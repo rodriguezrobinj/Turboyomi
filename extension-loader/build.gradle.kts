@@ -19,5 +19,6 @@ dependencies {
     implementation(libs.kotlin.logging)
 
     testImplementation(libs.bundles.test)
+    testImplementation(libs.okhttp.core)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
