@@ -14,6 +14,8 @@ dependencies {
 
     implementation(libs.apksig)
     implementation(libs.apk.parser)
+    implementation(libs.asm.tree)
+    implementation(libs.asm.analysis)
     implementation(libs.dex2jar.translator)
     implementation(libs.dex2jar.tools)
     implementation(libs.kotlin.logging)

@@ -28,7 +28,10 @@ class SignatureMismatchException(pkgName: String) :
 class ExtensionInstaller(
     private val dir: Path,
     private val inspect: (Path) -> ApkInfo = ApkInspector::inspect,
-    private val convert: (Path, Path) -> Unit = Dex2Jar::convert,
+    private val convert: (Path, Path) -> Unit = { apk, jar ->
+        Dex2Jar.convert(apk, jar)
+        AndroidBytecodeFixer.fix(jar)
+    },
 ) {
     fun install(downloadedApk: Path, expectedPkgName: String? = null): InstalledExtension {
         val info = inspect(downloadedApk)

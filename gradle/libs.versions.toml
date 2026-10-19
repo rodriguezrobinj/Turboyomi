@@ -88,6 +88,8 @@ xmlutil = "1.0.2"
 
 [libraries]
 android-stubs = { module = "com.github.Suwayomi:android-jar", version = "1.0.0" }
+asm-analysis = { module = "org.ow2.asm:asm-analysis", version = "9.10.1" }
+asm-tree = { module = "org.ow2.asm:asm-tree", version = "9.10.1" }
 apk-parser = { module = "net.dongliu:apk-parser", version = "2.6.10" }
 apksig = { module = "com.android.tools.build:apksig", version = "9.4.1" }
 appdirs = { module = "ca.gosyer:kotlin-multiplatform-appdirs", version = "2.0.0" }

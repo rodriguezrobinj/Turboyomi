@@ -71,7 +71,9 @@ class ClassLoadingTest {
         }
 
         val loader = SourceInstantiator.loaderFor(jar, apk)
-        loader.getResourceAsStream("assets/i18n/messages_en.properties")!!.use { it.readBytes().decodeToString() } shouldBe
+        loader.getResourceAsStream("assets/i18n/messages_en.properties")!!.use {
+            it.readBytes().decodeToString()
+        } shouldBe
             "title=Hello"
         SourceInstantiator.release(jar)
     }
