@@ -36,7 +36,9 @@ class ReportTest {
         OutcomeClassifier.classify(HttpException(503)) shouldBe Outcome.BLOCKED
         OutcomeClassifier.classify(CloudflareBypassException()) shouldBe Outcome.BLOCKED
         // A setup error that merely mentions Cloudflare is a real failure, not a blocked site
-        OutcomeClassifier.classify(IllegalStateException("CloudflareInterceptor must be present in default client")) shouldBe
+        OutcomeClassifier.classify(
+            IllegalStateException("CloudflareInterceptor must be present in default client"),
+        ) shouldBe
             Outcome.ERROR
         OutcomeClassifier.classify(NoClassDefFoundError("android/graphics/Picture")) shouldBe
             Outcome.MISSING_ANDROID_API

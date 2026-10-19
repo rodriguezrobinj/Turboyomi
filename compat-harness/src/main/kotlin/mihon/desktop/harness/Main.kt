@@ -38,6 +38,7 @@ fun main(args: Array<String>) {
         Report(
             targets.map { available ->
                 val installed = runCatching { manager.install(available) }.getOrElse {
+                    System.err.println("${available.pkgName} install failed: ${it.stackTraceToString()}")
                     return@map ExtensionResult(available.pkgName, Outcome.INSTALL_FAILED, it.toString())
                 }
                 if (installed !is Extension.Loaded) {
@@ -60,6 +61,7 @@ fun main(args: Array<String>) {
                     ExtensionResult(available.pkgName, Outcome.PASS, "")
                 } else {
                     val first = errors.filterNotNull().first()
+                    System.err.println("${available.pkgName} probe failed: ${first.stackTraceToString()}")
                     ExtensionResult(available.pkgName, OutcomeClassifier.classify(first), first.toString())
                 }
             },

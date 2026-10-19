@@ -58,4 +58,11 @@ class NetworkHelperTest {
         helper().client.newCall(GET(server.url("/").toString())).execute().use { it.code shouldBe 503 }
         server.shutdown()
     }
+
+    @Test
+    fun `compression codecs extensions use are on the classpath`() {
+        // Mihon ships the whole OkHttp bundle; extensions reference brotli and zstd directly
+        Class.forName("okhttp3.brotli.BrotliInterceptor")
+        Class.forName("okhttp3.zstd.Zstd")
+    }
 }

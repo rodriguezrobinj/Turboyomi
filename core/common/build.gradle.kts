@@ -45,6 +45,7 @@ dependencies {
     api(libs.okhttp.logging)
     api(libs.okhttp.brotli)
     api(libs.okhttp.dnsOverHttps)
+    api(libs.okhttp.zstd)
     api(libs.okio)
     api(libs.apollo)
 
