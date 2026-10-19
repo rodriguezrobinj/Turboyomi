@@ -23,26 +23,15 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         maven(url = "https://www.jitpack.io")
+        // android.jar stubs used by android-compat
+        maven(url = "https://github.com/Suwayomi/Suwayomi-Server/raw/android-jar/")
+        // JCEF (compile dependency of android-compat's webkit classes)
+        maven(url = "https://packages.jetbrains.team/maven/p/ij/intellij-dependencies")
+        maven(url = "https://jogamp.org/deployment/maven")
     }
 }
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
-rootProject.name = "Mihon"
-include(":app")
-include(":baseline-profile")
-include(":core-metadata")
-include(":core:archive")
-include(":core:common")
-include(":core:metro")
-include(":data")
-include(":domain")
+rootProject.name = "MangaReader"
 include(":i18n")
-include(":icons:custom-material-symbols")
-include(":icons:material-symbols")
-include(":icons:simple-icons")
-include(":presentation-core")
-include(":presentation-widget")
-include(":source-api")
-include(":source-local")
-include(":telemetry")

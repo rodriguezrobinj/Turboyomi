@@ -4,7 +4,7 @@ android-sdk-min = "26"
 android-sdk-compile = "37.2"
 android-sdk-target = "36"
 android-ndk = "29.0.14206865"
-java = "17"
+java = "21"
 
 [plugins]
 android-application = { id = "mihon.plugins.android.application" }
@@ -12,5 +12,6 @@ android-base = { id = "mihon.plugins.android.base" }
 android-library = { id = "mihon.plugins.android.library" }
 android-test = { id = "mihon.plugins.android.test" }
 compose = { id = "mihon.plugins.compose.android" }
+kotlin-jvm = { id = "mihon.plugins.kotlin.jvm" }
 kotlin-multiplatform = { id = "mihon.plugins.kotlin.multiplatform" }
 spotless = { id = "mihon.plugins.spotless" }
