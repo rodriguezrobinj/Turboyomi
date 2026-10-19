@@ -35,3 +35,5 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 rootProject.name = "MangaReader"
 include(":i18n")
+include(":android-compat")
+include(":android-compat:config")
