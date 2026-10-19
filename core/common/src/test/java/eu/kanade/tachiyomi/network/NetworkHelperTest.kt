@@ -2,6 +2,7 @@ package eu.kanade.tachiyomi.network
 
 import android.content.Context
 import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
@@ -39,5 +40,22 @@ class NetworkHelperTest {
         @Suppress("DEPRECATION")
         network.cloudflareClient shouldBe network.client
         network.client.interceptors.map { it::class.simpleName } shouldContain "UserAgentInterceptor"
+    }
+
+    @Test
+    fun `client has the interceptors extensions look up by class name`() {
+        // keiyoushi extensions rebuild the client and throw "<Name> must be present in default client" otherwise
+        helper().client.interceptors.map { it.javaClass.simpleName } shouldContainAll
+            listOf("UncaughtExceptionInterceptor", "UserAgentInterceptor", "CloudflareInterceptor")
+    }
+
+    @Test
+    fun `cloudflare interceptor passes requests through`() {
+        val server = MockWebServer()
+        server.enqueue(MockResponse().setResponseCode(503).setBody("challenge"))
+        server.start()
+
+        helper().client.newCall(GET(server.url("/").toString())).execute().use { it.code shouldBe 503 }
+        server.shutdown()
     }
 }

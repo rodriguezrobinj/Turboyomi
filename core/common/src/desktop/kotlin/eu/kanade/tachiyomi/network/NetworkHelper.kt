@@ -4,6 +4,7 @@ import android.content.Context
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
+import eu.kanade.tachiyomi.network.interceptor.CloudflareInterceptor
 import eu.kanade.tachiyomi.network.interceptor.UncaughtExceptionInterceptor
 import eu.kanade.tachiyomi.network.interceptor.UserAgentInterceptor
 import kotlinx.coroutines.CoroutineScope
@@ -20,7 +21,7 @@ import java.net.CookieManager as JavaCookieManager
 
 /**
  * Desktop copy of Mihon's NetworkHelper. Same public API, which extensions link against.
- * ponytail: no Cloudflare interceptor until the desktop WebView exists (subproject 2).
+ * ponytail: its CloudflareInterceptor passes through until the desktop WebView exists (subproject 2).
  */
 @Inject
 @SingleIn(AppScope::class)
@@ -75,7 +76,10 @@ class NetworkHelper(
             PREF_DOH_NJALLA -> builder.dohNajalla()
             PREF_DOH_SHECAN -> builder.dohShecan()
             else -> builder
-        }.build()
+        }
+            // Same position as Mihon: after the default interceptors, applied to the regular client
+            .addInterceptor(CloudflareInterceptor())
+            .build()
     }
 
     /**
