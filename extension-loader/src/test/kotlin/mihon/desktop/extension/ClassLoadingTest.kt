@@ -58,4 +58,21 @@ class ClassLoadingTest {
         SourceInstantiator.instantiate(jar, listOf(FakeSource::class.java.name)).map { it.name } shouldBe listOf("Fake")
         SourceInstantiator.release(jar)
     }
+
+    @Test
+    fun `apk assets are readable through the extension class loader`() {
+        // Extensions read bundled assets (e.g. i18n files) from their own class loader, which on Android is the apk
+        val jar = jarWith("ext.only.Hello")
+        val apk = createTempFile(suffix = ".apk")
+        JarOutputStream(apk.outputStream()).use { out ->
+            out.putNextEntry(JarEntry("assets/i18n/messages_en.properties"))
+            out.write("title=Hello".toByteArray())
+            out.closeEntry()
+        }
+
+        val loader = SourceInstantiator.loaderFor(jar, apk)
+        loader.getResourceAsStream("assets/i18n/messages_en.properties")!!.use { it.readBytes().decodeToString() } shouldBe
+            "title=Hello"
+        SourceInstantiator.release(jar)
+    }
 }

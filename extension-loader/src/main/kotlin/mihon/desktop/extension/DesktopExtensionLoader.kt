@@ -12,7 +12,9 @@ data class InstalledExtension(val apk: Path, val jar: Path, val info: ApkInfo)
 /** Desktop counterpart of Mihon's ExtensionLoader.loadExtension: same checks, same order, same reasons. */
 class DesktopExtensionLoader(
     private val trust: ExtensionTrust,
-    private val instantiate: (Path, List<String>) -> List<Source> = SourceInstantiator::instantiate,
+    private val instantiate: (InstalledExtension, List<String>) -> List<Source> = { ext, classNames ->
+        SourceInstantiator.instantiate(ext.jar, classNames, ext.apk)
+    },
 ) {
     fun load(installed: InstalledExtension, stores: List<ExtensionStore>): Extension.Installed {
         val info = installed.info
@@ -49,7 +51,7 @@ class DesktopExtensionLoader(
         if (classNames.isEmpty()) return notLoaded(Extension.NotLoaded.Reason.Malformed, libVersion)
 
         val sources = try {
-            instantiate(installed.jar, classNames)
+            instantiate(installed, classNames)
         } catch (e: Throwable) {
             logcat(LogPriority.ERROR, e) { "Extension load error: $name (${info.pkgName})" }
             val root = generateSequence(e) { it.cause }.last()

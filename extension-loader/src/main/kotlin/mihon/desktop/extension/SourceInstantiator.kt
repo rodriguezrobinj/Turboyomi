@@ -10,8 +10,8 @@ import java.util.concurrent.ConcurrentHashMap
 object SourceInstantiator {
     private val loaders = ConcurrentHashMap<Path, ChildFirstURLClassLoader>()
 
-    fun instantiate(jar: Path, classNames: List<String>): List<Source> {
-        val loader = loaders.getOrPut(jar.toAbsolutePath()) { ChildFirstURLClassLoader(arrayOf(jar.toUri().toURL())) }
+    fun instantiate(jar: Path, classNames: List<String>, apk: Path? = null): List<Source> {
+        val loader = loaderFor(jar, apk)
         return classNames.flatMap { className ->
             when (val obj = Class.forName(className, false, loader).getDeclaredConstructor().newInstance()) {
                 is Source -> listOf(obj)
@@ -20,6 +20,15 @@ object SourceInstantiator {
             }
         }
     }
+
+    /**
+     * Classes come from the converted jar; resources (assets/, java resources) from the apk itself, which on
+     * Android is what the extension's class loader reads.
+     */
+    internal fun loaderFor(jar: Path, apk: Path?): ClassLoader =
+        loaders.getOrPut(jar.toAbsolutePath()) {
+            ChildFirstURLClassLoader(listOfNotNull(jar, apk).map { it.toUri().toURL() }.toTypedArray())
+        }
 
     /** Closes the jar so Windows lets it be deleted. Its sources must not be used afterwards. */
     fun release(jar: Path) {
