@@ -14,6 +14,7 @@ import mihon.domain.extension.repository.ExtensionStoreRepository
 import nl.adaptivity.xmlutil.serialization.XML
 import tachiyomi.core.common.preference.PreferenceStore
 import tachiyomi.data.Database
+import tachiyomi.domain.source.service.SourceManager
 
 @DependencyGraph(
     scope = AppScope::class,
@@ -33,6 +34,8 @@ interface DesktopGraph {
 
     val extensionStoreRepository: ExtensionStoreRepository
     val extensionTrust: ExtensionTrust
+    val extensionManager: DesktopExtensionManager
+    val sourceManager: SourceManager
 
     @DependencyGraph.Factory
     fun interface Factory {
