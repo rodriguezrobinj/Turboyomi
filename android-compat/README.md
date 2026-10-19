@@ -14,3 +14,4 @@ Modifications to these files must stay under MPL-2.0 and be listed below.
   `server/src/main/kotlin/suwayomi/tachidesk/manga/impl/util/`, package renamed to `mihon.desktop.extension.vendor`.
   `ChildFirstURLClassLoader.kt` had no license header upstream; the project's MPL-2.0 header was added.
 - `extension-loader/.../vendor/Dex2Jar.kt`: derived from `PackageTools.dex2jar`; errors throw instead of being logged.
+- `extension-loader/.../vendor/BytecodeEditor.kt`: reformatted by the repository's ktlint (no behavior change).

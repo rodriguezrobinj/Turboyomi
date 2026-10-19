@@ -14,9 +14,9 @@ import okhttp3.logging.HttpLoggingInterceptor
 import java.io.File
 import java.net.CookieHandler
 import java.net.CookiePolicy
-import java.net.CookieManager as JavaCookieManager
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+import java.net.CookieManager as JavaCookieManager
 
 /**
  * Desktop copy of Mihon's NetworkHelper. Same public API, which extensions link against.
