@@ -1,6 +1,5 @@
 package mihon.desktop.extension
 
-import com.googlecode.d2j.DexLabel
 import com.googlecode.d2j.Field
 import com.googlecode.d2j.Method
 import com.googlecode.d2j.reader.BaseDexFileReader
@@ -20,6 +19,23 @@ import com.googlecode.d2j.visitors.DexMethodVisitor
  */
 class DexConstructorFixer(private val delegate: BaseDexFileReader) : BaseDexFileReader by delegate {
 
+    /** Superclass of every class in the dex, read once before any rewriting. */
+    private val superClasses: Map<String, String> by lazy {
+        HashMap<String, String>().also { supers ->
+            delegate.accept(
+                object : DexFileVisitor() {
+                    override fun visit(
+                        access: Int,
+                        className: String?,
+                        superClass: String?,
+                        interfaces: Array<String>?,
+                    ) =
+                        null.also { if (className != null && superClass != null) supers[className] = superClass }
+                },
+            )
+        }
+    }
+
     override fun accept(visitor: DexFileVisitor) = delegate.accept(FileVisitor(visitor))
 
     override fun accept(visitor: DexFileVisitor, config: Int) = delegate.accept(FileVisitor(visitor), config)
@@ -27,25 +43,30 @@ class DexConstructorFixer(private val delegate: BaseDexFileReader) : BaseDexFile
     override fun accept(visitor: DexFileVisitor, classIdx: Int, config: Int) =
         delegate.accept(FileVisitor(visitor), classIdx, config)
 
-    private class FileVisitor(visitor: DexFileVisitor) : DexFileVisitor(visitor) {
+    /** True when [ancestor] is above [type] in the chain the dex knows (up to the first class outside it). */
+    private fun isStrictAncestor(ancestor: String, type: String): Boolean =
+        generateSequence(superClasses[type]) { superClasses[it] }.any { it == ancestor }
+
+    private inner class FileVisitor(visitor: DexFileVisitor) : DexFileVisitor(visitor) {
         override fun visit(access: Int, className: String?, superClass: String?, interfaceNames: Array<String>?) =
             super.visit(access, className, superClass, interfaceNames)?.let(::ClassVisitor)
     }
 
-    private class ClassVisitor(visitor: DexClassVisitor) : DexClassVisitor(visitor) {
+    private inner class ClassVisitor(visitor: DexClassVisitor) : DexClassVisitor(visitor) {
         override fun visitMethod(accessFlags: Int, method: Method?) =
             super.visitMethod(accessFlags, method)?.let(::MethodVisitor)
     }
 
-    private class MethodVisitor(visitor: DexMethodVisitor) : DexMethodVisitor(visitor) {
+    private inner class MethodVisitor(visitor: DexMethodVisitor) : DexMethodVisitor(visitor) {
         override fun visitCode() = super.visitCode()?.let(::CodeVisitor)
     }
 
     /**
-     * Tracks which registers hold a fresh `new-instance`. Straight-line only: any label (a jump target) and any
-     * write to a register drops what is known, so an uncertain case is left exactly as R8 wrote it.
+     * Tracks which registers hold a fresh `new-instance`; any write to a register drops what is known about it.
+     * Labels keep it: ART only accepts an `<init>` whose receiver is one uninitialized allocation on every path,
+     * and the ancestor check below leaves any call that isn't R8's inlining exactly as written.
      */
-    private class CodeVisitor(visitor: DexCodeVisitor) : DexCodeVisitor(visitor) {
+    private inner class CodeVisitor(visitor: DexCodeVisitor) : DexCodeVisitor(visitor) {
         private val allocated = HashMap<Int, String>()
 
         override fun visitTypeStmt(op: Op, a: Int, b: Int, type: String) {
@@ -61,18 +82,15 @@ class DexConstructorFixer(private val delegate: BaseDexFileReader) : BaseDexFile
 
         override fun visitMethodStmt(op: Op, args: IntArray, method: Method) {
             val type = args.firstOrNull()?.let(allocated::get)
-            val target = if (op in INVOKE_DIRECT && method.name == "<init>" && type != null && type != method.owner) {
+            val target = if (
+                op in INVOKE_DIRECT && method.name == "<init>" && type != null && isStrictAncestor(method.owner, type)
+            ) {
                 Method(type, method.name, method.parameterTypes, method.returnType)
             } else {
                 method
             }
             if (method.name == "<init>") args.firstOrNull()?.let(allocated::remove)
             super.visitMethodStmt(op, args, target)
-        }
-
-        override fun visitLabel(label: DexLabel?) {
-            allocated.clear()
-            super.visitLabel(label)
         }
 
         override fun visitConstStmt(op: Op?, a: Int, value: Any?) {
