@@ -37,3 +37,4 @@ rootProject.name = "MangaReader"
 include(":i18n")
 include(":android-compat")
 include(":android-compat:config")
+include(":compat-shims")
