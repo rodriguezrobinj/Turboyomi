@@ -3,7 +3,6 @@ package mihon.desktop.extension
 import logcat.LogPriority
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
-import org.objectweb.asm.Opcodes.ACC_ABSTRACT
 import org.objectweb.asm.Opcodes.ACC_INTERFACE
 import org.objectweb.asm.Opcodes.ACC_PUBLIC
 import org.objectweb.asm.Opcodes.ACC_STATIC
@@ -36,13 +35,13 @@ import kotlin.io.path.readBytes
 import kotlin.io.path.writeBytes
 
 /**
- * Rewrites dex2jar output that ART accepts but the JVM verifier rejects. R8 optimizes extensions for ART:
- * - it inlines trivial constructors, so a constructor or an allocation calls an ancestor's `<init>` directly;
- * - it can leave `abstract` on classes it still instantiates;
+ * Rewrites dex2jar output that ART accepts but the JVM verifier rejects. R8 inlines trivial constructors, so a
+ * constructor or an allocation calls an ancestor's `<init>` directly and the skipped constructors are removed;
  * and dex2jar's stack map frames are not always consistent.
  *
- * Fixes, in order: concrete instantiated classes, constructor calls redirected to the expected class (adding
- * bridge constructors down the chain), then frames recomputed for every class.
+ * Fixes, in order: constructor calls redirected to the class the JVM expects, missing constructors added as
+ * bridges to the direct superclass, then frames recomputed for every class. Allocations dex2jar would retype
+ * are kept by DexConstructorFixer, before conversion.
  */
 object AndroidBytecodeFixer {
 
@@ -57,7 +56,6 @@ object AndroidBytecodeFixer {
             val classes = nodes.values.associateBy { it.name }
             val hierarchy = Hierarchy(classes, appLoader)
 
-            concretizeInstantiatedAbstracts(classes)
             classes.values.forEach { redirectConstructorCalls(it, classes, hierarchy) }
 
             nodes.forEach { (path, node) ->
@@ -73,17 +71,6 @@ object AndroidBytecodeFixer {
                     .onFailure { logcat(LogPriority.WARN, it) { "Left ${node.name} as dex2jar wrote it" } }
             }
         }
-    }
-
-    private fun concretizeInstantiatedAbstracts(classes: Map<String, ClassNode>) {
-        val instantiated = classes.values
-            .flatMap { node -> node.methods.flatMap { method -> method.instructions.filter { it.opcode == NEW } } }
-            .mapTo(HashSet()) { (it as TypeInsnNode).desc }
-        instantiated
-            .mapNotNull(classes::get)
-            .filter { it.access and ACC_ABSTRACT != 0 && it.access and ACC_INTERFACE == 0 }
-            .filter { node -> node.methods.none { it.access and ACC_ABSTRACT != 0 } }
-            .forEach { it.access = it.access and ACC_ABSTRACT.inv() }
     }
 
     private fun redirectConstructorCalls(owner: ClassNode, classes: Map<String, ClassNode>, hierarchy: Hierarchy) {

@@ -146,33 +146,6 @@ class AndroidBytecodeFixerTest {
     }
 
     @Test
-    fun `instantiated abstract classes without abstract methods become concrete`() {
-        val jar = jarOf(
-            cls("t3/Abs", access = ACC_PUBLIC or ACC_ABSTRACT) { ctor("java/lang/Object") },
-            cls("t3/Factory") { factory(type = "t3/Abs", target = "t3/Abs") },
-        )
-        shouldThrow<InstantiationError> { callMake(jar, "t3.Factory") }
-
-        AndroidBytecodeFixer.fix(jar)
-
-        callMake(jar, "t3.Factory").javaClass.name shouldBe "t3.Abs"
-    }
-
-    @Test
-    fun `classes with abstract methods stay abstract`() {
-        val jar = jarOf(
-            cls("t4/Abs", access = ACC_PUBLIC or ACC_ABSTRACT) {
-                ctor("java/lang/Object")
-                visitMethod(ACC_PUBLIC or ACC_ABSTRACT, "run", "()V", null, null).visitEnd()
-            },
-        )
-
-        AndroidBytecodeFixer.fix(jar)
-
-        withLoader(jar) { java.lang.reflect.Modifier.isAbstract(it.loadClass("t4.Abs").modifiers) } shouldBe true
-    }
-
-    @Test
     fun `wrong stack map frames are recomputed`() {
         // static int f(int x) { return x != 0 ? 1 : 0 } with a frame that claims x is an Object at the branch target
         val jar = jarOf(
