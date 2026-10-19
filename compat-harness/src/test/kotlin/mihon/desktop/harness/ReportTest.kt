@@ -34,7 +34,10 @@ class ReportTest {
     fun `classifies the failures the threshold depends on`() {
         OutcomeClassifier.classify(HttpException(403)) shouldBe Outcome.BLOCKED
         OutcomeClassifier.classify(HttpException(503)) shouldBe Outcome.BLOCKED
-        OutcomeClassifier.classify(IllegalStateException("Failed to bypass Cloudflare")) shouldBe Outcome.BLOCKED
+        OutcomeClassifier.classify(CloudflareBypassException()) shouldBe Outcome.BLOCKED
+        // A setup error that merely mentions Cloudflare is a real failure, not a blocked site
+        OutcomeClassifier.classify(IllegalStateException("CloudflareInterceptor must be present in default client")) shouldBe
+            Outcome.ERROR
         OutcomeClassifier.classify(NoClassDefFoundError("android/graphics/Picture")) shouldBe
             Outcome.MISSING_ANDROID_API
         OutcomeClassifier.classify(RuntimeException("x", RuntimeException("Stub!"))) shouldBe
@@ -46,3 +49,6 @@ class ReportTest {
         OutcomeClassifier.classify(ProbeTimeout(30.seconds)) shouldBe Outcome.TIMEOUT
     }
 }
+
+/** Same simple name as the exception Mihon's CloudflareInterceptor throws when it cannot solve a challenge. */
+private class CloudflareBypassException : Exception()

@@ -49,7 +49,7 @@ object OutcomeClassifier {
                 it is NoClassDefFoundError || it is AbstractMethodError || it.message == "Stub!"
             } -> Outcome.MISSING_ANDROID_API
             chain.any { it is HttpException && it.code in setOf(403, 503) } -> Outcome.BLOCKED
-            chain.any { it.message?.contains("cloudflare", ignoreCase = true) == true } -> Outcome.BLOCKED
+            chain.any { it.javaClass.simpleName == "CloudflareBypassException" } -> Outcome.BLOCKED
             else -> Outcome.ERROR
         }
     }
