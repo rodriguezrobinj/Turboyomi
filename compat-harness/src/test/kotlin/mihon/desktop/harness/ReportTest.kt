@@ -8,6 +8,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.jupiter.api.Test
+import kotlin.time.Duration.Companion.seconds
 
 class ReportTest {
     @Test
@@ -42,5 +43,6 @@ class ReportTest {
         val timeout = runCatching { runBlocking { withTimeout(1) { delay(1_000) } } }.exceptionOrNull()
         (timeout is TimeoutCancellationException) shouldBe true
         OutcomeClassifier.classify(timeout!!) shouldBe Outcome.TIMEOUT
+        OutcomeClassifier.classify(ProbeTimeout(30.seconds)) shouldBe Outcome.TIMEOUT
     }
 }

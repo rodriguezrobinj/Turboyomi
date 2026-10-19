@@ -3,17 +3,19 @@ package mihon.desktop.harness
 import eu.kanade.tachiyomi.extension.model.Extension
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.model.MangasPage
+import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.coEvery
 import io.mockk.mockk
-import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import mihon.domain.extension.model.ContentWarning
 import mihon.domain.extension.model.ExtensionStore
 import org.junit.jupiter.api.Test
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.measureTimedValue
 
 class ProbeTest {
     @Test
@@ -25,7 +27,22 @@ class ProbeTest {
                     MangasPage(emptyList(), false)
                 }
         }
-        probe(source, 100.milliseconds).shouldBeInstanceOf<TimeoutCancellationException>()
+        probe(source, 100.milliseconds).shouldBeInstanceOf<ProbeTimeout>()
+    }
+
+    @Test
+    fun `a source blocking its thread times out too`(): Unit = runBlocking {
+        // Rx-based extensions run OkHttp's execute() on the calling thread; a stall must not hold the harness
+        val source = mockk<Source> {
+            coEvery { getPopularManga(1) } answers
+                {
+                    Thread.sleep(10_000)
+                    MangasPage(emptyList(), false)
+                }
+        }
+        val (result, elapsed) = measureTimedValue { probe(source, 200.milliseconds) }
+        result.shouldBeInstanceOf<ProbeTimeout>()
+        elapsed shouldBeLessThan 3.seconds
     }
 
     @Test

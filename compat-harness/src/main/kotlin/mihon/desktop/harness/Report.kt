@@ -44,7 +44,7 @@ object OutcomeClassifier {
     fun classify(error: Throwable): Outcome {
         val chain = generateSequence(error) { it.cause }.toList()
         return when {
-            chain.any { it is TimeoutCancellationException } -> Outcome.TIMEOUT
+            chain.any { it is TimeoutCancellationException || it is ProbeTimeout } -> Outcome.TIMEOUT
             chain.any {
                 it is NoClassDefFoundError || it is AbstractMethodError || it.message == "Stub!"
             } -> Outcome.MISSING_ANDROID_API

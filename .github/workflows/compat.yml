@@ -5,15 +5,22 @@ on:
     - cron: "0 4 * * *"
   workflow_dispatch:
 
+# The harness runs third-party extension code: give it a read-only token and keep it out of .git/config
+permissions:
+  contents: read
+
 jobs:
   compat:
     runs-on: windows-latest
     if: ${{ vars.COMPAT_REPO_URL != '' }}
+    timeout-minutes: 90
     defaults:
       run:
         shell: bash
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
