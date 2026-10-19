@@ -27,7 +27,15 @@ class DesktopExtensionManagerTest {
     private fun available(apkUrl: String) = Extension.Available(
         name = "Example", pkgName = "pkg.example", versionName = "1.4.1", versionCode = 1, libVersion = 1.4,
         lang = "en", contentWarning = ContentWarning.SAFE, sources = emptyList(), apkUrl = apkUrl, iconUrl = "",
-        store = ExtensionStore("https://repo/index.min.json", "Repo", "R", "key", ExtensionStore.Contact("https://repo", null), false, null),
+        store = ExtensionStore(
+            "https://repo/index.min.json",
+            "Repo",
+            "R",
+            "key",
+            ExtensionStore.Contact("https://repo", null),
+            false,
+            null,
+        ),
     )
 
     @Test

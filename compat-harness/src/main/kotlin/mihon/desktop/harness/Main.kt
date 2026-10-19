@@ -16,7 +16,9 @@ private fun Array<String>.option(name: String): String? = indexOf(name).takeIf {
 
 fun main(args: Array<String>) {
     val repo = args.option("--repo") ?: run {
-        System.err.println("Usage: --repo <index url> [--limit 100] [--threshold 0.8] [--out compat-report.md] [--packages file]")
+        System.err.println(
+            "Usage: --repo <index url> [--limit 100] [--threshold 0.8] [--out compat-report.md] [--packages file]",
+        )
         exitProcess(2)
     }
     val limit = args.option("--limit")?.toInt() ?: 100
@@ -41,7 +43,15 @@ fun main(args: Array<String>) {
                 if (installed !is Extension.Loaded) {
                     val reason = (installed as Extension.NotLoaded).reason
                     val outcome = (reason as? Extension.NotLoaded.Reason.Failed)
-                        ?.let { if ("NoClassDefFoundError" in it.stackTrace || "Stub!" in it.stackTrace) Outcome.MISSING_ANDROID_API else null }
+                        ?.let {
+                            if ("NoClassDefFoundError" in it.stackTrace ||
+                                "Stub!" in it.stackTrace
+                            ) {
+                                Outcome.MISSING_ANDROID_API
+                            } else {
+                                null
+                            }
+                        }
                         ?: Outcome.LOAD_FAILED
                     return@map ExtensionResult(available.pkgName, outcome, reason.toString())
                 }

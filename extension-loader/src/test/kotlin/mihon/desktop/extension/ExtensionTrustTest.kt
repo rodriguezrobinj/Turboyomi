@@ -6,7 +6,16 @@ import org.junit.jupiter.api.Test
 import tachiyomi.core.common.preference.InMemoryPreferenceStore
 
 class ExtensionTrustTest {
-    private val store = ExtensionStore("https://repo/index.min.json", "Repo", "R", "storekey", ExtensionStore.Contact("https://repo", null), false, null)
+    private val store =
+        ExtensionStore(
+            "https://repo/index.min.json",
+            "Repo",
+            "R",
+            "storekey",
+            ExtensionStore.Contact("https://repo", null),
+            false,
+            null,
+        )
 
     @Test
     fun `signed by a store key is trusted`() {

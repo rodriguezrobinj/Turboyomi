@@ -147,7 +147,10 @@ object BytecodeEditor {
                     signature: String?,
                     cst: Any?,
                 ): FieldVisitor? {
-                    logger.trace { "CLass Field" to "${desc.replaceIndirectly()}: ${cst?.let { it::class.java.simpleName }}: $cst" }
+                    logger.trace {
+                        "CLass Field" to
+                            "${desc.replaceIndirectly()}: ${cst?.let { it::class.java.simpleName }}: $cst"
+                    }
                     return super.visitField(access, name, desc.replaceIndirectly(), signature, cst)
                 }
 

@@ -34,8 +34,10 @@ class ReportTest {
         OutcomeClassifier.classify(HttpException(403)) shouldBe Outcome.BLOCKED
         OutcomeClassifier.classify(HttpException(503)) shouldBe Outcome.BLOCKED
         OutcomeClassifier.classify(IllegalStateException("Failed to bypass Cloudflare")) shouldBe Outcome.BLOCKED
-        OutcomeClassifier.classify(NoClassDefFoundError("android/graphics/Picture")) shouldBe Outcome.MISSING_ANDROID_API
-        OutcomeClassifier.classify(RuntimeException("x", RuntimeException("Stub!"))) shouldBe Outcome.MISSING_ANDROID_API
+        OutcomeClassifier.classify(NoClassDefFoundError("android/graphics/Picture")) shouldBe
+            Outcome.MISSING_ANDROID_API
+        OutcomeClassifier.classify(RuntimeException("x", RuntimeException("Stub!"))) shouldBe
+            Outcome.MISSING_ANDROID_API
         OutcomeClassifier.classify(HttpException(500)) shouldBe Outcome.ERROR
         val timeout = runCatching { runBlocking { withTimeout(1) { delay(1_000) } } }.exceptionOrNull()
         (timeout is TimeoutCancellationException) shouldBe true

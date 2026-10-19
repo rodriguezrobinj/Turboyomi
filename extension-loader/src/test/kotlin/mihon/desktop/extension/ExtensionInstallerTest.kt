@@ -70,7 +70,10 @@ class ExtensionInstallerTest {
     fun `failed conversion leaves no partial files`() {
         val dir = createTempDirectory("ext")
         shouldThrow<IllegalStateException> {
-            installer(dir, convert = { _, jar -> jar.writeText("partial"); error("corrupt dex") }).install(apk(3))
+            installer(dir, convert = { _, jar ->
+                jar.writeText("partial")
+                error("corrupt dex")
+            }).install(apk(3))
         }
         dir.listDirectoryEntries() shouldBe emptyList()
     }

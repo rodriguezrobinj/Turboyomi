@@ -29,7 +29,8 @@ class ApkInspectorTest {
 
     @Test
     fun `rejects manifests with a doctype`() {
-        val xml = """<!DOCTYPE x [<!ENTITY e SYSTEM "file:///C:/Windows/win.ini">]><manifest><application/></manifest>"""
+        val xml = """<!DOCTYPE x [<!ENTITY e SYSTEM "file:///C:/Windows/win.ini">]>""" +
+            """<manifest><application/></manifest>"""
         shouldThrowAny { ApkInspector.readMetaData(xml) }
     }
 

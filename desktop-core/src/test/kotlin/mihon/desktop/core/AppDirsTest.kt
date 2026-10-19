@@ -11,7 +11,10 @@ class AppDirsTest {
     @Test
     fun `uses roaming and local app data on Windows`() {
         val dirs = AppDirs.fromEnvironment(
-            mapOf("APPDATA" to "C:\\Users\\José Pérez\\AppData\\Roaming", "LOCALAPPDATA" to "C:\\Users\\José Pérez\\AppData\\Local"),
+            mapOf(
+                "APPDATA" to "C:\\Users\\José Pérez\\AppData\\Roaming",
+                "LOCALAPPDATA" to "C:\\Users\\José Pérez\\AppData\\Local",
+            ),
         )
         dirs.data shouldBe Path("C:\\Users\\José Pérez\\AppData\\Roaming", AppDirs.APP_NAME)
         dirs.extensions shouldBe Path("C:\\Users\\José Pérez\\AppData\\Local", AppDirs.APP_NAME, "extensions")
@@ -34,6 +37,9 @@ class AppDirsTest {
         val root = createTempDirectory("José Pérez")
         val dirs = AppDirs(root.resolve("data"), root.resolve("local"))
         dirs.createAll()
-        listOf(dirs.db, dirs.backups, dirs.settings, dirs.cache, dirs.extensions, dirs.logs).forEach { it.isDirectory() shouldBe true }
+        listOf(dirs.db, dirs.backups, dirs.settings, dirs.cache, dirs.extensions, dirs.logs).forEach {
+            it.isDirectory() shouldBe
+                true
+        }
     }
 }

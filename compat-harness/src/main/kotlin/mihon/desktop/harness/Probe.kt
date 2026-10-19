@@ -19,7 +19,11 @@ suspend fun probe(source: Source, timeout: Duration): Throwable? = try {
     e
 }
 
-fun selectPackages(available: List<Extension.Available>, packages: List<String>?, limit: Int): List<Extension.Available> {
+fun selectPackages(
+    available: List<Extension.Available>,
+    packages: List<String>?,
+    limit: Int,
+): List<Extension.Available> {
     if (packages != null) {
         val byPkg = available.associateBy { it.pkgName }
         return packages.mapNotNull { byPkg[it] }.take(limit)

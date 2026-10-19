@@ -62,7 +62,9 @@ class ExtensionInstaller(
         }
         return versions.groupBy { it.first }.mapNotNull { (_, list) ->
             val sorted = list.sortedByDescending { it.second }
-            sorted.drop(1).forEach { (_, _, apk) -> deleteQuietly(apk, apk.resolveSibling(apk.name.removeSuffix(".apk") + ".jar")) }
+            sorted.drop(1).forEach { (_, _, apk) ->
+                deleteQuietly(apk, apk.resolveSibling(apk.name.removeSuffix(".apk") + ".jar"))
+            }
             val (_, _, apk) = sorted.first()
             val jar = apk.resolveSibling(apk.name.removeSuffix(".apk") + ".jar")
             if (!jar.exists()) return@mapNotNull null

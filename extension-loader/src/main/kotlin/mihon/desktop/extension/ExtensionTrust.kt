@@ -16,7 +16,12 @@ class ExtensionTrust(preferenceStore: PreferenceStore) {
     // Same key as Mihon's SourcePreferences.trustedExtensions, so backups carry it over
     private val trusted = preferenceStore.getStringSet(Preference.appStateKey("trusted_extensions"), emptySet())
 
-    fun isTrusted(pkgName: String, versionCode: Long, fingerprints: List<String>, stores: List<ExtensionStore>): Boolean {
+    fun isTrusted(
+        pkgName: String,
+        versionCode: Long,
+        fingerprints: List<String>,
+        stores: List<ExtensionStore>,
+    ): Boolean {
         if (fingerprints.isEmpty()) return false
         val storeKeys = stores.mapTo(HashSet()) { it.signingKey }
         return fingerprints.any { it in storeKeys } || "$pkgName:$versionCode:${fingerprints.last()}" in trusted.get()

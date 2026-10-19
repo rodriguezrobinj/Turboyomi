@@ -9,10 +9,25 @@ import tachiyomi.core.common.preference.InMemoryPreferenceStore
 import kotlin.io.path.Path
 
 class DesktopExtensionLoaderTest {
-    private val store = ExtensionStore("https://repo/index.min.json", "Repo", "R", "storekey", ExtensionStore.Contact("https://repo", null), false, null)
+    private val store =
+        ExtensionStore(
+            "https://repo/index.min.json",
+            "Repo",
+            "R",
+            "storekey",
+            ExtensionStore.Contact("https://repo", null),
+            false,
+            null,
+        )
     private val loader = DesktopExtensionLoader(ExtensionTrust(InMemoryPreferenceStore()))
 
-    private fun installed(meta: Map<String, String>, signatures: List<String> = listOf("storekey"), versionName: String = "1.4.1") =
+    private fun installed(
+        meta: Map<String, String>,
+        signatures: List<String> = listOf(
+            "storekey",
+        ),
+        versionName: String = "1.4.1",
+    ) =
         InstalledExtension(
             apk = Path("x.apk"),
             jar = Path("x.jar"),
@@ -21,7 +36,10 @@ class DesktopExtensionLoaderTest {
 
     @Test
     fun `loads trusted extensions with supported libs`() {
-        val ext = loader.load(installed(mapOf("tachiyomi.extension.class" to FakeSource::class.java.name)), listOf(store))
+        val ext = loader.load(
+            installed(mapOf("tachiyomi.extension.class" to FakeSource::class.java.name)),
+            listOf(store),
+        )
         ext.shouldBeInstanceOf<Extension.Loaded>().sources.map { it.name } shouldBe listOf("Fake")
         ext.lang shouldBe "en"
         ext.store shouldBe store
@@ -29,13 +47,19 @@ class DesktopExtensionLoaderTest {
 
     @Test
     fun `unsupported lib versions are not loaded`() {
-        val ext = loader.load(installed(mapOf("tachiyomix.extensionLib" to "1.2", "tachiyomi.extension.class" to "x")), listOf(store))
+        val ext = loader.load(
+            installed(mapOf("tachiyomix.extensionLib" to "1.2", "tachiyomi.extension.class" to "x")),
+            listOf(store),
+        )
         ext.shouldBeInstanceOf<Extension.NotLoaded>().reason shouldBe Extension.NotLoaded.Reason.UnsupportedLibVersion
     }
 
     @Test
     fun `untrusted signatures are reported with the last signature`() {
-        val ext = loader.load(installed(mapOf("tachiyomi.extension.class" to "x"), signatures = listOf("a", "b")), listOf(store))
+        val ext = loader.load(
+            installed(mapOf("tachiyomi.extension.class" to "x"), signatures = listOf("a", "b")),
+            listOf(store),
+        )
         ext.shouldBeInstanceOf<Extension.NotLoaded>().reason shouldBe Extension.NotLoaded.Reason.Untrusted("b")
     }
 

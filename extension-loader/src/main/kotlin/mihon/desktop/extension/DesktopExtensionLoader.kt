@@ -53,7 +53,10 @@ class DesktopExtensionLoader(
         } catch (e: Throwable) {
             logcat(LogPriority.ERROR, e) { "Extension load error: $name (${info.pkgName})" }
             val root = generateSequence(e) { it.cause }.last()
-            return notLoaded(Extension.NotLoaded.Reason.Failed(root.message ?: root.toString(), e.stackTraceToString()), libVersion)
+            return notLoaded(
+                Extension.NotLoaded.Reason.Failed(root.message ?: root.toString(), e.stackTraceToString()),
+                libVersion,
+            )
         }
 
         val langs = sources.map { it.lang }.toSet()

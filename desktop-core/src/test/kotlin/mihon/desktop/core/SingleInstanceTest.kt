@@ -18,7 +18,8 @@ class SingleInstanceTest {
         val received = CompletableDeferred<List<String>>()
         val job = first.instance.listen(CoroutineScope(Dispatchers.IO)) { received.complete(it) }
 
-        SingleInstance.acquire(lock, listOf("mangareader://anilist-auth?code=1")) shouldBe SingleInstance.Result.Forwarded
+        SingleInstance.acquire(lock, listOf("mangareader://anilist-auth?code=1")) shouldBe
+            SingleInstance.Result.Forwarded
 
         withTimeout(5_000) { received.await() } shouldBe listOf("mangareader://anilist-auth?code=1")
         job.cancel()

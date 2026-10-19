@@ -13,14 +13,21 @@ data class Report(val results: List<ExtensionResult>) {
     private val considered get() = results.filter { it.outcome != Outcome.BLOCKED }
 
     val passRate: Double
-        get() = if (considered.isEmpty()) 0.0 else considered.count { it.outcome == Outcome.PASS }.toDouble() / considered.size
+        get() = if (considered.isEmpty()) {
+            0.0
+        } else {
+            considered.count { it.outcome == Outcome.PASS }.toDouble() /
+                considered.size
+        }
 
     fun toMarkdown(): String = buildString {
         val passed = considered.count { it.outcome == Outcome.PASS }
         val rate = "%.1f".format(Locale.ROOT, passRate * 100)
         appendLine("# Extension compatibility")
         appendLine()
-        appendLine("Pass rate: **$rate%** ($passed/${considered.size}, ${results.size - considered.size} blocked excluded)")
+        appendLine(
+            "Pass rate: **$rate%** ($passed/${considered.size}, ${results.size - considered.size} blocked excluded)",
+        )
         appendLine()
         Outcome.entries.forEach { outcome -> appendLine("- $outcome: ${results.count { it.outcome == outcome }}") }
         appendLine()
@@ -38,7 +45,9 @@ object OutcomeClassifier {
         val chain = generateSequence(error) { it.cause }.toList()
         return when {
             chain.any { it is TimeoutCancellationException } -> Outcome.TIMEOUT
-            chain.any { it is NoClassDefFoundError || it is AbstractMethodError || it.message == "Stub!" } -> Outcome.MISSING_ANDROID_API
+            chain.any {
+                it is NoClassDefFoundError || it is AbstractMethodError || it.message == "Stub!"
+            } -> Outcome.MISSING_ANDROID_API
             chain.any { it is HttpException && it.code in setOf(403, 503) } -> Outcome.BLOCKED
             chain.any { it.message?.contains("cloudflare", ignoreCase = true) == true } -> Outcome.BLOCKED
             else -> Outcome.ERROR
