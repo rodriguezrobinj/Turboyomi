@@ -1,0 +1,10 @@
+MangaReader (provisional name)
+
+This product is a fork of Mihon (https://github.com/mihonapp/mihon),
+Copyright (c) the Mihon Open Source Project, licensed under the Apache License 2.0.
+
+The directory android-compat/ and the files under
+extension-loader/src/main/kotlin/mihon/desktop/extension/vendor/ are derived from
+Suwayomi-Server (https://github.com/Suwayomi/Suwayomi-Server) at commit
+e2ce828abb81f0f5ce1a3fb86194a2746b519c85 and are licensed under the
+Mozilla Public License 2.0 (see android-compat/LICENSE).
