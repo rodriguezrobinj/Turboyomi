@@ -97,6 +97,7 @@ axml = { module = "com.github.Aliucord:axml", version = "ed26565eb0" }
 config = { module = "com.typesafe:config", version = "1.4.9" }
 config4k = { module = "io.github.config4k:config4k", version = "0.7.0" }
 dex2jar-tools = { module = "de.femtopedia.dex2jar:dex-tools", version.ref = "dex2jar" }
+dex2jar-writer = { module = "de.femtopedia.dex2jar:dex-writer", version.ref = "dex2jar" }
 dex2jar-translator = { module = "de.femtopedia.dex2jar:dex-translator", version.ref = "dex2jar" }
 icu4j = { module = "com.ibm.icu:icu4j", version = "78.3" }
 imageio-webp = { module = "com.github.usefulness:webp-imageio", version = "0.11.0" }

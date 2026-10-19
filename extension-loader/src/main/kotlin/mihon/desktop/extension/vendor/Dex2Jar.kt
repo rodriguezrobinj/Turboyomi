@@ -10,6 +10,7 @@ package mihon.desktop.extension.vendor
 import com.googlecode.d2j.dex.Dex2jar
 import com.googlecode.d2j.reader.MultiDexFileReader
 import com.googlecode.dex2jar.tools.BaksmaliBaseDexExceptionHandler
+import mihon.desktop.extension.DexConstructorFixer
 import java.nio.file.Path
 import kotlin.io.path.readBytes
 
@@ -18,7 +19,8 @@ class Dex2JarException(message: String) : Exception(message)
 object Dex2Jar {
     /** Converts the dex code inside [apk] into [jar] and rewrites java.* classes that differ from Android's. */
     fun convert(apk: Path, jar: Path) {
-        val reader = MultiDexFileReader.open(apk.readBytes())
+        // DexConstructorFixer is this repo's addition: keeps allocation types R8's constructor inlining would lose
+        val reader = DexConstructorFixer(MultiDexFileReader.open(apk.readBytes()))
         val handler = BaksmaliBaseDexExceptionHandler()
         Dex2jar
             .from(reader)

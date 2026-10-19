@@ -22,5 +22,6 @@ dependencies {
 
     testImplementation(libs.bundles.test)
     testImplementation(libs.okhttp.core)
+    testImplementation(libs.dex2jar.writer)
     testRuntimeOnly(libs.junit.platform.launcher)
 }

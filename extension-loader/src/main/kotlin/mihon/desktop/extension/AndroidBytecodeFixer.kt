@@ -92,21 +92,34 @@ object AndroidBytecodeFixer {
             val calls = method.instructions.filterIsInstance<MethodInsnNode>()
                 .filter { it.opcode == INVOKESPECIAL && it.name == "<init>" }
             if (calls.isEmpty()) continue
-            val frames =
-                runCatching { Analyzer(SourceInterpreter()).analyze(owner.name, method) }.getOrNull() ?: continue
+            val frames = runCatching { Analyzer(SourceInterpreter()).analyze(owner.name, method) }.getOrNull()
 
             for (call in calls) {
-                val frame = frames[method.instructions.indexOf(call)] ?: continue
-                val receiver = frame.getStack(frame.stackSize - 1 - Type.getArgumentTypes(call.desc).size)
-                val expected = when (val origin = receiver.insns.singleOrNull()?.let { origin(it, method, frames) }) {
-                    is Origin.New -> origin.type
-                    // this(...) delegation is legal; anything else must go to the direct superclass
-                    Origin.This -> if (call.owner == owner.name) continue else owner.superName
-                    null -> continue
-                } ?: continue
-                if (expected == call.owner || call.owner !in hierarchy.ancestors(expected)) continue
-                if (ensureConstructorChain(expected, call.owner, call.desc, classes)) call.owner = expected
+                if (frames != null) {
+                    expectedOwner(call, owner, method, frames)
+                        ?.takeIf { it != call.owner && call.owner in hierarchy.ancestors(it) }
+                        ?.let { call.owner = it }
+                }
+                // Also covers calls DexConstructorFixer retargeted to a class whose trivial constructor R8 removed
+                ensureConstructor(call.owner, call.desc, classes)
             }
+        }
+    }
+
+    /** The class whose `<init>` the JVM requires for this call: the allocated type, or the direct superclass. */
+    private fun expectedOwner(
+        call: MethodInsnNode,
+        owner: ClassNode,
+        method: MethodNode,
+        frames: Array<Frame<SourceValue>?>,
+    ): String? {
+        val frame = frames[method.instructions.indexOf(call)] ?: return null
+        val receiver = frame.getStack(frame.stackSize - 1 - Type.getArgumentTypes(call.desc).size)
+        return when (val origin = receiver.insns.singleOrNull()?.let { origin(it, method, frames) }) {
+            is Origin.New -> origin.type
+            // this(...) delegation is legal; anything else must go to the direct superclass
+            Origin.This -> if (call.owner == owner.name) null else owner.superName
+            null -> null
         }
     }
 
@@ -143,28 +156,18 @@ object AndroidBytecodeFixer {
     }
 
     /**
-     * Makes `[start].<init>(desc)` exist and reach `[target].<init>(desc)` through each direct superclass,
-     * adding bridges where R8 removed the trivial constructors. False when a link isn't in the jar.
+     * Makes `[start].<init>(desc)` exist, adding a bridge to its direct superclass in every class of the jar up
+     * the chain that lacks one (R8 removes trivial constructors). App classes keep their own constructors.
      */
-    private fun ensureConstructorChain(
-        start: String,
-        target: String,
-        desc: String,
-        classes: Map<String, ClassNode>,
-    ): Boolean {
+    private fun ensureConstructor(start: String, desc: String, classes: Map<String, ClassNode>) {
         var current = start
-        while (current != target) {
-            val node = classes[current] ?: return false
-            val parent = node.superName ?: return false
-            if (node.methods.none {
-                    it.name == "<init>" && it.desc == desc
-                }
-            ) {
-                node.methods.add(bridgeConstructor(parent, desc))
-            }
+        while (true) {
+            val node = classes[current] ?: return
+            if (node.methods.any { it.name == "<init>" && it.desc == desc }) return
+            val parent = node.superName ?: return
+            node.methods.add(bridgeConstructor(parent, desc))
             current = parent
         }
-        return true
     }
 
     private fun bridgeConstructor(parent: String, desc: String) =
