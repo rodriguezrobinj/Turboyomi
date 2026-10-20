@@ -54,6 +54,10 @@ object Platform {
         createGraph: (Context, AppDirs, Boolean) -> G,
     ): G {
         dirs.createAll()
+        // AndroidCompat's android.os.Build makes kotlinx-coroutines take its Android fast path, which picks
+        // AndroidCompat's dispatcher (the android-main looper) as Dispatchers.Main. The UI thread is Swing's: read
+        // the registered factories instead. Must run before anything touches Dispatchers.Main.
+        System.setProperty("kotlinx.coroutines.fast.service.loader", "false")
         // AndroidCompat resolves every path (settings/, android-compat/) from this root
         System.setProperty("suwayomi.tachidesk.config.server.rootDir", dirs.data.toString())
 

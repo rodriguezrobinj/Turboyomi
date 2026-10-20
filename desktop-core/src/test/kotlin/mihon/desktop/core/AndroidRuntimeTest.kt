@@ -12,6 +12,7 @@ import kotlinx.coroutines.withTimeout
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import javax.swing.SwingUtilities
 import kotlin.io.path.createTempDirectory
 
 /** Runtime pieces Android gives every app and extensions take for granted. */
@@ -27,6 +28,12 @@ class AndroidRuntimeTest {
     fun `a main dispatcher exists`(): Unit = runBlocking {
         // cubari and mangaup switch to Dispatchers.Main
         withContext(Dispatchers.Main) { "on main" } shouldBe "on main"
+    }
+
+    @Test
+    fun `the main dispatcher is the Swing event thread`(): Unit = runBlocking {
+        // Compose's lifecycle checks that Dispatchers.Main runs on the thread it composes on (spec 2a, section 5)
+        withContext(Dispatchers.Main.immediate) { SwingUtilities.isEventDispatchThread() } shouldBe true
     }
 
     @Test
