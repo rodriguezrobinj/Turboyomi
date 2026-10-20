@@ -28,3 +28,4 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - run: bash scripts/check-licenses.sh
       - run: ./gradlew spotlessCheck test
+      - run: bash scripts/check-no-android.sh

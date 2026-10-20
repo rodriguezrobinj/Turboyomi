@@ -1,6 +1,5 @@
 package eu.kanade.presentation.more.settings
 
-import androidx.annotation.IntRange
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -53,7 +52,8 @@ sealed class Preference {
             override val subtitle: String? = null,
             val valueText: @Composable (Int) -> String = { it.toString() },
             val valueRange: IntProgression = 0..1,
-            @IntRange(from = 0) val steps: Int = with(valueRange) { ((last - first) / step) - 1 },
+            // desktop: no androidx.annotation.IntRange (Android lint annotation); steps is >= 0
+            val steps: Int = with(valueRange) { ((last - first) / step) - 1 },
             override val visible: Boolean = true,
             override val onValueChanged: suspend (value: Int) -> Boolean = { true },
         ) : PreferenceItem<Int, Boolean>() {
