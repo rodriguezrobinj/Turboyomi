@@ -12,6 +12,8 @@ dependencies {
     api(projects.extensionLoader)
     implementation(projects.core.metro)
     implementation(projects.androidCompat)
+    // Types of CefHelper.cefApp; the jar itself comes at runtime with android-compat
+    compileOnly(libs.jcef)
 
     implementation(libs.metro.runtime)
     implementation(libs.injekt)

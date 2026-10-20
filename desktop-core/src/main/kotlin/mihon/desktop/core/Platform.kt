@@ -9,6 +9,7 @@ import uy.kohesive.injekt.api.InjektScope
 import xyz.nulldev.androidcompat.AndroidCompat
 import xyz.nulldev.androidcompat.AndroidCompatInitializer
 import xyz.nulldev.androidcompat.androidCompatModule
+import xyz.nulldev.androidcompat.webkit.CefHelper
 import xyz.nulldev.ts.config.configManagerModule
 import java.util.concurrent.CountDownLatch
 import kotlin.concurrent.thread
@@ -47,6 +48,11 @@ object Platform {
 
         startKoin { modules(androidCompatModule(), configManagerModule()) }
         startMainLooper()
+        // Without this, a WebView waits forever for Chromium inside a runBlocking on the main looper, freezing it
+        // for every extension. ponytail: fails fast until KCEF is initialized here (subproject 2)
+        CefHelper.cefApp.value = Result.failure(
+            CefHelper.CefException("WebView is not available: the embedded browser (KCEF) is not set up yet"),
+        )
         AndroidCompatInitializer().init()
         val application = DesktopApplication()
         AndroidCompat().startApp(application)
