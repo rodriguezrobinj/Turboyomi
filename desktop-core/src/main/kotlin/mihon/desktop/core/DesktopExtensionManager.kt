@@ -20,6 +20,7 @@ import mihon.desktop.extension.ExtensionInstaller
 import mihon.desktop.extension.ExtensionTrust
 import mihon.domain.extension.repository.ExtensionStoreRepository
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 import kotlin.io.path.deleteIfExists
 
@@ -74,6 +75,11 @@ class DesktopExtensionManager(
         trust.trust(ext.pkgName, ext.versionCode, reason.signatureHash)
         reload()
     }
+
+    /** The apk of the installed version of [pkgName], for reading its icon. */
+    fun installedApk(pkgName: String): Path? = installed.value
+        .find { it.pkgName == pkgName }
+        ?.let { installer.apkFor(it.pkgName, it.versionCode) }
 
     suspend fun uninstall(pkgName: String) = mutex.withLock {
         withContext(Dispatchers.IO) {

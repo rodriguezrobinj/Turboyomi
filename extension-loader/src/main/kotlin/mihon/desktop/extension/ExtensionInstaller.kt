@@ -33,6 +33,9 @@ class ExtensionInstaller(
         AndroidBytecodeFixer.fix(jar)
     },
 ) {
+    /** Where the apk of this version lives once installed. */
+    fun apkFor(pkgName: String, versionCode: Long): Path = dir.resolve("$pkgName-$versionCode.apk")
+
     fun install(downloadedApk: Path, expectedPkgName: String? = null): InstalledExtension {
         val info = inspect(downloadedApk)
         // The package name comes from a not yet trusted apk and becomes a file name: validate before any write
@@ -57,7 +60,7 @@ class ExtensionInstaller(
         }
 
         val base = "${info.pkgName}-${info.versionCode}"
-        val apk = dir.resolve("$base.apk")
+        val apk = apkFor(info.pkgName, info.versionCode)
         val jar = dir.resolve("$base.jar")
         val tmpApk = dir.resolve("$base.apk.tmp")
         val tmpJar = dir.resolve("$base.jar.tmp")

@@ -3,6 +3,7 @@ package mihon.desktop.extension
 import com.android.apksig.ApkVerifier
 import eu.kanade.tachiyomi.util.lang.Hash
 import net.dongliu.apk.parser.ApkFile
+import net.dongliu.apk.parser.bean.Icon
 import org.w3c.dom.Element
 import java.nio.file.Path
 import javax.xml.parsers.DocumentBuilderFactory
@@ -36,6 +37,15 @@ object ApkInspector {
             )
         }
     }
+
+    /** The launcher icon with the highest density, read from an installed (already verified) apk. */
+    fun icon(apk: Path): ByteArray? = ApkFile(apk.toFile()).use { pickIcon(it.iconFiles) }
+
+    /** Bitmaps only: an adaptive icon is XML that only Android can draw. */
+    fun pickIcon(icons: List<Icon>): ByteArray? = icons
+        .filter { it.data != null && !it.path.endsWith(".xml") }
+        .maxByOrNull { it.density }
+        ?.data
 
     fun verifiedSignatures(apk: Path): List<String> {
         val result = try {

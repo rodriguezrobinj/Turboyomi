@@ -2,6 +2,7 @@ package mihon.app.di
 
 import dev.zacsweers.metrox.viewmodel.ViewModelGraph
 import eu.kanade.domain.ui.UiPreferences
+import eu.kanade.tachiyomi.data.cache.CoverCache
 import mihon.desktop.core.DesktopGraph
 
 /**
@@ -10,4 +11,5 @@ import mihon.desktop.core.DesktopGraph
  */
 interface AppGraph : DesktopGraph, ViewModelGraph {
     val uiPreferences: UiPreferences
+    val coverCache: CoverCache
 }

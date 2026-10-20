@@ -33,6 +33,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
 import logcat.LogPriority
+import mihon.desktop.app.image.DesktopImageLoader
 import mihon.desktop.app.main.AppContent
 import mihon.desktop.app.main.AppEvents
 import mihon.desktop.app.main.shortcutFor
@@ -79,6 +80,7 @@ fun main(args: Array<String>) {
     }
     DesktopApp.graph = graph
     AppMessages.install()
+    DesktopImageLoader.install(graph)
     val windowStore = WindowStateStore(graph.preferenceStore)
     val screens = GraphicsEnvironment.getLocalGraphicsEnvironment().screenDevices.map { it.defaultConfiguration.bounds }
     val initial = placeOnScreens(windowStore.load(), screens)

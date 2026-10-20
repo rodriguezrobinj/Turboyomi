@@ -58,9 +58,14 @@ dependencies {
     implementation(libs.bundles.voyager)
     implementation(libs.composeMaterialMotion)
     implementation(libs.kotlinx.datetime)
+    implementation(libs.coil.core)
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
+    implementation(projects.extensionLoader)
 
     testImplementation(libs.bundles.test)
     testImplementation(libs.compose.ui.test)
+    testImplementation(libs.okhttp.mockwebserver)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 
