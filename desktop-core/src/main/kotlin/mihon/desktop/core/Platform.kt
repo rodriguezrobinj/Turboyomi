@@ -1,6 +1,7 @@
 package mihon.desktop.core
 
 import android.app.Application
+import android.os.Looper
 import dev.zacsweers.metro.createGraphFactory
 import org.koin.core.context.startKoin
 import uy.kohesive.injekt.Injekt
@@ -9,6 +10,8 @@ import xyz.nulldev.androidcompat.AndroidCompat
 import xyz.nulldev.androidcompat.AndroidCompatInitializer
 import xyz.nulldev.androidcompat.androidCompatModule
 import xyz.nulldev.ts.config.configManagerModule
+import java.util.concurrent.CountDownLatch
+import kotlin.concurrent.thread
 
 object DesktopBuildInfo {
     // ponytail: hardcoded until packaging (subproject 5/6) generates it from the release tag
@@ -25,6 +28,17 @@ private class DesktopApplication : Application() {
 }
 
 object Platform {
+    /** Android's main thread: extensions post to Handler(Looper.getMainLooper()), komga even in its constructor. */
+    private fun startMainLooper() {
+        val ready = CountDownLatch(1)
+        thread(name = "android-main", isDaemon = true) {
+            Looper.prepareMainLooper()
+            ready.countDown()
+            Looper.loop()
+        }
+        ready.await()
+    }
+
     /** Boots AndroidCompat, then the Metro graph, then the Injekt view extensions use. Call once per process. */
     fun start(dirs: AppDirs, isDebugBuild: Boolean = false): DesktopGraph {
         dirs.createAll()
@@ -32,6 +46,7 @@ object Platform {
         System.setProperty("suwayomi.tachidesk.config.server.rootDir", dirs.data.toString())
 
         startKoin { modules(androidCompatModule(), configManagerModule()) }
+        startMainLooper()
         AndroidCompatInitializer().init()
         val application = DesktopApplication()
         AndroidCompat().startApp(application)

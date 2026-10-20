@@ -17,6 +17,8 @@ dependencies {
     implementation(libs.injekt)
     implementation(libs.koin.core)
     implementation(libs.kotlinx.coroutines.core)
+    // Dispatchers.Main for extensions (and later Compose): the Swing event thread
+    runtimeOnly(libs.kotlinx.coroutines.swing)
     implementation(libs.bundles.serialization)
     implementation(libs.logback)
 
