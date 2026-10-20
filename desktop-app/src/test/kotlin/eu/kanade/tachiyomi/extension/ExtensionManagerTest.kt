@@ -55,4 +55,14 @@ class ExtensionManagerTest {
         ExtensionManager.withStatus(installed, listOf(newer)).let { (it as Extension.Loaded).isObsolete } shouldBe false
         ExtensionManager.withStatus(installed, emptyList()) shouldBe installed
     }
+
+    @Test
+    fun `a per-language row installs the store's listing, whose package name is the apk's`() {
+        // GetExtensionsByType splits multi-language extensions into rows named "<pkg>-<sourceId>"
+        val listing = available("https://repo/all.mangadex.apk")
+        val row = listing.copy(pkgName = "${listing.pkgName}-2499283573021220255")
+
+        ExtensionManager.listingFor(row, listOf(listing)) shouldBe listing
+        ExtensionManager.listingFor(listing, emptyList()) shouldBe listing
+    }
 }

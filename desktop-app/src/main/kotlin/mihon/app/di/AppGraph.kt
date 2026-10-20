@@ -1,6 +1,7 @@
 package mihon.app.di
 
 import dev.zacsweers.metrox.viewmodel.ViewModelGraph
+import eu.kanade.domain.base.BasePreferences
 import eu.kanade.domain.source.service.SourcePreferences
 import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.tachiyomi.data.cache.CoverCache
@@ -14,6 +15,7 @@ import mihon.domain.extension.interactor.GetExtensionStoreCountAsFlow
  */
 interface AppGraph : DesktopGraph, ViewModelGraph {
     val uiPreferences: UiPreferences
+    val basePreferences: BasePreferences
     val coverCache: CoverCache
     val mihonExtensionManager: ExtensionManager
     val sourcePreferences: SourcePreferences

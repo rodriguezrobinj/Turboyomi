@@ -50,6 +50,13 @@ fun TachiyomiTheme(
 }
 
 @Composable
+fun TachiyomiPreviewTheme(
+    appTheme: AppTheme = AppTheme.DEFAULT,
+    isAmoled: Boolean = false,
+    content: @Composable () -> Unit,
+) = BaseTachiyomiTheme(appTheme, isAmoled, isSystemInDarkTheme(), content)
+
+@Composable
 private fun BaseTachiyomiTheme(
     appTheme: AppTheme,
     isAmoled: Boolean,

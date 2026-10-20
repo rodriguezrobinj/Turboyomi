@@ -110,7 +110,7 @@ class ExtensionManager(
             emit(InstallStep.Pending)
             // Downloading and installing are one call on desktop; the list shows it as downloading
             emit(InstallStep.Downloading)
-            manager.install(extension)
+            manager.install(listingFor(extension, availableListings.value))
             emit(InstallStep.Installed)
         } catch (e: CancellationException) {
             throw e
@@ -141,6 +141,13 @@ class ExtensionManager(
     }
 
     companion object {
+        /**
+         * The store listing behind a row of the extensions list. GetExtensionsByType shows a multi-language
+         * extension as one row per language, named "<pkg>-<sourceId>"; the installer needs the apk's own name.
+         */
+        fun listingFor(extension: Extension.Available, listings: List<Extension.Available>): Extension.Available =
+            listings.find { it.apkUrl == extension.apkUrl && it.store == extension.store } ?: extension
+
         /** What the listings say about an installed extension; with no listing at all, nothing is derived. */
         fun withStatus(extension: Extension.Installed, available: List<Extension.Available>): Extension.Installed {
             if (available.isEmpty()) return extension

@@ -48,6 +48,7 @@ dependencies {
     implementation(projects.presentationCore)
     implementation(projects.icons.materialSymbols)
     implementation(projects.icons.customMaterialSymbols)
+    implementation(projects.icons.simpleIcons)
     implementation(libs.compose.animation)
     implementation(libs.compose.animationGraphics)
     implementation(libs.compose.ui.util)
