@@ -23,13 +23,22 @@ kotlin {
     }
 }
 
+sourceSets {
+    main {
+        // Null implementations of subsystems later subprojects port (downloads: 4, trackers: 5)
+        kotlin.srcDir("src/stubs/kotlin")
+    }
+}
+
 dependencies {
     implementation(projects.desktopCore)
     implementation(projects.core.metro)
+    implementation(projects.i18n)
     implementation(libs.metro.runtime)
     implementation(libs.metrox.viewmodel)
     implementation(libs.metrox.viewmodel.compose)
     implementation(libs.injekt)
+    implementation(libs.kotlinx.coroutines.core)
 
     implementation(libs.compose.desktop.windows)
     implementation(libs.compose.runtime)

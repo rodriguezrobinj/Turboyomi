@@ -16,3 +16,4 @@ Modifications to these files must stay under MPL-2.0 and be listed below.
 - `extension-loader/.../vendor/Dex2Jar.kt`: derived from `PackageTools.dex2jar`; errors throw instead of being logged.
 - `extension-loader/.../vendor/BytecodeEditor.kt`: reformatted by the repository's ktlint (no behavior change).
 - `extension-loader/.../vendor/Dex2Jar.kt`: wraps the dex reader with `DexConstructorFixer` (Apache-2.0, not vendored).
+- `android/widget/Toast.java`: `show()` hands the text to the static `listener` when one is set (the desktop app shows it in its window).

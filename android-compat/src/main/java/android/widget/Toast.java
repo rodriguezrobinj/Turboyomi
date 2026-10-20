@@ -11,6 +11,9 @@ public class Toast {
     public static final int LENGTH_LONG = 1;
     public static final int LENGTH_SHORT = 0;
 
+    /** Local modification: the desktop app shows toasts in its window; null prints them like upstream. */
+    public static volatile java.util.function.Consumer<CharSequence> listener;
+
     private CharSequence text;
 
     private Toast(CharSequence text) {
@@ -22,7 +25,12 @@ public class Toast {
     }
 
     public void show() {
-        System.out.printf("made a Toast: \"%s\"\n", text.toString());
+        java.util.function.Consumer<CharSequence> current = listener;
+        if (current != null) {
+            current.accept(text);
+        } else {
+            System.out.printf("made a Toast: \"%s\"\n", text.toString());
+        }
     }
 
     public void cancel() {
