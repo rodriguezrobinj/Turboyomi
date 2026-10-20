@@ -36,4 +36,11 @@ class WindowStateStoreTest {
         val laptop = Rectangle(0, 0, 1366, 768)
         placeOnScreens(null, listOf(laptop)) shouldBe SavedWindow(43, 0, 1280, 768, false)
     }
+
+    @Test
+    fun `a saved window taller than its screen's work area shrinks to it`() {
+        val workArea = Rectangle(0, 0, 1280, 728)
+        val saved = SavedWindow(x = 0, y = 0, width = 1280, height = 768, maximized = false)
+        placeOnScreens(saved, listOf(workArea)) shouldBe SavedWindow(0, 0, 1280, 728, false)
+    }
 }

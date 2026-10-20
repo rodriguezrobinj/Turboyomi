@@ -16,17 +16,26 @@ import cafe.adriel.voyager.navigator.tab.CurrentTab
 import cafe.adriel.voyager.navigator.tab.TabNavigator
 import eu.kanade.presentation.util.Screen
 import eu.kanade.presentation.util.Tab
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
 
 /** Root screen: the navigation rail and the current tab (spec 2a, section 2: Explorar and Ajustes in plan 1). */
 object HomeScreen : Screen() {
     /** In rail order; the first one opens at start. Settings must stay last for [AppEvents.openSettings]. */
     val tabs: List<Tab> = listOf(BrowseTab)
 
+    // Ctrl+, from any screen: AppContent pops back to this screen; the request waits here until it is composed
+    private val settingsRequests = Channel<Unit>(Channel.CONFLATED)
+
+    fun openSettings() {
+        settingsRequests.trySend(Unit)
+    }
+
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         TabNavigator(tabs.first()) { tabNavigator ->
-            LaunchedEffect(Unit) { AppEvents.openSettings.collect { tabNavigator.current = tabs.last() } }
+            LaunchedEffect(Unit) { settingsRequests.receiveAsFlow().collect { tabNavigator.current = tabs.last() } }
             // Like Mihon's HomeScreen: tabs push screens onto the root navigator, not the tab navigator
             CompositionLocalProvider(LocalNavigator provides navigator) {
                 Row(Modifier.fillMaxSize()) {

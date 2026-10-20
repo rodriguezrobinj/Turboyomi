@@ -14,6 +14,8 @@ import mihon.desktop.core.AppDirs
 import mihon.desktop.core.DesktopBindings
 import mihon.desktop.core.DesktopSourceManager
 import mihon.desktop.core.Platform
+import tachiyomi.domain.chapter.interactor.GetChaptersByMangaId
+import tachiyomi.domain.manga.interactor.GetMangaByUrlAndSourceId
 import tachiyomi.domain.source.service.SourceManager
 import kotlin.io.path.createTempDirectory
 
@@ -24,6 +26,9 @@ import kotlin.io.path.createTempDirectory
     excludes = [DesktopSourceManager::class],
 )
 interface TestAppGraph : AppGraph {
+    val getMangaByUrlAndSourceId: GetMangaByUrlAndSourceId
+    val getChaptersByMangaId: GetChaptersByMangaId
+
     @DependencyGraph.Factory
     fun interface Factory {
         fun create(
@@ -41,12 +46,20 @@ object TestBindings {
     fun sourceManager(): SourceManager = FakeSourceManager(TestSources.fake)
 }
 
-/** Boots the platform once for this JVM (the test task forks per class) in a folder with a non-ASCII path. */
+private var started: TestAppGraph? = null
+
+/**
+ * Boots the platform once for this JVM (the test task forks per class) in a folder with a non-ASCII path.
+ * Later calls in the same class return the same graph: the platform can't start twice.
+ */
+@Synchronized
 fun startTestApp(): TestAppGraph {
+    started?.let { return it }
     val root = createTempDirectory("José Pérez app")
     val graph = Platform.start(AppDirs(root.resolve("data"), root.resolve("local"))) { context, dirs, debug ->
         createGraphFactory<TestAppGraph.Factory>().create(context, dirs, debug)
     }
     DesktopApp.graph = graph
+    started = graph
     return graph
 }

@@ -5,6 +5,7 @@ import eu.kanade.tachiyomi.source.Source
 
 interface Tracker {
     val id: Long
+    val name: String
 }
 
 interface EnhancedTracker {

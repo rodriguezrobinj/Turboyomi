@@ -27,7 +27,8 @@ class FakeSource(
         SManga.create().apply {
             url = "/manga/$i"
             title = "Manga $i"
-            initialized = true
+            // Like a real listing: details (description) are fetched when the manga is opened
+            initialized = false
         }
     }
 

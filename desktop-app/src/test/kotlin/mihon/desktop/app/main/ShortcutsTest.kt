@@ -7,7 +7,8 @@ import org.junit.jupiter.api.Test
 class ShortcutsTest {
     @Test
     fun `desktop shortcuts from the spec`() {
-        shortcutFor(Key.Escape, ctrl = false, alt = false, shift = false) shouldBe Shortcut.Back
+        // Esc is Compose's own back key: ConnectWindowBack routes it, dialogs first
+        shortcutFor(Key.Escape, ctrl = false, alt = false, shift = false) shouldBe null
         shortcutFor(Key.DirectionLeft, ctrl = false, alt = true, shift = false) shouldBe Shortcut.Back
         shortcutFor(Key.F, ctrl = true, alt = false, shift = false) shouldBe Shortcut.GlobalSearch
         shortcutFor(Key.F5, ctrl = false, alt = false, shift = false) shouldBe Shortcut.Refresh
@@ -19,5 +20,14 @@ class ShortcutsTest {
         shortcutFor(Key.F, ctrl = false, alt = false, shift = false) shouldBe null
         shortcutFor(Key.DirectionLeft, ctrl = false, alt = false, shift = false) shouldBe null
         shortcutFor(Key.Escape, ctrl = true, alt = false, shift = false) shouldBe null
+    }
+
+    @Test
+    fun `back waits for the focused component, the others go first`() {
+        // A dialog or a search field closes itself on Esc; only an unhandled Esc goes back
+        Shortcut.Back.beforeFocusedComponent shouldBe false
+        Shortcut.GlobalSearch.beforeFocusedComponent shouldBe true
+        Shortcut.Refresh.beforeFocusedComponent shouldBe true
+        Shortcut.Settings.beforeFocusedComponent shouldBe true
     }
 }

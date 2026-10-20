@@ -16,11 +16,12 @@ private const val DEFAULT_HEIGHT = 800
  * first (primary) screen at the default size (or the screen size, if smaller). Never below the minimum size.
  */
 fun placeOnScreens(saved: SavedWindow?, screens: List<Rectangle>): SavedWindow {
-    val onScreen = saved?.takeIf { s -> screens.any { it.contains(s.x, s.y) } }
-    if (onScreen != null) {
-        return onScreen.copy(
-            width = onScreen.width.coerceAtLeast(MIN_WIDTH),
-            height = onScreen.height.coerceAtLeast(MIN_HEIGHT),
+    val screen = saved?.let { s -> screens.find { it.contains(s.x, s.y) } }
+    if (saved != null && screen != null) {
+        // No bigger than the screen it is on, no smaller than the minimum
+        return saved.copy(
+            width = saved.width.coerceAtMost(screen.width).coerceAtLeast(MIN_WIDTH),
+            height = saved.height.coerceAtMost(screen.height).coerceAtLeast(MIN_HEIGHT),
         )
     }
     val primary = screens.first()

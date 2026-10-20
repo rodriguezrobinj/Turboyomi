@@ -19,6 +19,8 @@ import cafe.adriel.voyager.navigator.Navigator
 import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 import eu.kanade.presentation.theme.TachiyomiTheme
 import eu.kanade.presentation.util.DefaultNavigatorScreenTransition
+import eu.kanade.tachiyomi.ui.browse.source.globalsearch.GlobalSearchScreen
+import kotlinx.coroutines.launch
 import mihon.app.di.AppGraph
 import mihon.desktop.app.platform.AppMessages
 
@@ -45,6 +47,7 @@ fun AppContent(graph: AppGraph, crash: Throwable?, onRestart: () -> Unit) {
     AppProviders(graph) {
         // On Android the Activity theme paints the window background and content color; here the Surface does
         Surface(Modifier.fillMaxSize()) {
+            ConnectWindowBack()
             if (crash != null) {
                 CrashScreen(crash, onRestart)
                 return@Surface
@@ -52,7 +55,18 @@ fun AppContent(graph: AppGraph, crash: Throwable?, onRestart: () -> Unit) {
             val snackbar = remember { SnackbarHostState() }
             LaunchedEffect(Unit) { AppMessages.messages.collect { snackbar.showSnackbar(it) } }
             Box(Modifier.fillMaxSize()) {
-                Navigator(HomeScreen) { DefaultNavigatorScreenTransition(it) }
+                Navigator(HomeScreen) { navigator ->
+                    // Shortcuts that navigate are collected here, at the root, which stays composed whatever
+                    // screen is on top (Voyager only composes the top screen)
+                    LaunchedEffect(navigator) {
+                        launch { AppEvents.globalSearch.collect { navigator.push(GlobalSearchScreen()) } }
+                        AppEvents.openSettings.collect {
+                            navigator.popUntilRoot()
+                            HomeScreen.openSettings()
+                        }
+                    }
+                    DefaultNavigatorScreenTransition(navigator)
+                }
                 SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
             }
         }

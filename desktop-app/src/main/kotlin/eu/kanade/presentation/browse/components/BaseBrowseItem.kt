@@ -8,6 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import mihon.desktop.app.platform.onSecondaryClick
 import tachiyomi.presentation.core.components.material.padding
 
 @Composable
@@ -25,6 +26,7 @@ fun BaseBrowseItem(
                 onClick = onClickItem,
                 onLongClick = onLongClickItem,
             )
+            .onSecondaryClick(onLongClickItem) // desktop: right click = long press
             .padding(horizontal = MaterialTheme.padding.medium, vertical = MaterialTheme.padding.small),
         verticalAlignment = Alignment.CenterVertically,
     ) {

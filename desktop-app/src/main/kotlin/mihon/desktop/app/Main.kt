@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isAltPressed
 import androidx.compose.ui.input.key.isCtrlPressed
@@ -51,6 +52,8 @@ import tachiyomi.core.common.util.system.logcat
 import tachiyomi.i18n.MR
 import java.awt.Dimension
 import java.awt.GraphicsEnvironment
+import java.awt.Rectangle
+import java.awt.Toolkit
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
@@ -84,7 +87,19 @@ fun main(args: Array<String>) {
     // Loads the installed extensions (their sources feed SourceManager) and the store listings at startup
     graph.mihonExtensionManager
     val windowStore = WindowStateStore(graph.preferenceStore)
-    val screens = GraphicsEnvironment.getLocalGraphicsEnvironment().screenDevices.map { it.defaultConfiguration.bounds }
+    // Each screen's work area: its bounds without the taskbar, so a default-sized window never hides under it
+    val screens = GraphicsEnvironment.getLocalGraphicsEnvironment().screenDevices.map { device ->
+        val config = device.defaultConfiguration
+        val insets = Toolkit.getDefaultToolkit().getScreenInsets(config)
+        config.bounds.run {
+            Rectangle(
+                x + insets.left,
+                y + insets.top,
+                width - insets.left - insets.right,
+                height - insets.top - insets.bottom,
+            )
+        }
+    }
     val initial = placeOnScreens(windowStore.load(), screens)
 
     application {
@@ -111,11 +126,8 @@ fun main(args: Array<String>) {
                     exitApplication()
                 },
                 title = AppDirs.APP_NAME,
-                onPreviewKeyEvent = { event ->
-                    event.type == KeyEventType.KeyDown &&
-                        shortcutFor(event.key, event.isCtrlPressed, event.isAltPressed, event.isShiftPressed)
-                            ?.let(AppEvents::send) == true
-                },
+                onPreviewKeyEvent = { event -> handleShortcut(event, beforeFocusedComponent = true) },
+                onKeyEvent = { event -> handleShortcut(event, beforeFocusedComponent = false) },
             ) {
                 window.minimumSize = Dimension(MIN_WIDTH, MIN_HEIGHT)
                 LaunchedEffect(Unit) {
@@ -137,6 +149,12 @@ fun main(args: Array<String>) {
         }
     }
 }
+
+private fun handleShortcut(event: KeyEvent, beforeFocusedComponent: Boolean): Boolean =
+    event.type == KeyEventType.KeyDown &&
+        shortcutFor(event.key, event.isCtrlPressed, event.isAltPressed, event.isShiftPressed)
+            ?.takeIf { it.beforeFocusedComponent == beforeFocusedComponent }
+            ?.let(AppEvents::send) == true
 
 private fun WindowState.toSaved() = SavedWindow(
     x = position.x.value.toInt(),
