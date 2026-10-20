@@ -1120,4 +1120,7 @@
     <string name="donationCampaign.paragraph3">Regardless, Mihon will continue to be maintained by me and the volunteers, and it will stay open source.</string>
     <string name="donationCampaign.contactPlatform">Discord</string>
     <string name="donationCampaign.dismiss">Dismiss</string>
+
+    <!-- Desktop -->
+    <string name="desktop_instance_unreachable">Another window of the app is already open but isn\'t responding. Close it from the Task Manager and try again.</string>
 </resources>
