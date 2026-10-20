@@ -31,7 +31,6 @@ package tachiyomi.presentation.core.util
  * Modifiers for regular scrollable list is omitted.
  */
 
-import android.view.ViewConfiguration
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.Orientation
@@ -56,7 +55,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.LayoutDirection
@@ -234,8 +233,8 @@ private fun Modifier.drawScrollbar(
     }
     val atEnd = if (orientation == Orientation.Vertical) isLtr else true
 
-    val context = LocalContext.current
-    val thickness = remember { ViewConfiguration.get(context).scaledScrollBarSize.toFloat() }
+    // desktop: Android's default scrollbar size (4dp); ViewConfiguration is a stub here
+    val thickness = with(LocalDensity.current) { 4.dp.toPx() }
     val color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.364f)
 
     return this
@@ -245,9 +244,9 @@ private fun Modifier.drawScrollbar(
         }
 }
 
-private val ScrollBarVisibilityDurationMillis = ViewConfiguration.getScrollDefaultDelay().toLong()
+private val ScrollBarVisibilityDurationMillis = 300L // desktop: Android's default scroll delay
 private val ImmediateFadeOutAnimationSpec = tween<Float>(
-    durationMillis = ViewConfiguration.getScrollBarFadeDuration(),
+    durationMillis = 250, // desktop: Android's default fade duration
 )
 
 @Preview(widthDp = 400, heightDp = 400, showBackground = true)

@@ -1,14 +1,10 @@
 plugins {
-    alias(mihonx.plugins.android.library)
-    alias(mihonx.plugins.compose)
+    alias(mihonx.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.compose.compiler)
 
     alias(mihonx.plugins.spotless)
 
     alias(libs.plugins.valkyrie)
-}
-
-android {
-    namespace = "mihon.icons.custommaterialsymbols"
 }
 
 spotless {
@@ -40,5 +36,5 @@ valkyrie {
 }
 
 dependencies {
-    api(libs.androidx.compose.ui)
+    api(libs.compose.ui)
 }

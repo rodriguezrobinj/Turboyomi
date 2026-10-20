@@ -6,9 +6,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderColors
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.SliderState
-import androidx.compose.material3.rememberSliderState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import kotlin.math.roundToInt
@@ -35,23 +33,18 @@ fun Slider(
         SliderDefaults.Track(colors = colors, enabled = enabled, sliderState = sliderState)
     },
 ) {
-    val state = key(steps, valueRange) {
-        rememberSliderState(
-            value = value.toFloat(),
-            steps = steps,
-            trackRange = with(valueRange) { first.toFloat()..last.toFloat() },
-        )
-    }
-    state.value = value.toFloat()
+    // desktop: CMP material3 1.12.0-alpha03 has no SliderState(trackRange) overload; same Slider driven by value
     Slider(
-        state = state,
+        value = value.toFloat(),
+        onValueChange = { onValueChange(it.roundToInt()) },
         modifier = modifier,
         enabled = enabled,
-        onValueChange = { onValueChange(it.roundToInt()) },
         onValueChangeFinished = onValueChangeFinished,
         colors = colors,
         interactionSource = interactionSource,
+        steps = steps,
         thumb = thumb,
         track = track,
+        valueRange = with(valueRange) { first.toFloat()..last.toFloat() },
     )
 }

@@ -1,12 +1,7 @@
 plugins {
-    alias(mihonx.plugins.android.library)
-    alias(mihonx.plugins.compose)
-
+    alias(mihonx.plugins.kotlin.jvm)
     alias(mihonx.plugins.spotless)
-}
-
-android {
-    namespace = "tachiyomi.presentation.core"
+    alias(libs.plugins.kotlin.compose.compiler)
 }
 
 kotlin {
@@ -28,17 +23,21 @@ dependencies {
     api(projects.i18n)
     implementation(projects.icons.materialSymbols)
 
-    // Compose
-    implementation(libs.androidx.activity.compose)
-    implementation(libs.androidx.compose.foundation)
-    implementation(libs.androidx.compose.material3)
-    api(libs.androidx.compose.material3NavSuite)
-    implementation(libs.androidx.compose.animation)
-    implementation(libs.androidx.compose.animationGraphics)
-    debugImplementation(libs.androidx.compose.uiTooling)
-    implementation(libs.androidx.compose.uiToolingPreview)
-    implementation(libs.androidx.compose.uiUtil)
+    api(libs.compose.runtime)
+    api(libs.compose.foundation)
+    api(libs.compose.ui)
+    api(libs.compose.material3)
+    api(libs.compose.material3NavSuite)
+    implementation(libs.compose.animation)
+    implementation(libs.compose.animationGraphics)
+    implementation(libs.compose.ui.util)
+    implementation(libs.compose.ui.toolingPreview)
 
-    implementation(libs.androidx.paging.runtime)
+    implementation(libs.androidx.paging.common)
     implementation(libs.androidx.paging.compose)
+
+    testImplementation(libs.bundles.test)
+    testImplementation(libs.compose.ui.test)
+    testImplementation(libs.compose.desktop.windows)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }

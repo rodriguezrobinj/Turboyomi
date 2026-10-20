@@ -1,6 +1,5 @@
 package tachiyomi.presentation.core.components
 
-import android.view.ViewConfiguration
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -23,7 +22,6 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.systemGestureExclusion
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -211,7 +209,7 @@ fun VerticalFastScroller(
                     .then(
                         // Exclude thumb from gesture area only when needed
                         if (isThumbVisible && !isThumbDragged && !listState.isScrollInProgress) {
-                            Modifier.systemGestureExclusion()
+                            Modifier // desktop: no system gestures to exclude
                         } else {
                             Modifier
                         },
@@ -401,7 +399,7 @@ fun VerticalGridFastScroller(
                     .then(
                         // Exclude thumb from gesture area only when needed
                         if (isThumbVisible && !isThumbDragged && !state.isScrollInProgress) {
-                            Modifier.systemGestureExclusion()
+                            Modifier // desktop: no system gestures to exclude
                         } else {
                             Modifier
                         },
@@ -466,7 +464,7 @@ private val ThumbThickness = 12.dp
 private val ThumbShape = RoundedCornerShape(ThumbThickness / 2)
 private val ScrollBarVisibilityDuration = 2.seconds
 private val ImmediateFadeOutAnimationSpec = tween<Float>(
-    durationMillis = ViewConfiguration.getScrollBarFadeDuration(),
+    durationMillis = 250, // desktop: Android's default fade duration
 )
 
 private val LazyListItemInfo.top: Int
