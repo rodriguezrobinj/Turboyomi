@@ -19,6 +19,7 @@ import cafe.adriel.voyager.navigator.Navigator
 import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 import eu.kanade.presentation.theme.TachiyomiTheme
 import eu.kanade.presentation.util.DefaultNavigatorScreenTransition
+import eu.kanade.presentation.util.LocalBackPress
 import eu.kanade.tachiyomi.ui.browse.source.globalsearch.GlobalSearchScreen
 import kotlinx.coroutines.launch
 import mihon.app.di.AppGraph
@@ -65,7 +66,10 @@ fun AppContent(graph: AppGraph, crash: Throwable?, onRestart: () -> Unit) {
                             HomeScreen.openSettings()
                         }
                     }
-                    DefaultNavigatorScreenTransition(navigator)
+                    // Like Mihon's SettingsScreen: settings screens draw their up arrow from LocalBackPress
+                    CompositionLocalProvider(LocalBackPress provides navigator::pop) {
+                        DefaultNavigatorScreenTransition(navigator)
+                    }
                 }
                 SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
             }

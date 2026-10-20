@@ -18,11 +18,12 @@ import eu.kanade.presentation.util.Screen
 import eu.kanade.presentation.util.Tab
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
+import mihon.desktop.app.settings.SettingsTab
 
 /** Root screen: the navigation rail and the current tab (spec 2a, section 2: Explorar and Ajustes in plan 1). */
 object HomeScreen : Screen() {
     /** In rail order; the first one opens at start. Settings must stay last for [AppEvents.openSettings]. */
-    val tabs: List<Tab> = listOf(BrowseTab)
+    val tabs: List<Tab> = listOf(BrowseTab, SettingsTab)
 
     // Ctrl+, from any screen: AppContent pops back to this screen; the request waits here until it is composed
     private val settingsRequests = Channel<Unit>(Channel.CONFLATED)

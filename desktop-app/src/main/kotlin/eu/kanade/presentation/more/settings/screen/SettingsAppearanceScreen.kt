@@ -1,0 +1,160 @@
+package eu.kanade.presentation.more.settings.screen
+
+import androidx.compose.foundation.layout.Column
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
+import eu.kanade.domain.ui.UiPreferences
+import eu.kanade.domain.ui.model.TabletUiMode
+import eu.kanade.domain.ui.model.ThemeMode
+import eu.kanade.domain.ui.model.TimeFormat
+import eu.kanade.presentation.more.settings.Preference
+import eu.kanade.presentation.more.settings.widget.AppThemeModePreferenceWidget
+import eu.kanade.presentation.more.settings.widget.AppThemePreferenceWidget
+import eu.kanade.presentation.util.rememberIs24HourSystem
+import eu.kanade.tachiyomi.util.system.toast
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toJavaLocalDateTime
+import kotlinx.datetime.toLocalDateTime
+import mihon.app.di.appGraph
+import tachiyomi.i18n.MR
+import tachiyomi.presentation.core.i18n.stringResource
+import tachiyomi.presentation.core.util.collectAsState
+import java.util.Locale
+import kotlin.time.Clock
+
+object SettingsAppearanceScreen : SearchableSettings {
+
+    @ReadOnlyComposable
+    @Composable
+    override fun getTitleRes() = MR.strings.pref_category_appearance
+
+    @Composable
+    override fun getPreferences(): List<Preference> {
+        val context = LocalContext.current
+        val uiPreferences = remember { context.appGraph.uiPreferences }
+
+        return listOf(
+            getThemeGroup(uiPreferences = uiPreferences),
+            getDisplayGroup(uiPreferences = uiPreferences),
+        )
+    }
+
+    @Composable
+    private fun getThemeGroup(
+        uiPreferences: UiPreferences,
+    ): Preference.PreferenceGroup {
+        val context = LocalContext.current
+
+        val themeModePref = uiPreferences.themeMode
+        val themeMode by themeModePref.collectAsState()
+
+        val appThemePref = uiPreferences.appTheme
+        val appTheme by appThemePref.collectAsState()
+
+        val amoledPref = uiPreferences.themeDarkAmoled
+        val amoled by amoledPref.collectAsState()
+
+        return Preference.PreferenceGroup(
+            title = stringResource(MR.strings.pref_category_theme),
+            preferenceItems = listOf(
+                Preference.PreferenceItem.CustomPreference(
+                    title = stringResource(MR.strings.pref_app_theme),
+                ) {
+                    Column {
+                        AppThemeModePreferenceWidget(
+                            value = themeMode,
+                            onItemClick = {
+                                themeModePref.set(it) // desktop: TachiyomiTheme reacts to the preference
+                            },
+                        )
+
+                        AppThemePreferenceWidget(
+                            value = appTheme,
+                            amoled = amoled,
+                            onItemClick = { appThemePref.set(it) },
+                        )
+                    }
+                },
+                Preference.PreferenceItem.SwitchPreference(
+                    preference = amoledPref,
+                    title = stringResource(MR.strings.pref_dark_theme_pure_black),
+                    visible = themeMode != ThemeMode.LIGHT,
+                    onValueChanged = { true }, // desktop: the theme recomposes, no Activity to recreate
+                ),
+            ),
+        )
+    }
+
+    @Composable
+    private fun getDisplayGroup(
+        uiPreferences: UiPreferences,
+    ): Preference.PreferenceGroup {
+        val context = LocalContext.current
+        val navigator = LocalNavigator.currentOrThrow
+        val locale = remember { Locale.getDefault() } // desktop: no LocalLocale
+        val is24HourSystem = rememberIs24HourSystem()
+
+        val now = remember { Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).toJavaLocalDateTime() }
+
+        val dateFormat by uiPreferences.dateFormat.collectAsState()
+        val formattedDateNow = remember(dateFormat) {
+            UiPreferences.dateFormat(dateFormat, locale).format(now)
+        }
+
+        return Preference.PreferenceGroup(
+            title = stringResource(MR.strings.pref_category_display),
+            preferenceItems = listOf(
+                // desktop: no app language (follows Windows) nor tablet UI mode (the window width decides)
+                Preference.PreferenceItem.ListPreference(
+                    preference = uiPreferences.dateFormat,
+                    entries = DateFormats
+                        .associateWith {
+                            val formattedDate = UiPreferences.dateFormat(it, locale).format(now)
+                            "${it.ifEmpty { stringResource(MR.strings.label_default) }} ($formattedDate)"
+                        },
+                    title = stringResource(MR.strings.pref_date_format),
+                ),
+                Preference.PreferenceItem.ListPreference(
+                    preference = uiPreferences.timeFormat,
+                    entries = TimeFormat.entries
+                        .associateWith {
+                            val formattedTime = UiPreferences.timeFormat(
+                                it,
+                                locale,
+                                is24HourSystem,
+                            ).format(now)
+                            "${stringResource(it.titleRes)} ($formattedTime)"
+                        },
+                    title = stringResource(MR.strings.pref_time_format),
+                ),
+                Preference.PreferenceItem.SwitchPreference(
+                    preference = uiPreferences.relativeTime,
+                    title = stringResource(MR.strings.pref_relative_format),
+                    subtitle = stringResource(
+                        MR.strings.pref_relative_format_summary,
+                        stringResource(MR.strings.relative_time_today),
+                        formattedDateNow,
+                    ),
+                ),
+                Preference.PreferenceItem.SwitchPreference(
+                    preference = uiPreferences.imagesInDescription,
+                    title = stringResource(MR.strings.pref_display_images_description),
+                ),
+            ),
+        )
+    }
+}
+
+private val DateFormats = listOf(
+    "", // Default
+    "MM/dd/yy",
+    "dd/MM/yy",
+    "yyyy-MM-dd",
+    "dd MMM yyyy",
+    "MMM dd, yyyy",
+)

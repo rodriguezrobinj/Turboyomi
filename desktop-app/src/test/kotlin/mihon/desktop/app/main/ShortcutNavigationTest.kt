@@ -74,4 +74,22 @@ class ShortcutNavigationTest {
         runOnIdle { AppEvents.send(Shortcut.Back) }
         waitFor(str(MR.strings.label_extensions))
     }
+
+    @Test
+    fun `ctrl+comma opens the settings tab from a screen above the home screen`() = runComposeUiTest {
+        val graph = startTestApp()
+        setContent { AppContent(graph, crash = null, onRestart = {}) }
+        fun waitFor(text: String) = waitUntil(timeoutMillis = 10_000) {
+            onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        onNodeWithText(str(MR.strings.label_extensions)).performClick()
+        waitFor(str(MR.strings.extensionStores))
+        onNodeWithText(str(MR.strings.extensionStores)).performClick()
+        waitFor(str(MR.strings.extensionStoresScreen_emptyLabel))
+
+        runOnIdle { AppEvents.send(Shortcut.Settings) }
+
+        waitFor(str(MR.strings.pref_category_appearance))
+    }
 }

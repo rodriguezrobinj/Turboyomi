@@ -1125,4 +1125,7 @@
     <string name="desktop_instance_unreachable">Another window of the app is already open but isn\'t responding. Close it from the Task Manager and try again.</string>
     <string name="desktop_reader_coming">The reader arrives in the next version</string>
     <string name="desktop_site_needs_browser">This site needs a browser to load (coming soon)</string>
+    <string name="desktop_clear_image_cache">Clear image cache</string>
+    <string name="desktop_image_cache_cleared">Image cache cleared</string>
+    <string name="desktop_open_logs_folder">Open logs folder</string>
 </resources>

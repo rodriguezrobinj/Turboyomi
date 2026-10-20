@@ -898,4 +898,7 @@
     <string name="desktop_instance_unreachable">Ya hay otra ventana de la app abierta, pero no responde. Ciérrala desde el Administrador de tareas e inténtalo de nuevo.</string>
     <string name="desktop_reader_coming">El lector llega en la próxima versión</string>
     <string name="desktop_site_needs_browser">Este sitio requiere navegador (disponible pronto)</string>
+    <string name="desktop_clear_image_cache">Borrar caché de imágenes</string>
+    <string name="desktop_image_cache_cleared">Caché de imágenes borrada</string>
+    <string name="desktop_open_logs_folder">Abrir carpeta de logs</string>
 </resources>
