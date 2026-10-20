@@ -1,6 +1,7 @@
 package mihon.desktop.core
 
 import android.app.Application
+import android.content.Context
 import android.os.Looper
 import dev.zacsweers.metro.createGraphFactory
 import org.koin.core.context.startKoin
@@ -40,8 +41,18 @@ object Platform {
         ready.await()
     }
 
-    /** Boots AndroidCompat, then the Metro graph, then the Injekt view extensions use. Call once per process. */
-    fun start(dirs: AppDirs, isDebugBuild: Boolean = false): DesktopGraph {
+    /** Boots the platform with the UI-less [CoreGraph]. */
+    fun start(dirs: AppDirs, isDebugBuild: Boolean = false): DesktopGraph =
+        start(dirs, isDebugBuild) { context, appDirs, debug ->
+            createGraphFactory<CoreGraph.Factory>().create(context, appDirs, debug)
+        }
+
+    /** Boots AndroidCompat, then the leaf module's Metro graph, then the Injekt view extensions use. Once per process. */
+    fun <G : DesktopGraph> start(
+        dirs: AppDirs,
+        isDebugBuild: Boolean = false,
+        createGraph: (Context, AppDirs, Boolean) -> G,
+    ): G {
         dirs.createAll()
         // AndroidCompat resolves every path (settings/, android-compat/) from this root
         System.setProperty("suwayomi.tachidesk.config.server.rootDir", dirs.data.toString())
@@ -49,7 +60,7 @@ object Platform {
         startKoin { modules(androidCompatModule(), configManagerModule()) }
         startMainLooper()
         // Without this, a WebView waits forever for Chromium inside a runBlocking on the main looper, freezing it
-        // for every extension. ponytail: fails fast until KCEF is initialized here (subproject 2)
+        // for every extension. ponytail: fails fast until KCEF is initialized here (subproject 2b)
         CefHelper.cefApp.value = Result.failure(
             CefHelper.CefException("WebView is not available: the embedded browser (KCEF) is not set up yet"),
         )
@@ -58,7 +69,7 @@ object Platform {
         AndroidCompat().startApp(application)
 
         // Like Mihon, the application is the Context everything gets; it delegates to AndroidCompat's CustomContext
-        val graph = createGraphFactory<DesktopGraph.Factory>().create(application, dirs, isDebugBuild)
+        val graph = createGraph(application, dirs, isDebugBuild)
         Injekt = InjektScope(DesktopInjektRegistrar(application, graph))
         return graph
     }

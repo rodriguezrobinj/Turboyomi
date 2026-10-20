@@ -25,6 +25,11 @@ kotlin {
 
 dependencies {
     implementation(projects.desktopCore)
+    implementation(projects.core.metro)
+    implementation(libs.metro.runtime)
+    implementation(libs.metrox.viewmodel)
+    implementation(libs.metrox.viewmodel.compose)
+    implementation(libs.injekt)
 
     implementation(libs.compose.desktop.windows)
     implementation(libs.compose.runtime)
