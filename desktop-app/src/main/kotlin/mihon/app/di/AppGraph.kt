@@ -1,9 +1,12 @@
 package mihon.app.di
 
 import dev.zacsweers.metrox.viewmodel.ViewModelGraph
+import eu.kanade.domain.source.service.SourcePreferences
 import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.tachiyomi.data.cache.CoverCache
+import eu.kanade.tachiyomi.extension.ExtensionManager
 import mihon.desktop.core.DesktopGraph
+import mihon.domain.extension.interactor.GetExtensionStoreCountAsFlow
 
 /**
  * Desktop counterpart of Mihon's AppGraph: the accessors ported code reaches through `context.appGraph`.
@@ -12,4 +15,7 @@ import mihon.desktop.core.DesktopGraph
 interface AppGraph : DesktopGraph, ViewModelGraph {
     val uiPreferences: UiPreferences
     val coverCache: CoverCache
+    val mihonExtensionManager: ExtensionManager
+    val sourcePreferences: SourcePreferences
+    val getExtensionStoreCountAsFlow: GetExtensionStoreCountAsFlow
 }

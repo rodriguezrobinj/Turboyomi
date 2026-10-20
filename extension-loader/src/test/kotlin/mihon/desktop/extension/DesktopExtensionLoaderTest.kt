@@ -3,6 +3,7 @@ package mihon.desktop.extension
 import eu.kanade.tachiyomi.extension.model.Extension
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import mihon.domain.extension.model.ContentWarning
 import mihon.domain.extension.model.ExtensionStore
 import org.junit.jupiter.api.Test
 import tachiyomi.core.common.preference.InMemoryPreferenceStore
@@ -73,5 +74,21 @@ class DesktopExtensionLoaderTest {
     fun `missing classes become a failed reason instead of crashing`() {
         val ext = loader.load(installed(mapOf("tachiyomi.extension.class" to "does.not.Exist")), listOf(store))
         ext.shouldBeInstanceOf<Extension.NotLoaded>().reason.shouldBeInstanceOf<Extension.NotLoaded.Reason.Failed>()
+    }
+
+    @Test
+    fun `a content warning the user didn't allow is filtered before any class loads`() {
+        var instantiated = false
+        val filtering = DesktopExtensionLoader(ExtensionTrust(InMemoryPreferenceStore())) { _, _ ->
+            instantiated = true
+            emptyList()
+        }
+        val ext = filtering.load(
+            installed(mapOf("tachiyomi.extension.class" to "x", "tachiyomix.contentWarning" to "2")),
+            listOf(store),
+            isAllowed = { it != ContentWarning.NSFW },
+        )
+        ext.shouldBeInstanceOf<Extension.NotLoaded>().reason shouldBe Extension.NotLoaded.Reason.Filtered
+        instantiated shouldBe false
     }
 }

@@ -7,18 +7,28 @@ import eu.kanade.tachiyomi.extension.model.Extension
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.awaitSuccess
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import mihon.core.metro.AppCoroutineScope
 import mihon.desktop.extension.DesktopExtensionLoader
 import mihon.desktop.extension.ExtensionInstaller
 import mihon.desktop.extension.ExtensionTrust
+import mihon.domain.extension.model.ContentWarning
 import mihon.domain.extension.repository.ExtensionStoreRepository
+import tachiyomi.core.common.preference.PreferenceStore
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption.REPLACE_EXISTING
@@ -32,6 +42,8 @@ class DesktopExtensionManager(
     private val network: NetworkHelper,
     private val storeRepository: ExtensionStoreRepository,
     private val trust: ExtensionTrust,
+    private val preferenceStore: PreferenceStore,
+    @AppCoroutineScope scope: CoroutineScope,
 ) {
     private val installer = ExtensionInstaller(appDirs.extensions)
     private val loader = DesktopExtensionLoader(trust)
@@ -42,6 +54,18 @@ class DesktopExtensionManager(
     private val _installed = MutableStateFlow<List<Extension.Installed>>(emptyList())
     val installed: StateFlow<List<Extension.Installed>> = _installed.asStateFlow()
 
+    private val isAllowed: (ContentWarning) -> Boolean = { ContentWarningPrefs.isAllowed(preferenceStore, it) }
+
+    init {
+        // Allowing NSFW in the settings loads those extensions right away, and disallowing it unloads them
+        scope.launch {
+            merge(
+                ContentWarningPrefs.enabled(preferenceStore).changes().distinctUntilChanged().drop(1).map {},
+                ContentWarningPrefs.applyToInstalled(preferenceStore).changes().distinctUntilChanged().drop(1).map {},
+            ).collectLatest { reload() }
+        }
+    }
+
     suspend fun addStore(indexUrl: String): Result<Unit> = storeRepository.insert(indexUrl)
 
     suspend fun available(): List<Extension.Available> = storeRepository.fetchExtensions()
@@ -50,7 +74,7 @@ class DesktopExtensionManager(
 
     private suspend fun reloadLocked() = withContext(Dispatchers.IO) {
         val stores = storeRepository.getAll()
-        _installed.value = installer.installed().map { loader.load(it, stores) }
+        _installed.value = installer.installed().map { loader.load(it, stores, isAllowed) }
     }
 
     suspend fun install(ext: Extension.Available): Extension.Installed = mutex.withLock { installLocked(ext) }
@@ -62,7 +86,7 @@ class DesktopExtensionManager(
                 response.body.byteStream().use { Files.copy(it, download, REPLACE_EXISTING) }
             }
             val installedExt = installer.install(download, expectedPkgName = ext.pkgName)
-            val result = loader.load(installedExt, storeRepository.getAll())
+            val result = loader.load(installedExt, storeRepository.getAll(), isAllowed)
             _installed.update { list -> list.filterNot { it.pkgName == result.pkgName } + result }
             result
         } finally {

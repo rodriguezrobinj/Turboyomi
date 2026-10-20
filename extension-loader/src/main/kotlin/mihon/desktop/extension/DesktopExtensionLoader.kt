@@ -3,6 +3,7 @@ package mihon.desktop.extension
 import eu.kanade.tachiyomi.extension.model.Extension
 import eu.kanade.tachiyomi.source.Source
 import logcat.LogPriority
+import mihon.domain.extension.model.ContentWarning
 import mihon.domain.extension.model.ExtensionStore
 import tachiyomi.core.common.util.system.logcat
 import java.nio.file.Path
@@ -16,7 +17,11 @@ class DesktopExtensionLoader(
         SourceInstantiator.instantiate(ext.jar, classNames, ext.apk)
     },
 ) {
-    fun load(installed: InstalledExtension, stores: List<ExtensionStore>): Extension.Installed {
+    fun load(
+        installed: InstalledExtension,
+        stores: List<ExtensionStore>,
+        isAllowed: (ContentWarning) -> Boolean = { true },
+    ): Extension.Installed {
         val info = installed.info
         val name = ExtensionManifestParser.name(info)
         val contentWarning = ExtensionManifestParser.contentWarning(info.metaData)
@@ -46,6 +51,8 @@ class DesktopExtensionLoader(
         if (!trust.isTrusted(info.pkgName, info.versionCode, info.signatures, stores)) {
             return notLoaded(Extension.NotLoaded.Reason.Untrusted(info.signatures.last()), libVersion)
         }
+        // Same place as Mihon's loader: after trust, before any of the extension's classes are touched
+        if (!isAllowed(contentWarning)) return notLoaded(Extension.NotLoaded.Reason.Filtered, libVersion)
 
         val classNames = ExtensionManifestParser.sourceClasses(info)
         if (classNames.isEmpty()) return notLoaded(Extension.NotLoaded.Reason.Malformed, libVersion)

@@ -3,7 +3,9 @@ package mihon.desktop.harness
 import eu.kanade.tachiyomi.extension.model.Extension
 import kotlinx.coroutines.runBlocking
 import mihon.desktop.core.AppDirs
+import mihon.desktop.core.ContentWarningPrefs
 import mihon.desktop.core.Platform
+import mihon.domain.extension.model.ContentWarning
 import kotlin.io.path.Path
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.exists
@@ -30,6 +32,8 @@ fun main(args: Array<String>) {
 
     val home = createTempDirectory("compat-harness")
     val graph = Platform.start(AppDirs(home.resolve("data"), home.resolve("local")))
+    // The harness measures whether extensions run, so every content warning is allowed here
+    ContentWarningPrefs.enabled(graph.preferenceStore).set(ContentWarning.entries.toSet())
     val manager = graph.extensionManager
 
     val report = runBlocking {

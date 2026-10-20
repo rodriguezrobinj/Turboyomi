@@ -81,6 +81,8 @@ fun main(args: Array<String>) {
     DesktopApp.graph = graph
     AppMessages.install()
     DesktopImageLoader.install(graph)
+    // Loads the installed extensions (their sources feed SourceManager) and the store listings at startup
+    graph.mihonExtensionManager
     val windowStore = WindowStateStore(graph.preferenceStore)
     val screens = GraphicsEnvironment.getLocalGraphicsEnvironment().screenDevices.map { it.defaultConfiguration.bounds }
     val initial = placeOnScreens(windowStore.load(), screens)
