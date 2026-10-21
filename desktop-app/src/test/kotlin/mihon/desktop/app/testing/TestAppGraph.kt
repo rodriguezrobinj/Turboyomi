@@ -7,6 +7,8 @@ import dev.zacsweers.metro.DependencyGraph
 import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
 import dev.zacsweers.metro.createGraphFactory
+import eu.kanade.domain.chapter.interactor.SyncChaptersWithSource
+import eu.kanade.tachiyomi.ui.reader.ReaderViewModel
 import mihon.app.di.AppGraph
 import mihon.core.metro.IsDebugBuild
 import mihon.desktop.app.DesktopApp
@@ -15,7 +17,9 @@ import mihon.desktop.core.DesktopBindings
 import mihon.desktop.core.DesktopSourceManager
 import mihon.desktop.core.Platform
 import tachiyomi.domain.chapter.interactor.GetChaptersByMangaId
+import tachiyomi.domain.history.interactor.GetHistory
 import tachiyomi.domain.manga.interactor.GetMangaByUrlAndSourceId
+import tachiyomi.domain.manga.interactor.NetworkToLocalManga
 import tachiyomi.domain.source.service.SourceManager
 import kotlin.io.path.createTempDirectory
 
@@ -28,6 +32,10 @@ import kotlin.io.path.createTempDirectory
 interface TestAppGraph : AppGraph {
     val getMangaByUrlAndSourceId: GetMangaByUrlAndSourceId
     val getChaptersByMangaId: GetChaptersByMangaId
+    val readerViewModelFactory: ReaderViewModel.Factory
+    val networkToLocalManga: NetworkToLocalManga
+    val syncChaptersWithSource: SyncChaptersWithSource
+    val getHistory: GetHistory
 
     @DependencyGraph.Factory
     fun interface Factory {

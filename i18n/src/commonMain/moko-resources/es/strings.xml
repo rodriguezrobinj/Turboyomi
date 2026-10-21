@@ -905,6 +905,12 @@
     <!-- Desktop: Mihon strings with no Spanish translation upstream yet; drop each one when Weblate adds it -->
     <string name="action_web_view">WebView</string>
     <string name="content_warnings_info">Las extensiones instaladas que no se cargan siguen en la lista, sin sus fuentes; las que no has instalado se ocultan. Esto no impide que extensiones no oficiales o mal etiquetadas muestren contenido para adultos dentro de la app.</string>
+    <string name="cutout_mode_avoid">Evitar</string>
+    <string name="cutout_mode_ignore">Ignorar</string>
+    <string name="cutout_mode_shift">Desplazar</string>
+    <string name="dual_page_view_always">Siempre</string>
+    <string name="dual_page_view_never">Nunca</string>
+    <string name="dual_page_view_wide">Con ventana ancha</string>
     <string name="ext_content_warning_mixed">Mixto</string>
     <string name="ext_content_warning_mixed_description">Las fuentes de esta extensión pueden tener contenido apto para todos y contenido para adultos.</string>
     <string name="ext_content_warning_nsfw">18+</string>
@@ -932,4 +938,18 @@
     <string name="theme_tokyonight">Tokyo Night</string>
     <string name="time_12_hours">12 horas</string>
     <string name="time_24_hours">24 horas</string>
+    <string name="transition_animation_basic">Básica</string>
+    <string name="transition_animation_cube_inside">Cubo (por dentro)</string>
+    <string name="transition_animation_cube_outside">Cubo (por fuera)</string>
+    <string name="transition_animation_fade">Fundido</string>
+    <string name="transition_animation_fade_white">Fundido a blanco</string>
+    <string name="transition_animation_flip">Pasar página</string>
+    <string name="transition_animation_flip_left">Pasar página (izquierda)</string>
+    <string name="transition_animation_flip_right">Pasar página (derecha)</string>
+    <string name="transition_animation_none">Ninguna</string>
+    <string name="transition_animation_sphere">Esfera</string>
+    <string name="transition_animation_stack_down">Apilar (abajo)</string>
+    <string name="transition_animation_stack_left">Apilar (izquierda)</string>
+    <string name="transition_animation_stack_right">Apilar (derecha)</string>
+    <string name="transition_animation_stack_up">Apilar (arriba)</string>
 </resources>

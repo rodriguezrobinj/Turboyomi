@@ -3,13 +3,16 @@ package eu.kanade.domain.manga.model
 import android.content.Context
 import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.source.model.SManga
+import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
 import mihon.app.di.appGraph
 import tachiyomi.core.common.preference.TriState
 import tachiyomi.domain.manga.model.Manga
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
-// desktop: readingMode and readerOrientation come back with the reader (plan 2 of subproject 2a)
+// desktop: no readerOrientation (no screen orientation on desktop)
+val Manga.readingMode: Long
+    get() = viewerFlags and ReadingMode.MASK.toLong()
 
 // TODO: move these into the domain model
 val Manga.downloadedFilter: TriState
