@@ -83,7 +83,13 @@ class CefInstaller(
             if (version == null || !sameBuild(version, expectedVersion)) {
                 throw IOException("The downloaded browser is version $version; the app needs $expectedVersion")
             }
-            installDir.deleteRecursively()
+            try {
+                installDir.deleteRecursively()
+            } catch (e: IOException) {
+                // A start that failed still holds the old build's DLLs; what's left of it goes at the next start
+                markForRemoval()
+                throw IOException("The browser's previous files are in use: restart the app and try again", e)
+            }
             moveWithRetry(layout, installDir)
             removalMarker.deleteIfExists()
         } finally {
@@ -91,14 +97,22 @@ class CefInstaller(
         }
     }
 
-    /** Removes the browser. While it runs Windows keeps its DLLs open, so then it goes at the next start. */
+    /**
+     * Removes the browser. While it runs Windows keeps its DLLs open, so then it goes at the next start; also when a
+     * start that failed left them loaded.
+     */
     fun uninstall(running: Boolean) {
-        if (running) {
-            if (!removalMarker.exists()) removalMarker.createFile()
-        } else {
+        if (running) return markForRemoval()
+        try {
             installDir.deleteRecursively()
             removalMarker.deleteIfExists()
+        } catch (_: IOException) {
+            markForRemoval()
         }
+    }
+
+    private fun markForRemoval() {
+        if (!removalMarker.exists()) removalMarker.createFile()
     }
 
     /** At startup, before anything loads the browser: finishes a removal asked for while it ran. */

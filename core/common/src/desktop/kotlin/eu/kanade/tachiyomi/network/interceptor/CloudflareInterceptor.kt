@@ -4,6 +4,8 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.webkit.JavascriptInterface
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import eu.kanade.tachiyomi.network.AndroidCookieJar
@@ -27,8 +29,7 @@ import kotlin.concurrent.write
  * Desktop copy of Mihon's CloudflareInterceptor (spec 2b §3 A): it solves the challenge in AndroidCompat's WebView over
  * the embedded browser. Extensions find it in NetworkHelper.client by class simple name, so the name stays.
  *
- * desktop: there's no androidx.webkit, so the bridge is the WebView's JavaScript interface (Mihon's fallback).
- * AndroidCompat doesn't report onReceivedHttpError, so the challenge counts as found: OkHttp already got it. There
+ * desktop: there's no androidx.webkit, so the bridge is the WebView's JavaScript interface (Mihon's fallback). There
  * are no WebView updates to suggest.
  */
 class CloudflareInterceptor(
@@ -121,6 +122,7 @@ class CloudflareInterceptor(
         val latch = CountDownLatch(1)
 
         var webview: WebView? = null
+        var challengeFound = false
         var cloudflareBypassed = false
         var challengeFailed = false
 
@@ -164,7 +166,30 @@ class CloudflareInterceptor(
                         latch.countDown()
                     }
 
-                    if (url == challengeUrl) view.evaluateJavascript(listenerScript, null)
+                    if (url == challengeUrl) {
+                        if (!challengeFound) {
+                            // The first request didn't return the challenge, abort.
+                            latch.countDown()
+                        } else {
+                            view.evaluateJavascript(listenerScript, null)
+                        }
+                    }
+                }
+
+                override fun onReceivedHttpError(
+                    view: WebView?,
+                    request: WebResourceRequest?,
+                    errorResponse: WebResourceResponse?,
+                ) {
+                    if (request?.isForMainFrame == true) {
+                        if (errorResponse?.responseHeaders?.get("cf-mitigated") == "challenge") {
+                            // Found the Cloudflare challenge page.
+                            challengeFound = true
+                        } else {
+                            // Unlock thread, the challenge wasn't found.
+                            latch.countDown()
+                        }
+                    }
                 }
             }
 

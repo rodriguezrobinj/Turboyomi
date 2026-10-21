@@ -68,7 +68,7 @@ object CefRuntime {
             CefHelper.cefApp.value = Result.success(app)
             runBlocking { withTimeout(30.seconds) { CefHelper.waitForInit().first() } }
             Runtime.getRuntime().addShutdownHook(thread(start = false, name = "cef-stop") { app.dispose() })
-            logcat { "The embedded browser started" }
+            logcat(LogPriority.INFO) { "The embedded browser started" }
         } catch (e: Throwable) {
             logcat(LogPriority.ERROR, e) { "The embedded browser didn't start" }
             CefHelper.cefApp.value = Result.failure(EmbeddedBrowserUnavailableException(Reason.NOT_STARTED, e))

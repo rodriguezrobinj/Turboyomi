@@ -2,7 +2,9 @@ package mihon.desktop.core.cef
 
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelAndJoin
@@ -13,6 +15,7 @@ import okhttp3.mockwebserver.MockWebServer
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.io.FileInputStream
 import java.io.IOException
 import java.nio.file.Path
 import kotlin.io.path.ExperimentalPathApi
@@ -157,5 +160,34 @@ class CefInstallerTest {
     fun `the download size comes from the server`(): Unit = runBlocking {
         val fake = FakeJbr()
         installer(fake).downloadSize() shouldBe fake.zip.size.toLong()
+    }
+
+    @Test
+    fun `removing it while its files are in use waits for the next start instead of failing`(): Unit = runBlocking {
+        val installer = installer(FakeJbr())
+        installer.install()
+
+        // What a failed start leaves behind: its DLLs loaded, which Windows won't let anyone delete
+        FileInputStream(root.resolve("cef/libcef.dll").toFile()).use { installer.uninstall(running = false) }
+
+        installer.isInstalled() shouldBe false
+        installer.isRemovalPending() shouldBe true
+        installer.applyPendingRemoval()
+        root.resolve("cef").exists() shouldBe false
+    }
+
+    @Test
+    fun `installing over files in use says to restart the app`(): Unit = runBlocking {
+        val installer = installer(FakeJbr())
+        installer.install()
+
+        val error = FileInputStream(root.resolve("cef/libcef.dll").toFile()).use {
+            shouldThrow<IOException> { installer.install() }
+        }
+
+        error.message.shouldNotBeNull() shouldContain "restart"
+        // What was left of it goes at the next start
+        installer.isRemovalPending() shouldBe true
+        leftovers().filter { !it.endsWith(".remove") }.shouldBeEmpty()
     }
 }

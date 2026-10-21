@@ -77,4 +77,15 @@ class CloudflareChallengeTest {
         elapsed shouldBeLessThan 20_000
         server.shutdown()
     }
+
+    @Test
+    fun `when the browser isn't challenged it gives up at once, as Mihon does`() {
+        val server = site(ChallengeSite(browserPasses = true))
+
+        val elapsed = measureTimeMillis { shouldThrow<IOException> { fetch(server, "/manga/1") } }
+
+        // Not the interceptor's 30 s wait: the browser's page had no challenge to solve
+        elapsed shouldBeLessThan 20_000
+        server.shutdown()
+    }
 }

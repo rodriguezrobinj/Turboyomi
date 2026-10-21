@@ -184,26 +184,32 @@ class KcefWebViewProvider(
         }
     }
 
+    // desktop: everything is read when it's built. CEF frees the request once its callback returns, and clients read
+    // it later on the WebView's thread (onReceivedHttpError)
+    @Suppress("UNUSED_PARAMETER")
     private class CefWebResourceRequest(
-        val request: CefRequest?,
-        val frame: CefFrame?,
-        val redirect: Boolean,
+        request: CefRequest?,
+        frame: CefFrame?,
+        private val redirect: Boolean,
     ) : WebResourceRequest {
-        override fun getUrl(): Uri = Uri.parse(request?.url)
+        private val url = Uri.parse(request?.url)
 
-        override fun isForMainFrame(): Boolean = frame?.isMain ?: false
+        // desktop: as Android, the main frame's own document, not anything the main frame loads (images, scripts)
+        private val mainFrame = request?.resourceType == CefRequest.ResourceType.RT_MAIN_FRAME
+        private val method = request?.method ?: "GET"
+        private val headers = mutableMapOf<String, String>().also { request?.getHeaderMap(it) }
+
+        override fun getUrl(): Uri = url
+
+        override fun isForMainFrame(): Boolean = mainFrame
 
         override fun isRedirect(): Boolean = redirect
 
         override fun hasGesture(): Boolean = false
 
-        override fun getMethod(): String = request?.method ?: "GET"
+        override fun getMethod(): String = method
 
-        override fun getRequestHeaders(): Map<String, String> {
-            val headers = mutableMapOf<String, String>()
-            request?.getHeaderMap(headers)
-            return headers
-        }
+        override fun getRequestHeaders(): Map<String, String> = headers
     }
 
     private class CefPermissionRequest(
@@ -285,10 +291,6 @@ class KcefWebViewProvider(
                         "Too Many Requests",
                         url,
                     )
-                }
-                if (httpStatusCode >= 400) {
-                    // TODO: create request and response
-                    // viewClient.onReceivedHttpError(_view, ...);
                 }
                 viewClient.onPageFinished(view, url)
                 chromeClient.onProgressChanged(view, 100)
@@ -512,6 +514,31 @@ class KcefWebViewProvider(
             }
             response ?: return null
             return WebResponseResourceHandler(response)
+        }
+
+        // desktop: Android reports every resource that answers an HTTP error, with its headers (Mihon's Cloudflare
+        // interceptor looks for cf-mitigated there); CEF tells us here, on its IO thread
+        override fun onResourceResponse(
+            browser: CefBrowser?,
+            frame: CefFrame?,
+            request: CefRequest,
+            response: CefResponse,
+        ): Boolean {
+            val status = response.status
+            if (status in 400..599) {
+                val headers = mutableMapOf<String, String>().also(response::getHeaderMap)
+                val errorResponse = WebResourceResponse(
+                    response.mimeType,
+                    null,
+                    status,
+                    response.statusText?.takeIf { it.isNotBlank() } ?: "Error",
+                    headers,
+                    null,
+                )
+                val webRequest = CefWebResourceRequest(request, frame, false)
+                handler.post { viewClient.onReceivedHttpError(view, webRequest, errorResponse) }
+            }
+            return false
         }
     }
 

@@ -57,8 +57,9 @@ class HttpPageLoaderTest {
 
     @Test
     fun `a page that failed can be retried`(): Unit = runBlocking {
-        val (loader, pages) = loaded("/m/loader/c2", pages = 3)
+        // Before the loader exists: getPages already starts downloading the first page
         TestSources.images.failing += "/m/loader/c2/0.png"
+        val (loader, pages) = loaded("/m/loader/c2", pages = 3)
 
         loader.loadPage(pages[0])
         pages[0].awaitStatus { it is Page.State.Error }

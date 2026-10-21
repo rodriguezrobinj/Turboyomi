@@ -29,8 +29,8 @@ class ReaderViewModelTest {
         graph = startTestApp()
     }
 
-    private suspend fun reader(chapterIndex: Int = 0): Pair<ReaderViewModel, List<Chapter>> {
-        TestSources.http.pageCount = 5
+    private suspend fun reader(chapterIndex: Int = 0, pages: Int = 5): Pair<ReaderViewModel, List<Chapter>> {
+        TestSources.http.pageCount = pages
         val (manga, chapters) = TestLibrary.httpManga(graph)
         val viewModel = graph.readerViewModelFactory.create(manga.id, chapters[chapterIndex].id)
         withTimeout(10.seconds) { viewModel.state.first { it.viewerChapters != null || it.initError != null } }
@@ -97,9 +97,10 @@ class ReaderViewModelTest {
 
     @Test
     fun `a failed page can be retried`(): Unit = runBlocking {
-        val (viewModel, chapters) = reader()
-        val page = viewModel.pages[0]
-        val path = "${chapters[0].url}/0.png"
+        // Page 8: opening the chapter already loads pages 0 to 4, maybe before the test makes this one fail
+        val (viewModel, chapters) = reader(pages = 10)
+        val page = viewModel.pages[8]
+        val path = "${chapters[0].url}/8.png"
         TestSources.images.failing += path
         page.chapter.pageLoader.shouldNotBeNull().loadPage(page)
         withTimeout(10.seconds) { page.statusFlow.first { it is Page.State.Error } }
