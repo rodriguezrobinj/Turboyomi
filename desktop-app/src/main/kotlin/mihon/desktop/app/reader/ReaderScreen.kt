@@ -1,5 +1,6 @@
 package mihon.desktop.app.reader
 
+import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
@@ -10,6 +11,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -24,6 +26,9 @@ import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -31,18 +36,33 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.zacsweers.metrox.viewmodel.assistedMetroViewModel
 import eu.kanade.presentation.util.Screen
+import eu.kanade.presentation.util.formattedMessage
 import eu.kanade.tachiyomi.ui.reader.ReaderViewModel
+import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
 import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
+import eu.kanade.tachiyomi.util.system.openInBrowser
+import eu.kanade.tachiyomi.util.system.toast
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import mihon.desktop.app.platform.ExitHooks
+import mihon.desktop.app.platform.FileDialogs
 import mihon.desktop.app.platform.LocalWindowControls
 import mihon.desktop.app.reader.image.DecodedPageCache
 import mihon.desktop.app.reader.viewer.PagerViewer
 import mihon.desktop.app.reader.viewer.ViewerController
 import mihon.desktop.app.reader.viewer.WebtoonViewer
+import mihon.icons.materialsymbols.MaterialSymbols
+import mihon.icons.materialsymbols.rounded.Public
+import mihon.icons.materialsymbols.rounded.Refresh
+import tachiyomi.core.common.i18n.stringResource
+import tachiyomi.i18n.MR
+import tachiyomi.presentation.core.screens.EmptyScreen
+import tachiyomi.presentation.core.screens.EmptyScreenAction
 import tachiyomi.presentation.core.screens.LoadingScreen
 import tachiyomi.presentation.core.util.collectAsState
+import kotlin.time.Duration.Companion.seconds
 
 const val READER_TAG = "reader"
 
@@ -83,6 +103,17 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
     val background by preferences.readerTheme.collectAsState()
     val dualView by preferences.dualPageView.collectAsState()
     var shifted by remember { mutableStateOf(false) }
+    var showSettings by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    // The controls hide after 3 s without moving the mouse (spec 2a §4)
+    var lastMouseMove by remember { mutableLongStateOf(0L) }
+    LaunchedEffect(state.menuVisible, lastMouseMove) {
+        if (state.menuVisible) {
+            delay(3.seconds)
+            viewModel.showMenus(false)
+        }
+    }
 
     fun perform(action: ReaderAction) {
         when (action) {
@@ -99,6 +130,7 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
             .fillMaxSize()
             .background(ReaderBackground.fromPreference(background).color())
             .testTag(READER_TAG)
+            .onPointerEvent(PointerEventType.Move) { lastMouseMove = System.nanoTime() }
             .focusRequester(focus)
             .focusable()
             .onKeyEvent { event ->
@@ -112,7 +144,23 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
     ) {
         val chapters = state.viewerChapters
         when {
-            state.initError != null -> Unit // Task 7: the error screen with retry and open in browser
+            state.initError != null -> {
+                val error = state.initError!!
+                val url = viewModel.getChapterUrl()
+                EmptyScreen(
+                    message = with(context) { error.formattedMessage },
+                    actions = listOfNotNull(
+                        EmptyScreenAction(MR.strings.action_retry, MaterialSymbols.Rounded.Refresh) {
+                            viewModel.retryInit()
+                        },
+                        url?.let {
+                            EmptyScreenAction(MR.strings.action_open_in_browser, MaterialSymbols.Rounded.Public) {
+                                context.openInBrowser(it)
+                            }
+                        },
+                    ),
+                )
+            }
             chapters == null -> LoadingScreen()
             else -> key(chapters.currChapter, mode) {
                 if (mode.type == ReadingMode.ViewerType.Webtoon) {
@@ -127,6 +175,13 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
                         onTap = ::perform,
                         onRetry = viewModel::retryPage,
                         onController = { controller = it },
+                        onSave = { page -> savePage(context, state, page) },
+                        onCopy = { page ->
+                            scope.launch(Dispatchers.IO) {
+                                page.stream?.let { PageActions.copyImage(it().use { s -> s.readBytes() }) }
+                                context.toast(MR.strings.desktop_image_copied)
+                            }
+                        },
                     )
                 } else {
                     PagerViewer(
@@ -145,12 +200,52 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
                         onTap = ::perform,
                         onRetry = viewModel::retryPage,
                         onController = { controller = it },
+                        onSave = { page -> savePage(context, state, page) },
+                        onCopy = { page ->
+                            scope.launch(Dispatchers.IO) {
+                                page.stream?.let { PageActions.copyImage(it().use { s -> s.readBytes() }) }
+                                context.toast(MR.strings.desktop_image_copied)
+                            }
+                        },
                     )
                 }
             }
         }
+        ReaderControls(
+            state = state,
+            mode = mode,
+            onBack = onClose,
+            onToggleBookmark = viewModel::toggleChapterBookmark,
+            onOpenInBrowser = viewModel.getChapterUrl()?.let { url -> { context.openInBrowser(url) } },
+            onPreviousChapter = { scope.launch { viewModel.loadPreviousChapter() } },
+            onNextChapter = { scope.launch { viewModel.loadNextChapter() } },
+            onPageIndexChange = { index -> scope.launch { controller?.goToPage(index) } },
+            onOpenSettings = { showSettings = true },
+        )
+        if (showSettings) {
+            ReaderQuickSettings(
+                preferences = preferences,
+                mode = mode,
+                shifted = shifted,
+                onModeChange = viewModel::setMangaReadingMode,
+                onShiftChange = { shifted = it },
+                onDismissRequest = { showSettings = false },
+            )
+        }
     }
     LaunchedEffect(Unit) { focus.requestFocus() }
+}
+
+private fun savePage(context: Context, state: ReaderViewModel.State, page: ReaderPage) {
+    val bytes = page.stream?.invoke()?.use { it.readBytes() } ?: return
+    val name = listOfNotNull(state.manga?.title, state.currentChapter?.chapter?.name, page.number.toString())
+        .joinToString(" - ")
+        .replace(Regex("""[\\/:*?"<>|]"""), "_")
+    val file =
+        FileDialogs.saveFile(context.stringResource(MR.strings.action_save), "$name.${PageActions.extensionOf(bytes)}")
+            ?: return
+    file.writeBytes(bytes)
+    context.toast(MR.strings.picture_saved)
 }
 
 /** Mihon's dualPageView: never, always, or when the window is wider than tall. */

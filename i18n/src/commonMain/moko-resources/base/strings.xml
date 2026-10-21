@@ -1127,4 +1127,7 @@
     <string name="desktop_clear_image_cache">Clear image cache</string>
     <string name="desktop_image_cache_cleared">Image cache cleared</string>
     <string name="desktop_open_logs_folder">Open logs folder</string>
+    <string name="desktop_dual_page_shift">Shift by one page</string>
+    <string name="desktop_reader_preload_pages">Pages loaded ahead</string>
+    <string name="desktop_image_copied">Image copied</string>
 </resources>

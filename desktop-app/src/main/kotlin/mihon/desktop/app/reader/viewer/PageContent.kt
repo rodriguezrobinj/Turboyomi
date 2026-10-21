@@ -1,5 +1,7 @@
 package mihon.desktop.app.reader.viewer
 
+import androidx.compose.foundation.ContextMenuArea
+import androidx.compose.foundation.ContextMenuItem
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -62,7 +64,11 @@ fun PageContent(
     onRetry: (ReaderPage) -> Unit,
     onSize: (IntSize) -> Unit,
     modifier: Modifier = Modifier,
+    onSave: (ReaderPage) -> Unit = {},
+    onCopy: (ReaderPage) -> Unit = {},
 ) {
+    val saveLabel = stringResource(MR.strings.action_save)
+    val copyLabel = stringResource(MR.strings.action_copy_to_clipboard)
     val status by page.statusFlow.collectAsStateWithLifecycle()
     LaunchedEffect(page) { page.chapter.pageLoader?.loadPage(page) }
 
@@ -104,11 +110,21 @@ fun PageContent(
                 } else {
                     tapModifier.fillMaxWidth()
                 }
-                DecodedPageImage(
-                    result.getOrThrow(),
-                    if (zoom) scale.contentScale else ContentScale.FillWidth,
-                    pageModifier,
-                )
+                // Right click (spec 2a §4): save the page as it came, or copy it as an image
+                ContextMenuArea(
+                    items = {
+                        listOf(
+                            ContextMenuItem(saveLabel) { onSave(page) },
+                            ContextMenuItem(copyLabel) { onCopy(page) },
+                        )
+                    },
+                ) {
+                    DecodedPageImage(
+                        result.getOrThrow(),
+                        if (zoom) scale.contentScale else ContentScale.FillWidth,
+                        pageModifier,
+                    )
+                }
             }
         }
     }

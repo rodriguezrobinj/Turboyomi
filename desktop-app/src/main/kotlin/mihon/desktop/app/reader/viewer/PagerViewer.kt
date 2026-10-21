@@ -54,6 +54,8 @@ fun PagerViewer(
     onTap: (ReaderAction) -> Unit,
     onRetry: (ReaderPage) -> Unit,
     onController: (ViewerController) -> Unit,
+    onSave: (ReaderPage) -> Unit,
+    onCopy: (ReaderPage) -> Unit,
 ) {
     val current = chapters.currChapter
     val pages = current.pages.orEmpty()
@@ -113,6 +115,8 @@ fun PagerViewer(
                         onTap = { x, width -> onTap(tapActionFor(x, width, mode)) },
                         onRetry = onRetry,
                         onSize = { sizes[pageIndex] = it },
+                        onSave = onSave,
+                        onCopy = onCopy,
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -142,11 +146,12 @@ private class PagerController(
 ) : ViewerController {
     override suspend fun perform(action: ReaderAction) {
         val last = items().lastIndex
+        // From the page a turn already in progress goes to, so two quick presses turn two pages
         when (action) {
             ReaderAction.NextPage, ReaderAction.ScrollDown ->
-                if (state.currentPage < last) state.animateScrollToPage(state.currentPage + 1) else onPastEnd(true)
+                if (state.targetPage < last) state.animateScrollToPage(state.targetPage + 1) else onPastEnd(true)
             ReaderAction.PreviousPage, ReaderAction.ScrollUp ->
-                if (state.currentPage > 0) state.animateScrollToPage(state.currentPage - 1) else onPastEnd(false)
+                if (state.targetPage > 0) state.animateScrollToPage(state.targetPage - 1) else onPastEnd(false)
             ReaderAction.FirstPage -> state.scrollToPage(1.coerceAtMost(last))
             ReaderAction.LastPage -> state.scrollToPage((last - 1).coerceAtLeast(0))
             else -> Unit

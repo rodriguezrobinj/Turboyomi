@@ -57,6 +57,8 @@ fun WebtoonViewer(
     onTap: (ReaderAction) -> Unit,
     onRetry: (ReaderPage) -> Unit,
     onController: (ViewerController) -> Unit,
+    onSave: (ReaderPage) -> Unit,
+    onCopy: (ReaderPage) -> Unit,
 ) {
     val current = chapters.currChapter
     val pages = current.pages.orEmpty()
@@ -115,6 +117,8 @@ fun WebtoonViewer(
                         onTap = { x, width -> onTap(tapActionFor(x, width, ReadingMode.WEBTOON)) },
                         onRetry = onRetry,
                         onSize = { sizes[item.pages.single().index] = it },
+                        onSave = onSave,
+                        onCopy = onCopy,
                         modifier = if (item.pages.single().index in sizes) {
                             Modifier.fillMaxWidth()
                         } else {

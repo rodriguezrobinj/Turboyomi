@@ -900,6 +900,9 @@
     <string name="desktop_clear_image_cache">Borrar caché de imágenes</string>
     <string name="desktop_image_cache_cleared">Caché de imágenes borrada</string>
     <string name="desktop_open_logs_folder">Abrir carpeta de logs</string>
+    <string name="desktop_dual_page_shift">Desplazar una página</string>
+    <string name="desktop_reader_preload_pages">Páginas que se cargan por adelantado</string>
+    <string name="desktop_image_copied">Imagen copiada</string>
 
     <!-- Desktop: Mihon strings with no Spanish translation upstream yet; drop each one when Weblate adds it -->
     <string name="action_web_view">WebView</string>
@@ -933,6 +936,7 @@
     <string name="pref_apply_content_warnings_to_installed">Aplicar también a las extensiones instaladas</string>
     <string name="pref_apply_content_warnings_to_installed_summary">Si está desactivado, las extensiones que ya instalaste se siguen cargando y actualizando sea cual sea su aviso</string>
     <string name="pref_category_extensions">Extensiones</string>
+    <string name="pref_dual_page_view">Vista de doble página</string>
     <string name="pref_time_format">Formato de hora</string>
     <string name="theme_tokyonight">Tokyo Night</string>
     <string name="time_12_hours">12 horas</string>
