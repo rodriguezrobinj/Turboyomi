@@ -40,6 +40,7 @@ import mihon.desktop.app.platform.LocalWindowControls
 import mihon.desktop.app.reader.image.DecodedPageCache
 import mihon.desktop.app.reader.viewer.PagerViewer
 import mihon.desktop.app.reader.viewer.ViewerController
+import mihon.desktop.app.reader.viewer.WebtoonViewer
 import tachiyomi.presentation.core.screens.LoadingScreen
 import tachiyomi.presentation.core.util.collectAsState
 
@@ -114,21 +115,38 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
             state.initError != null -> Unit // Task 7: the error screen with retry and open in browser
             chapters == null -> LoadingScreen()
             else -> key(chapters.currChapter, mode) {
-                PagerViewer(
-                    chapters = chapters,
-                    mode = mode,
-                    dual = isDualPage(dualView),
-                    shifted = shifted,
-                    scale = ImageScale.fromPreference(scale),
-                    cache = cache,
-                    onPageSelected = viewModel::onPageSelected,
-                    onPastEnd = { forward ->
-                        scope.launch { if (forward) viewModel.loadNextChapter() else viewModel.loadPreviousChapter() }
-                    },
-                    onTap = ::perform,
-                    onRetry = viewModel::retryPage,
-                    onController = { controller = it },
-                )
+                if (mode.type == ReadingMode.ViewerType.Webtoon) {
+                    val sidePadding by preferences.webtoonSidePadding.collectAsState()
+                    WebtoonViewer(
+                        chapters = chapters,
+                        gap = mode == ReadingMode.CONTINUOUS_VERTICAL,
+                        sidePaddingPercent = sidePadding,
+                        cache = cache,
+                        onPageSelected = viewModel::onPageSelected,
+                        onReachedEnd = { scope.launch { viewModel.loadNextChapter() } },
+                        onTap = ::perform,
+                        onRetry = viewModel::retryPage,
+                        onController = { controller = it },
+                    )
+                } else {
+                    PagerViewer(
+                        chapters = chapters,
+                        mode = mode,
+                        dual = isDualPage(dualView),
+                        shifted = shifted,
+                        scale = ImageScale.fromPreference(scale),
+                        cache = cache,
+                        onPageSelected = viewModel::onPageSelected,
+                        onPastEnd = { forward ->
+                            scope.launch {
+                                if (forward) viewModel.loadNextChapter() else viewModel.loadPreviousChapter()
+                            }
+                        },
+                        onTap = ::perform,
+                        onRetry = viewModel::retryPage,
+                        onController = { controller = it },
+                    )
+                }
             }
         }
     }

@@ -72,10 +72,7 @@ fun PageContent(
         val stream = page.stream ?: return@produceState
         value = withContext(Dispatchers.IO) {
             runCatching { PageDecoder.decode(stream().use { it.readBytes() }) }
-        }.onSuccess {
-            cache.put(key, it)
-            onSize(IntSize(it.width, it.height))
-        }
+        }.onSuccess { cache.put(key, it) }
     }
 
     // The page's width, for the click zones of zoomable's onTap, which only gives the offset
@@ -85,6 +82,8 @@ fun PageContent(
     }
 
     val result = decoded
+    // Also for a page that comes decoded from the cache, so a new viewer learns its size
+    LaunchedEffect(result) { result?.getOrNull()?.let { onSize(IntSize(it.width, it.height)) } }
     Box(
         modifier
             .onSizeChanged { width = it.width }
