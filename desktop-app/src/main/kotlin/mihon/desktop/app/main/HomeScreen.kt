@@ -12,6 +12,7 @@ import cafe.adriel.voyager.navigator.tab.CurrentTab
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import eu.kanade.presentation.util.Screen
 import eu.kanade.presentation.util.Tab
+import eu.kanade.tachiyomi.ui.history.HistoryTab
 import mihon.desktop.app.settings.SettingsTab
 
 /**
@@ -21,7 +22,7 @@ import mihon.desktop.app.settings.SettingsTab
  */
 object HomeScreen : Screen() {
     /** In rail order; the first one opens at start. Settings must stay last for [AppEvents.openSettings]. */
-    val tabs: List<Tab> = listOf(BrowseTab, SettingsTab)
+    val tabs: List<Tab> = listOf(BrowseTab, HistoryTab, SettingsTab)
 
     @Composable
     override fun Content() {

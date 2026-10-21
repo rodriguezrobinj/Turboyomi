@@ -18,6 +18,8 @@ import mihon.desktop.core.DesktopSourceManager
 import mihon.desktop.core.Platform
 import tachiyomi.domain.chapter.interactor.GetChaptersByMangaId
 import tachiyomi.domain.history.interactor.GetHistory
+import tachiyomi.domain.history.interactor.RemoveHistory
+import tachiyomi.domain.history.interactor.UpsertHistory
 import tachiyomi.domain.manga.interactor.GetMangaByUrlAndSourceId
 import tachiyomi.domain.manga.interactor.NetworkToLocalManga
 import tachiyomi.domain.source.service.SourceManager
@@ -36,6 +38,8 @@ interface TestAppGraph : AppGraph {
     val networkToLocalManga: NetworkToLocalManga
     val syncChaptersWithSource: SyncChaptersWithSource
     val getHistory: GetHistory
+    val upsertHistory: UpsertHistory
+    val removeHistory: RemoveHistory
 
     @DependencyGraph.Factory
     fun interface Factory {
