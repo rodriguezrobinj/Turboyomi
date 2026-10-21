@@ -29,9 +29,25 @@ dependencies {
 
     testImplementation(libs.bundles.test)
     testImplementation(libs.okhttp.mockwebserver)
+    testImplementation(libs.jcef)
     testFixturesImplementation(libs.okhttp.mockwebserver)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 
 // Platform.start boots Koin and AndroidCompat's global config: once per JVM
-tasks.test { forkEvery = 1 }
+tasks.test {
+    forkEvery = 1
+    // The real embedded browser is downloaded and started only by cefTest
+    useJUnitPlatform { excludeTags("cef") }
+}
+
+// Tests against the real embedded browser (spec 2b §5). It's downloaded once into build/cef at the repo's root
+val cefTest by tasks.registering(Test::class) {
+    description = "Runs the tests that need the real embedded browser"
+    group = "verification"
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    forkEvery = 1
+    useJUnitPlatform { includeTags("cef") }
+    systemProperty("cef.dir", layout.settingsDirectory.dir("build/cef").asFile.absolutePath)
+}

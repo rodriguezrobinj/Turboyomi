@@ -30,11 +30,11 @@ class WebViewUnavailableTest {
 
     @Test
     fun `creating a WebView fails fast and keeps the main looper free`(): Unit = runBlocking {
-        // cubari and mangaup build a WebView on the main thread; without KCEF it used to wait forever there,
-        // freezing the looper every other extension posts to
+        // cubari and mangaup build a WebView on the main thread; without the embedded browser it used to wait forever
+        // there, freezing the looper every other extension posts to
         val created = withTimeout(5_000) { onMain { WebView(graph.context) }.await() }
         created.isFailure shouldBe true
-        created.exceptionOrNull()!!.stackTraceToString() shouldContain "WebView is not available"
+        created.exceptionOrNull()!!.stackTraceToString() shouldContain "EmbeddedBrowserUnavailableException"
 
         withTimeout(5_000) { onMain {}.await() }.isSuccess shouldBe true
     }

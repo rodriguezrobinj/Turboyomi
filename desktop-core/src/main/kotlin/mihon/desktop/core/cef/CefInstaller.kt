@@ -9,11 +9,13 @@ package mihon.desktop.core.cef
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
+import java.nio.file.AccessDeniedException
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
@@ -82,7 +84,7 @@ class CefInstaller(
                 throw IOException("The downloaded browser is version $version; the app needs $expectedVersion")
             }
             installDir.deleteRecursively()
-            layout.moveTo(installDir, StandardCopyOption.ATOMIC_MOVE)
+            moveWithRetry(layout, installDir)
             removalMarker.deleteIfExists()
         } finally {
             staging.deleteRecursively()
@@ -178,3 +180,23 @@ private fun releaseVersion(dir: Path): String? = runCatching {
 /** The same native build: the part before `-chromium` (JCEF's version and commit), as Suwayomi compares them. */
 private fun sameBuild(installed: String, expected: String) =
     installed.substringBefore("-chromium") == expected.substringBefore("-chromium")
+
+/**
+ * Renames [from] to [to]. Windows refuses to rename a folder while a program holds one of its files, and the
+ * antivirus scans a freshly extracted browser's DLLs and executables for a moment: retried until it lets go.
+ * ponytail: a fixed 10 tries over 5 s; enough for a scan, not for a program that keeps the file open.
+ */
+internal suspend fun moveWithRetry(from: Path, to: Path) {
+    repeat(MOVE_TRIES - 1) {
+        try {
+            from.moveTo(to, StandardCopyOption.ATOMIC_MOVE)
+            return
+        } catch (_: AccessDeniedException) {
+            delay(MOVE_RETRY_MS)
+        }
+    }
+    from.moveTo(to, StandardCopyOption.ATOMIC_MOVE)
+}
+
+private const val MOVE_TRIES = 10
+private const val MOVE_RETRY_MS = 500L

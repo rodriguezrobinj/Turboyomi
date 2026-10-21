@@ -122,6 +122,9 @@ class KcefWebViewProvider(
 
     interface InitBrowserHandler {
         fun init(provider: KcefWebViewProvider): Unit
+
+        // desktop: brings the page's cookies to the app's cookie store before the page counts as loaded
+        fun onLoadEnd(url: String) {}
     }
 
     private inner class LifeSpanHandler : CefLifeSpanHandlerAdapter() {
@@ -265,6 +268,8 @@ class KcefWebViewProvider(
             val url = frame.url ?: ""
             Log.v(TAG, "Load end $url")
             handler.post {
+                // desktop: before onPageFinished, so a client checking cookies there (CloudflareInterceptor) sees them
+                initHandler.onLoadEnd(url)
                 if (httpStatusCode == 404) {
                     viewClient.onReceivedError(
                         view,

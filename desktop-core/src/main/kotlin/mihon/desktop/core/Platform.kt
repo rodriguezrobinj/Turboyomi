@@ -4,14 +4,17 @@ import android.app.Application
 import android.content.Context
 import android.os.Looper
 import dev.zacsweers.metro.createGraphFactory
+import mihon.desktop.core.cef.CefCookieSync
+import mihon.desktop.core.cef.CefRuntime
 import mihon.desktop.core.cookies.PersistentCookieStore
 import org.koin.core.context.startKoin
+import org.koin.dsl.module
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.InjektScope
 import xyz.nulldev.androidcompat.AndroidCompat
 import xyz.nulldev.androidcompat.AndroidCompatInitializer
 import xyz.nulldev.androidcompat.androidCompatModule
-import xyz.nulldev.androidcompat.webkit.CefHelper
+import xyz.nulldev.androidcompat.webkit.KcefWebViewProvider
 import xyz.nulldev.ts.config.configManagerModule
 import java.net.CookieHandler
 import java.net.CookiePolicy
@@ -69,13 +72,18 @@ object Platform {
         CookieHandler.setDefault(java.net.CookieManager(cookies, CookiePolicy.ACCEPT_ALL))
         Runtime.getRuntime().addShutdownHook(thread(start = false, name = "cookie-flush") { cookies.flush() })
 
-        startKoin { modules(androidCompatModule(), configManagerModule()) }
+        startKoin {
+            modules(
+                androidCompatModule(),
+                configManagerModule(),
+                // AndroidCompat's WebView asks Koin for this when it creates a browser: it brings in the app's cookies
+                module { single<KcefWebViewProvider.InitBrowserHandler> { CefCookieSync } },
+            )
+        }
         startMainLooper()
         // Without this, a WebView waits forever for Chromium inside a runBlocking on the main looper, freezing it
-        // for every extension. ponytail: fails fast until KCEF is initialized here (subproject 2b)
-        CefHelper.cefApp.value = Result.failure(
-            CefHelper.CefException("WebView is not available: the embedded browser (KCEF) is not set up yet"),
-        )
+        // for every extension; CefRuntime replaces it once the browser runs
+        CefRuntime.markNotInstalled()
         AndroidCompatInitializer().init()
         val application = DesktopApplication()
         AndroidCompat().startApp(application)
@@ -83,6 +91,10 @@ object Platform {
         // Like Mihon, the application is the Context everything gets; it delegates to AndroidCompat's CustomContext
         val graph = createGraph(application, dirs, isDebugBuild)
         Injekt = InjektScope(DesktopInjektRegistrar(application, graph))
+        // The embedded browser starts in the background when it's installed (spec 2b §2). A removal asked for while
+        // it ran happens first, before anything loads its DLLs
+        graph.cefInstaller.applyPendingRemoval()
+        if (graph.cefInstaller.isInstalled()) CefRuntime.startAsync(dirs.cef, dirs.cefCache)
         return graph
     }
 }
