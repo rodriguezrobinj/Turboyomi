@@ -16,6 +16,7 @@ import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import cafe.adriel.voyager.navigator.Navigator
+import cafe.adriel.voyager.navigator.tab.TabNavigator
 import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 import eu.kanade.presentation.theme.TachiyomiTheme
 import eu.kanade.presentation.util.DefaultNavigatorScreenTransition
@@ -56,19 +57,24 @@ fun AppContent(graph: AppGraph, crash: Throwable?, onRestart: () -> Unit) {
             val snackbar = remember { SnackbarHostState() }
             LaunchedEffect(Unit) { AppMessages.messages.collect { snackbar.showSnackbar(it) } }
             Box(Modifier.fillMaxSize()) {
-                Navigator(HomeScreen) { navigator ->
-                    // Shortcuts that navigate are collected here, at the root, which stays composed whatever
-                    // screen is on top (Voyager only composes the top screen)
-                    LaunchedEffect(navigator) {
-                        launch { AppEvents.globalSearch.collect { navigator.push(GlobalSearchScreen()) } }
-                        AppEvents.openSettings.collect {
-                            navigator.popUntilRoot()
-                            HomeScreen.openSettings()
+                // The tabs' navigator sits above the screens' navigator, so it stays composed while a screen covers
+                // HomeScreen; inside HomeScreen it lost every tab's state (pager page, scroll) on the way back.
+                // Voyager's default TabDisposable would drop that state too, and the tabs live as long as the app.
+                TabNavigator(HomeScreen.tabs.first(), tabDisposable = {}) { tabNavigator ->
+                    Navigator(HomeScreen) { navigator ->
+                        // Shortcuts that navigate are collected here, at the root, which stays composed whatever
+                        // screen is on top (Voyager only composes the top screen)
+                        LaunchedEffect(navigator) {
+                            launch { AppEvents.globalSearch.collect { navigator.push(GlobalSearchScreen()) } }
+                            AppEvents.openSettings.collect {
+                                navigator.popUntilRoot()
+                                tabNavigator.current = HomeScreen.tabs.last()
+                            }
                         }
-                    }
-                    // Like Mihon's SettingsScreen: settings screens draw their up arrow from LocalBackPress
-                    CompositionLocalProvider(LocalBackPress provides navigator::pop) {
-                        DefaultNavigatorScreenTransition(navigator)
+                        // Like Mihon's SettingsScreen: settings screens draw their up arrow from LocalBackPress
+                        CompositionLocalProvider(LocalBackPress provides navigator::pop) {
+                            DefaultNavigatorScreenTransition(navigator)
+                        }
                     }
                 }
                 SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))

@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.Navigator
+import java.util.WeakHashMap
 
 /**
  * On Android, Voyager gives every screen its own ViewModelStore; on desktop it doesn't, so two MangaScreens would
@@ -30,9 +31,13 @@ class ScreenViewModelStores {
     }
 }
 
+// Per navigator, outside any screen's composition: a screen covered by another one leaves the composition, and
+// its view models must still be there when it comes back. Weak keys: a navigator that goes away takes them along.
+private val storesByNavigator = WeakHashMap<Navigator, ScreenViewModelStores>()
+
 @Composable
 fun ProvideScreenViewModelStore(navigator: Navigator, screen: Screen, content: @Composable () -> Unit) {
-    val stores = remember(navigator) { ScreenViewModelStores() }
+    val stores = remember(navigator) { storesByNavigator.getOrPut(navigator) { ScreenViewModelStores() } }
     LaunchedEffect(navigator.items) { stores.retainOnly(navigator.items.mapTo(HashSet()) { it.key }) }
     CompositionLocalProvider(LocalViewModelStoreOwner provides stores.ownerFor(screen.key), content = content)
 }

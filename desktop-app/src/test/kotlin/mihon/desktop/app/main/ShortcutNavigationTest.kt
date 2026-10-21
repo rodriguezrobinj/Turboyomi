@@ -92,4 +92,23 @@ class ShortcutNavigationTest {
 
         waitFor(str(MR.strings.pref_category_appearance))
     }
+
+    @Test
+    fun `coming back from a pushed screen keeps the browse tab that was open`() = runComposeUiTest {
+        val graph = startTestApp()
+        setContent { AppContent(graph, crash = null, onRestart = {}) }
+        fun waitFor(text: String) = waitUntil(timeoutMillis = 10_000) {
+            onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        onNodeWithText(str(MR.strings.label_extensions)).performClick()
+        waitFor(str(MR.strings.extensionStores))
+        onNodeWithText(str(MR.strings.extensionStores)).performClick()
+        waitFor(str(MR.strings.extensionStoresScreen_emptyLabel))
+
+        runOnIdle { AppEvents.send(Shortcut.Back) }
+
+        // Still on the extensions page: its empty state's button is there again
+        waitFor(str(MR.strings.extensionStores))
+    }
 }
