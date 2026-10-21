@@ -896,10 +896,27 @@
 
     <!-- Desktop -->
     <string name="desktop_instance_unreachable">Ya hay otra ventana de la app abierta, pero no responde. Ciérrala desde el Administrador de tareas e inténtalo de nuevo.</string>
-    <string name="desktop_site_needs_browser">Este sitio requiere navegador (disponible pronto)</string>
     <string name="desktop_clear_image_cache">Borrar caché de imágenes</string>
     <string name="desktop_image_cache_cleared">Caché de imágenes borrada</string>
     <string name="desktop_open_logs_folder">Abrir carpeta de logs</string>
+    <string name="desktop_cef_title">Navegador integrado</string>
+    <string name="desktop_cef_consent_message">Para abrir páginas dentro de la app, pasar Cloudflare e iniciar sesión en las fuentes hace falta un navegador Chromium de JetBrains (%1$s). Se descarga una sola vez.</string>
+    <string name="desktop_cef_download">Descargar</string>
+    <string name="desktop_cef_not_now">Ahora no</string>
+    <string name="desktop_cef_downloading">Descargando el navegador…</string>
+    <string name="desktop_cef_install_failed">No se pudo instalar el navegador: %1$s</string>
+    <string name="desktop_cef_not_installed">Este sitio necesita el navegador integrado. Pulsa «Abrir en WebView» para instalarlo.</string>
+    <string name="desktop_cef_not_started">No se pudo iniciar el navegador integrado: %1$s</string>
+    <string name="desktop_cef_status_installed">Instalado</string>
+    <string name="desktop_cef_status_starting">Arrancando…</string>
+    <string name="desktop_cef_status_not_installed">No instalado</string>
+    <string name="desktop_cef_status_failed">Instalado, pero no arrancó: %1$s</string>
+    <string name="desktop_cef_status_remove_pending">Se borrará la próxima vez que abras la app</string>
+    <string name="desktop_cef_install">Instalar el navegador integrado</string>
+    <string name="desktop_cef_remove">Borrar el navegador integrado</string>
+    <string name="desktop_cef_removed">Navegador integrado borrado</string>
+    <string name="desktop_cef_licenses">Licencias del navegador</string>
+    <string name="desktop_cef_clear_site_cookies">Borrar las cookies de este sitio</string>
     <string name="desktop_dual_page_shift">Desplazar una página</string>
     <string name="desktop_reader_preload_pages">Páginas que se cargan por adelantado</string>
     <string name="desktop_image_copied">Imagen copiada</string>

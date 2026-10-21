@@ -27,7 +27,9 @@ import eu.kanade.presentation.util.LocalBackPress
 import eu.kanade.tachiyomi.ui.browse.source.globalsearch.GlobalSearchScreen
 import kotlinx.coroutines.launch
 import mihon.app.di.AppGraph
+import mihon.desktop.app.browser.EmbeddedBrowserConsent
 import mihon.desktop.app.platform.AppMessages
+import mihon.desktop.core.cef.CefRuntime
 
 /** What every screen needs around it: context, view model factory and root store, theme. Tests reuse it. */
 @Composable
@@ -92,6 +94,10 @@ fun AppContent(graph: AppGraph, crash: Throwable?, onRestart: () -> Unit) {
                     }
                 }
                 SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
+                // The embedded browser's download dialog, over whatever screen asked for a WebView (spec 2b §3 D)
+                EmbeddedBrowserConsent(graph.cefInstaller) {
+                    CefRuntime.startAsync(graph.appDirs.cef, graph.appDirs.cefCache)
+                }
             }
         }
     }

@@ -1123,10 +1123,27 @@
 
     <!-- Desktop -->
     <string name="desktop_instance_unreachable">Another window of the app is already open but isn\'t responding. Close it from the Task Manager and try again.</string>
-    <string name="desktop_site_needs_browser">This site needs a browser to load (coming soon)</string>
     <string name="desktop_clear_image_cache">Clear image cache</string>
     <string name="desktop_image_cache_cleared">Image cache cleared</string>
     <string name="desktop_open_logs_folder">Open logs folder</string>
+    <string name="desktop_cef_title">Built-in browser</string>
+    <string name="desktop_cef_consent_message">Opening pages inside the app, getting past Cloudflare and signing in to sources need a Chromium browser from JetBrains (%1$s). It\'s downloaded once.</string>
+    <string name="desktop_cef_download">Download</string>
+    <string name="desktop_cef_not_now">Not now</string>
+    <string name="desktop_cef_downloading">Downloading the browser…</string>
+    <string name="desktop_cef_install_failed">Couldn\'t install the browser: %1$s</string>
+    <string name="desktop_cef_not_installed">This site needs the built-in browser. Press “Open in WebView” to install it.</string>
+    <string name="desktop_cef_not_started">The built-in browser couldn\'t start: %1$s</string>
+    <string name="desktop_cef_status_installed">Installed</string>
+    <string name="desktop_cef_status_starting">Starting…</string>
+    <string name="desktop_cef_status_not_installed">Not installed</string>
+    <string name="desktop_cef_status_failed">Installed, but it didn\'t start: %1$s</string>
+    <string name="desktop_cef_status_remove_pending">It\'ll be removed the next time the app starts</string>
+    <string name="desktop_cef_install">Install the built-in browser</string>
+    <string name="desktop_cef_remove">Remove the built-in browser</string>
+    <string name="desktop_cef_removed">Built-in browser removed</string>
+    <string name="desktop_cef_licenses">Browser licenses</string>
+    <string name="desktop_cef_clear_site_cookies">Clear this site\'s cookies</string>
     <string name="desktop_dual_page_shift">Shift by one page</string>
     <string name="desktop_reader_preload_pages">Pages loaded ahead</string>
     <string name="desktop_image_copied">Image copied</string>

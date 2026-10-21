@@ -73,6 +73,10 @@ dependencies {
     implementation(libs.diskLruCache)
     implementation(libs.zoomable)
 
+    // Types of CefHelper.cefApp and of the WebView window's browser; the jar comes at runtime with android-compat
+    compileOnly(libs.jcef)
+    testImplementation(testFixtures(projects.desktopCore))
+    testImplementation(libs.jcef)
     testImplementation(libs.bundles.test)
     testImplementation(libs.compose.ui.test)
     testImplementation(libs.okhttp.mockwebserver)

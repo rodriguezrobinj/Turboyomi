@@ -12,10 +12,6 @@ import java.net.UnknownHostException
 context(context: Context)
 val Throwable.formattedMessage: String
     get() {
-        // desktop: Cloudflare and similar challenges answer 403/503; they need the embedded browser (subproject 2b)
-        if (this is HttpException && (code == 403 || code == 503)) {
-            return context.stringResource(MR.strings.desktop_site_needs_browser)
-        }
         when (this) {
             is HttpException -> return context.stringResource(MR.strings.exception_http, code)
             is UnknownHostException -> {
