@@ -5,6 +5,8 @@ import kotlinx.coroutines.runBlocking
 import mihon.desktop.core.AppDirs
 import mihon.desktop.core.ContentWarningPrefs
 import mihon.desktop.core.Platform
+import mihon.desktop.core.cef.CefInstaller
+import mihon.desktop.core.cef.CefRuntime
 import mihon.domain.extension.model.ContentWarning
 import kotlin.io.path.Path
 import kotlin.io.path.createTempDirectory
@@ -19,7 +21,7 @@ private fun Array<String>.option(name: String): String? = indexOf(name).takeIf {
 fun main(args: Array<String>) {
     val repo = args.option("--repo") ?: run {
         System.err.println(
-            "Usage: --repo <index url> [--limit 100] [--threshold 0.8] [--out compat-report.md] [--packages file]",
+            "Usage: --repo <index url> [--limit 100] [--threshold 0.8] [--out compat-report.md] [--packages file] [--cef dir]",
         )
         exitProcess(2)
     }
@@ -32,6 +34,14 @@ fun main(args: Array<String>) {
 
     val home = createTempDirectory("compat-harness")
     val graph = Platform.start(AppDirs(home.resolve("data"), home.resolve("local")))
+    // With the embedded browser, Cloudflare and WebView extensions are measured too (spec 2b §5). It's installed
+    // into [dir] once and reused by later runs
+    args.option("--cef")?.let { dir ->
+        val installer = CefInstaller(Path(dir))
+        if (!installer.isInstalled()) runBlocking { installer.install() }
+        CefRuntime.start(Path(dir), home.resolve("cef-cache"))
+        check(CefRuntime.isRunning) { "The embedded browser didn't start" }
+    }
     // The harness measures whether extensions run, so every content warning is allowed here
     ContentWarningPrefs.enabled(graph.preferenceStore).set(ContentWarning.entries.toSet())
     val manager = graph.extensionManager

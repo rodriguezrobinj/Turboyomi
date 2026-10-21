@@ -6,7 +6,9 @@ import android.webkit.WebView
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -37,5 +39,14 @@ class WebViewUnavailableTest {
         created.exceptionOrNull()!!.stackTraceToString() shouldContain "EmbeddedBrowserUnavailableException"
 
         withTimeout(5_000) { onMain {}.await() }.isSuccess shouldBe true
+    }
+
+    @Test
+    fun `a WebView created from Dispatchers Main gets as far as on Android`(): Unit = runBlocking {
+        // cubari, mangaup and hdoujin create theirs in withContext(Dispatchers.Main), which on Android is the main
+        // Looper's thread; here it's Swing's, and it used to fail before reaching the browser: "no Looper"
+        val created = withTimeout(5_000) { withContext(Dispatchers.Main) { runCatching { WebView(graph.context) } } }
+
+        created.exceptionOrNull()!!.stackTraceToString() shouldContain "EmbeddedBrowserUnavailableException"
     }
 }

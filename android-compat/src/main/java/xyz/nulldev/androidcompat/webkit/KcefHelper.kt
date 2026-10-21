@@ -126,8 +126,10 @@ class JsHandler : CefMessageRouterHandlerAdapter {
             try {
               var result = payload();
 
+              // desktop: as Android's evaluateJavascript, the value as JSON text (undefined: "null"); sending it
+              // raw made any object fail to decode and its callback never come
               window.${QUERY_FN}({
-                  request: JSON.stringify({ id: "$id", result }),
+                  request: JSON.stringify({ id: "$id", result: JSON.stringify(result === undefined ? null : result) }),
                   onSuccess: function (response) {},
                   onFailure: function (error_code, error_message) {}
               });

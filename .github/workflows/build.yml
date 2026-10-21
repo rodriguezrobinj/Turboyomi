@@ -29,3 +29,8 @@ jobs:
       - run: bash scripts/check-licenses.sh
       - run: ./gradlew spotlessCheck test
       - run: bash scripts/check-no-android.sh
+      - uses: actions/cache@v4
+        with:
+          path: build/cef
+          key: cef-jbr-release-25.0.4b508.27
+      - run: ./gradlew :desktop-core:cefTest

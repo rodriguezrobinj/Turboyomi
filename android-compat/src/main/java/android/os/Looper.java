@@ -400,7 +400,13 @@ public final class Looper {
      * null if the calling thread is not associated with a Looper.
      */
     public static @Nullable Looper myLooper() {
-        return sThreadLocal.get();
+        Looper looper = sThreadLocal.get();
+        // desktop: the app's main thread is Swing's event thread (Dispatchers.Main), not the main Looper's. Code
+        // running there, like an extension creating a WebView in withContext(Dispatchers.Main), sees the main Looper
+        // as on Android; what it posts runs on the main Looper's thread. AWT replaces that thread when it idles, so
+        // it's asked each time rather than bound once
+        if (looper == null && java.awt.EventQueue.isDispatchThread()) return getMainLooper();
+        return looper;
     }
 
     /**

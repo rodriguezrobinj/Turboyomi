@@ -26,10 +26,14 @@ jobs:
           distribution: temurin
           java-version: 21
       - uses: gradle/actions/setup-gradle@v4
+      - uses: actions/cache@v4
+        with:
+          path: build/cef
+          key: cef-jbr-release-25.0.4b508.27
       - name: Run harness
         env:
           COMPAT_REPO_URL: ${{ vars.COMPAT_REPO_URL }}
-        run: ./gradlew :compat-harness:run --args="--repo $COMPAT_REPO_URL --limit 100 --threshold 0.8 --out $GITHUB_WORKSPACE/compat-report.md"
+        run: ./gradlew :compat-harness:run --args="--repo $COMPAT_REPO_URL --limit 100 --threshold 0.8 --out $GITHUB_WORKSPACE/compat-report.md --cef $GITHUB_WORKSPACE/build/cef"
       - name: Publish report
         if: always()
         run: cat compat-report.md >> "$GITHUB_STEP_SUMMARY"

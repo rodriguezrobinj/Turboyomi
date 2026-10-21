@@ -745,7 +745,9 @@ class KcefWebViewProvider(
         script: String,
         resultCallback: ValueCallback<String>?,
     ) {
-        browser!!.evaluateJavaScript(
+        // desktop: on a destroyed WebView (no browser) it does nothing, as on Android
+        val browser = browser ?: return
+        browser.evaluateJavaScript(
             script.removePrefix("javascript:"),
         )
             {
