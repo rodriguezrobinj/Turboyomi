@@ -86,6 +86,16 @@ class ReaderViewModelTest {
     }
 
     @Test
+    fun `a next chapter asked for from a chapter that's no longer shown doesn't skip one`(): Unit = runBlocking {
+        val (viewModel, chapters) = reader()
+        val first = viewModel.state.value.currentChapter.shouldNotBeNull()
+        viewModel.loadNextChapter(from = first)
+        // Late, like a wheel turn at the end of the first chapter before its viewer is replaced
+        viewModel.loadNextChapter(from = first)
+        viewModel.state.value.currentChapter.shouldNotBeNull().chapter.id shouldBe chapters[1].id
+    }
+
+    @Test
     fun `a failed page can be retried`(): Unit = runBlocking {
         val (viewModel, chapters) = reader()
         val page = viewModel.pages[0]

@@ -7,6 +7,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performKeyInput
@@ -40,8 +41,12 @@ class WebtoonAndDualTest {
         }
     }
 
-    /** Opens the first of three chapters; returns them. */
-    private fun ComposeUiTest.open(mode: ReadingMode, dual: ReaderPreferences.DualPageView): List<Chapter> {
+    /** Opens one of three chapters, the first by default; returns them. */
+    private fun ComposeUiTest.open(
+        mode: ReadingMode,
+        dual: ReaderPreferences.DualPageView,
+        chapterIndex: Int = 0,
+    ): List<Chapter> {
         val graph = startTestApp()
         TestSources.http.pageCount = 6
         val (manga, chapters) = runBlocking { TestLibrary.httpManga(graph) }
@@ -51,7 +56,7 @@ class WebtoonAndDualTest {
             AppProviders(graph) {
                 CompositionLocalProvider(LocalWindowControls provides WindowControls(WindowState())) {
                     ConnectWindowBack()
-                    Navigator(listOf(Below, ReaderScreen(manga.id, chapters[0].id))) {
+                    Navigator(listOf(Below, ReaderScreen(manga.id, chapters[chapterIndex].id))) {
                         DefaultNavigatorScreenTransition(it)
                     }
                 }
@@ -116,6 +121,35 @@ class WebtoonAndDualTest {
                     chapters[0].id
             }.read
         }
+    }
+
+    @Test
+    fun `going up past the top of a webtoon chapter opens the previous one`() = runComposeUiTest {
+        val chapters = open(ReadingMode.WEBTOON, ReaderPreferences.DualPageView.NEVER, chapterIndex = 1)
+        waitForTag("page 1 ready")
+        // Moving to another chapter writes this one's history
+        fun leftChapter() = runBlocking { startTestApp().getHistory.await(chapters[1].mangaId) }
+            .any { it.chapterId == chapters[1].id }
+        leftChapter() shouldBe false
+
+        repeat(3) {
+            onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.PageUp) }
+            waitForIdle()
+        }
+        waitUntil(timeoutMillis = 10_000) { leftChapter() }
+    }
+
+    @Test
+    fun `the end key stays on a short last page while the pages above it load`() = runComposeUiTest {
+        val chapters = open(ReadingMode.WEBTOON, ReaderPreferences.DualPageView.NEVER)
+        TestSources.images.short += "${chapters[0].url}/5.png"
+        waitForTag("page 1 ready")
+        onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.MoveEnd) }
+
+        // Page 5 comes into view above the short page 6 and grows as it loads: page 6 stays in view
+        waitForTag("page 5 ready")
+        waitForIdle()
+        onNodeWithTag("page 6 ready").assertIsDisplayed()
     }
 
     @Test

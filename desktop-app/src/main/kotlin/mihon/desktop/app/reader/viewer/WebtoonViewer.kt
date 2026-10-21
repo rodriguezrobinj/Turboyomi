@@ -20,6 +20,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventType
@@ -33,18 +34,22 @@ import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
 import eu.kanade.tachiyomi.ui.reader.model.ViewerChapters
 import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 import mihon.desktop.app.reader.ImageScale
 import mihon.desktop.app.reader.ReaderAction
 import mihon.desktop.app.reader.Spread
 import mihon.desktop.app.reader.image.DecodedPageCache
 import mihon.desktop.app.reader.tapActionFor
+import kotlin.time.Duration.Companion.seconds
 
 const val WEBTOON_TAG = "webtoon"
 
 /**
  * Webtoon (spec 2a §4): pages one under another with no space between them ([gap]: Mihon's continuous vertical, 16
- * dp), [sidePaddingPercent] of the width on each side. Going on past the end (wheel, keys) loads the next chapter:
- * only reaching it would leave the chapter as soon as the way on shows under its last page.
+ * dp), [sidePaddingPercent] of the width on each side. Going on past the end (wheel, keys) loads the next chapter,
+ * and past the top the previous one: only reaching the end would leave the chapter as soon as the way on shows
+ * under its last page.
  */
 @Composable
 fun WebtoonViewer(
@@ -54,6 +59,7 @@ fun WebtoonViewer(
     cache: DecodedPageCache,
     onPageSelected: (ReaderPage) -> Unit,
     onReachedEnd: () -> Unit,
+    onReachedStart: () -> Unit,
     onTap: (ReaderAction) -> Unit,
     onRetry: (ReaderPage) -> Unit,
     onController: (ViewerController) -> Unit,
@@ -88,7 +94,16 @@ fun WebtoonViewer(
         }
     }
     val latestOnReachedEnd by rememberUpdatedState(onReachedEnd)
-    val controller = remember(state) { WebtoonController(state, { latestItems }) { latestOnReachedEnd() } }
+    val latestOnReachedStart by rememberUpdatedState(onReachedStart)
+    val controller = remember(state) {
+        WebtoonController(
+            state = state,
+            items = { latestItems },
+            isSized = { it in sizes },
+            onPastEnd = { latestOnReachedEnd() },
+            onPastStart = { latestOnReachedStart() },
+        )
+    }
     LaunchedEffect(controller) { onController(controller) }
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -99,7 +114,9 @@ fun WebtoonViewer(
                 .fillMaxSize()
                 .testTag(WEBTOON_TAG)
                 .onPointerEvent(PointerEventType.Scroll) { event ->
-                    if (event.changes.first().scrollDelta.y > 0 && !state.canScrollForward) latestOnReachedEnd()
+                    val delta = event.changes.first().scrollDelta.y
+                    if (delta > 0 && !state.canScrollForward) latestOnReachedEnd()
+                    if (delta < 0 && !state.canScrollBackward) latestOnReachedStart()
                 },
             contentPadding = PaddingValues(horizontal = side),
             verticalArrangement = Arrangement.spacedBy(if (gap) 16.dp else 0.dp),
@@ -145,19 +162,23 @@ fun WebtoonViewer(
 private class WebtoonController(
     private val state: LazyListState,
     private val items: () -> List<ViewerItem>,
+    private val isSized: (pageIndex: Int) -> Boolean,
     private val onPastEnd: () -> Unit,
+    private val onPastStart: () -> Unit,
 ) : ViewerController {
     override suspend fun perform(action: ReaderAction) {
         val viewport = state.layoutInfo.viewportSize.height.toFloat()
         val forward = action == ReaderAction.NextPage || action == ReaderAction.ScrollDown
         if (forward && !state.canScrollForward) return onPastEnd()
+        val backward = action == ReaderAction.PreviousPage || action == ReaderAction.ScrollUp
+        if (backward && !state.canScrollBackward) return onPastStart()
         when (action) {
             ReaderAction.NextPage -> state.animateScrollBy(viewport * 0.9f)
             ReaderAction.PreviousPage -> state.animateScrollBy(-viewport * 0.9f)
             ReaderAction.ScrollDown -> state.animateScrollBy(viewport * 0.15f)
             ReaderAction.ScrollUp -> state.animateScrollBy(-viewport * 0.15f)
             ReaderAction.FirstPage -> state.scrollToItem(1)
-            ReaderAction.LastPage -> state.scrollToItem((items().lastIndex - 1).coerceAtLeast(0))
+            ReaderAction.LastPage -> scrollToLastPage()
             else -> Unit
         }
     }
@@ -165,4 +186,26 @@ private class WebtoonController(
     override suspend fun goToPage(index: Int) {
         state.scrollToItem(items().itemOfPage(index))
     }
+
+    /**
+     * Pages that come into view above a short last page grow when they load and push it out (the list keeps its first
+     * visible item in place): once every page in view has its size, the jump is made again.
+     * ponytail: bounded tries and wait; a page that keeps failing leaves the jump where it got.
+     */
+    private suspend fun scrollToLastPage() {
+        repeat(LAST_PAGE_TRIES) {
+            state.scrollToItem((items().lastIndex - 1).coerceAtLeast(0))
+            if (visiblePagesSized()) return
+            withTimeoutOrNull(5.seconds) { snapshotFlow { visiblePagesSized() }.first { it } } ?: return
+            // The size is known a frame before the list lays the page out at it
+            withFrameNanos { }
+        }
+    }
+
+    private fun visiblePagesSized(): Boolean = state.layoutInfo.visibleItemsInfo.all { info ->
+        val item = items().getOrNull(info.index) as? ViewerItem.Pages ?: return@all true
+        isSized(item.pages.single().index)
+    }
 }
+
+private const val LAST_PAGE_TRIES = 5

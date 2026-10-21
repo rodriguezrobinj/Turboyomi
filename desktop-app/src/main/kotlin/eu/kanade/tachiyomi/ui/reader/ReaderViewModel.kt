@@ -258,12 +258,18 @@ class ReaderViewModel(
         }
     }
 
-    suspend fun loadNextChapter() {
+    /**
+     * Moves to the next chapter. A viewer passes the chapter it shows as [from]: a request it makes after that chapter
+     * stopped being the current one (a wheel turn while the next one replaces it) would skip a chapter.
+     */
+    suspend fun loadNextChapter(from: ReaderChapter? = null) {
+        if (from != null && from != state.value.currentChapter) return
         val nextChapter = state.value.viewerChapters?.nextChapter ?: return
         loadAdjacent(nextChapter)
     }
 
-    suspend fun loadPreviousChapter() {
+    suspend fun loadPreviousChapter(from: ReaderChapter? = null) {
+        if (from != null && from != state.value.currentChapter) return
         val prevChapter = state.value.viewerChapters?.prevChapter ?: return
         loadAdjacent(prevChapter)
     }

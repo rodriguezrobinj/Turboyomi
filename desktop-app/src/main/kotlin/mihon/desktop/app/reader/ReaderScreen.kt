@@ -105,6 +105,8 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
     var shifted by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    // Asks the source, so once per chapter rather than on every recomposition
+    val chapterUrl = remember(state.currentChapter, state.source, state.initError) { viewModel.getChapterUrl() }
 
     // The controls hide after 3 s without moving the mouse (spec 2a §4)
     var lastMouseMove by remember { mutableLongStateOf(0L) }
@@ -146,7 +148,7 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
         when {
             state.initError != null -> {
                 val error = state.initError!!
-                val url = viewModel.getChapterUrl()
+                val url = chapterUrl
                 EmptyScreen(
                     message = with(context) { error.formattedMessage },
                     actions = listOfNotNull(
@@ -171,7 +173,10 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
                         sidePaddingPercent = sidePadding,
                         cache = cache,
                         onPageSelected = viewModel::onPageSelected,
-                        onReachedEnd = { scope.launch { viewModel.loadNextChapter() } },
+                        onReachedEnd = { scope.launch { viewModel.loadNextChapter(from = chapters.currChapter) } },
+                        onReachedStart = {
+                            scope.launch { viewModel.loadPreviousChapter(from = chapters.currChapter) }
+                        },
                         onTap = ::perform,
                         onRetry = viewModel::retryPage,
                         onController = { controller = it },
@@ -194,7 +199,8 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
                         onPageSelected = viewModel::onPageSelected,
                         onPastEnd = { forward ->
                             scope.launch {
-                                if (forward) viewModel.loadNextChapter() else viewModel.loadPreviousChapter()
+                                val from = chapters.currChapter
+                                if (forward) viewModel.loadNextChapter(from) else viewModel.loadPreviousChapter(from)
                             }
                         },
                         onTap = ::perform,
@@ -216,7 +222,7 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
             mode = mode,
             onBack = onClose,
             onToggleBookmark = viewModel::toggleChapterBookmark,
-            onOpenInBrowser = viewModel.getChapterUrl()?.let { url -> { context.openInBrowser(url) } },
+            onOpenInBrowser = chapterUrl?.let { url -> { context.openInBrowser(url) } },
             onPreviousChapter = { scope.launch { viewModel.loadPreviousChapter() } },
             onNextChapter = { scope.launch { viewModel.loadNextChapter() } },
             onPageIndexChange = { index -> scope.launch { controller?.goToPage(index) } },

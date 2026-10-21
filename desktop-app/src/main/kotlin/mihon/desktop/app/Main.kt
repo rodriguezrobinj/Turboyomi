@@ -114,6 +114,7 @@ fun main(args: Array<String>) {
         )
         val windowControls = remember { WindowControls(windowState) }
         val exitScope = rememberCoroutineScope()
+        var closing by remember { mutableStateOf(false) }
         var crash by remember { mutableStateOf<Throwable?>(null) }
         var restarts by remember { mutableIntStateOf(0) }
         CompositionLocalProvider(
@@ -127,12 +128,16 @@ fun main(args: Array<String>) {
             Window(
                 state = windowState,
                 onCloseRequest = {
-                    // The reader's last progress write and history finish first (at most 2 s)
-                    exitScope.launch {
-                        ExitHooks.runAll()
-                        windowStore.save(windowControls.toSaved())
-                        instance.close()
-                        exitApplication()
+                    // Once, even if the close button is clicked again while the exit work runs
+                    if (!closing) {
+                        closing = true
+                        // The reader's last progress write and history finish first (at most 2 s)
+                        exitScope.launch {
+                            ExitHooks.runAll()
+                            windowStore.save(windowControls.toSaved())
+                            instance.close()
+                            exitApplication()
+                        }
                     }
                 },
                 title = AppDirs.APP_NAME,
