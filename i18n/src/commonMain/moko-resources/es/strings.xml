@@ -901,4 +901,35 @@
     <string name="desktop_clear_image_cache">Borrar caché de imágenes</string>
     <string name="desktop_image_cache_cleared">Caché de imágenes borrada</string>
     <string name="desktop_open_logs_folder">Abrir carpeta de logs</string>
+
+    <!-- Desktop: Mihon strings with no Spanish translation upstream yet; drop each one when Weblate adds it -->
+    <string name="action_web_view">WebView</string>
+    <string name="content_warnings_info">Las extensiones instaladas que no se cargan siguen en la lista, sin sus fuentes; las que no has instalado se ocultan. Esto no impide que extensiones no oficiales o mal etiquetadas muestren contenido para adultos dentro de la app.</string>
+    <string name="ext_content_warning_mixed">Mixto</string>
+    <string name="ext_content_warning_mixed_description">Las fuentes de esta extensión pueden tener contenido apto para todos y contenido para adultos.</string>
+    <string name="ext_content_warning_nsfw">18+</string>
+    <string name="ext_content_warning_nsfw_description">Las fuentes de esta extensión se centran sobre todo en contenido para adultos.</string>
+    <string name="ext_content_warning_safe">Apto</string>
+    <string name="ext_copy_stacktrace">Copiar el registro del error</string>
+    <string name="ext_filtered">Filtrada</string>
+    <string name="ext_filtered_message">El aviso de contenido de esta extensión no está entre los que elegiste cargar, así que sus fuentes no están disponibles.</string>
+    <string name="ext_info_warning">Aviso</string>
+    <string name="ext_installer_private">Privada</string>
+    <string name="ext_load_failed_message">Esta extensión dio un error al cargarse, así que ninguna de sus fuentes está disponible.</string>
+    <string name="ext_malformed_message">A esta extensión le falta información que la app necesita para cargarla.</string>
+    <string name="ext_not_loaded">No cargada</string>
+    <string name="ext_not_loaded_details">Por qué no se carga</string>
+    <string name="ext_not_loaded_dialog">No se pudo cargar</string>
+    <string name="ext_unsigned_message">Esta extensión no está firmada, así que no hay firma con la que comprobarla.</string>
+    <string name="ext_unsupported_message">Esta extensión se hizo para una versión de la librería de extensiones que esta versión de la app no puede cargar. Actualizar la app o la extensión puede ayudar.</string>
+    <string name="follow_language">Según el idioma</string>
+    <string name="follow_system">Según el sistema</string>
+    <string name="pref_allowed_content_warnings">Avisos de contenido permitidos</string>
+    <string name="pref_apply_content_warnings_to_installed">Aplicar también a las extensiones instaladas</string>
+    <string name="pref_apply_content_warnings_to_installed_summary">Si está desactivado, las extensiones que ya instalaste se siguen cargando y actualizando sea cual sea su aviso</string>
+    <string name="pref_category_extensions">Extensiones</string>
+    <string name="pref_time_format">Formato de hora</string>
+    <string name="theme_tokyonight">Tokyo Night</string>
+    <string name="time_12_hours">12 horas</string>
+    <string name="time_24_hours">24 horas</string>
 </resources>

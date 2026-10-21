@@ -267,12 +267,7 @@ private fun DetailsHeader(
                 )
             }
 
-            if ((extension as? Extension.Loaded)?.isShared == false) {
-                ExtensionPill(
-                    text = stringResource(MR.strings.ext_installer_private),
-                    modifier = Modifier.padding(top = MaterialTheme.padding.small),
-                )
-            }
+            // desktop: no "Private" pill, every desktop install is private (there are no shared, system-wide ones)
         }
 
         Row(

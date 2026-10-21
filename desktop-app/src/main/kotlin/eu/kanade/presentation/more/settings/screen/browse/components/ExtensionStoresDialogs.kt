@@ -18,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import tachiyomi.i18n.MR
@@ -40,6 +41,8 @@ fun ExtensionStoreCreateDialog(
     }
 
     val focusRequester = remember { FocusRequester() }
+    val canCreate = !processing && state.text.isNotEmpty() && !storeAlreadyExists
+    val create = { if (canCreate) onCreate(state.text.toString()) }
 
     AlertDialog(
         onDismissRequest = onDismissRequest,
@@ -64,14 +67,16 @@ fun ExtensionStoreCreateDialog(
                     Text(text = errorMessage ?: stringResource(msgRes))
                 },
                 isError = errorMessage != null || storeAlreadyExists,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Done),
+                // desktop: Enter adds the store, like the dialog's button
+                onKeyboardAction = { create() },
                 lineLimits = TextFieldLineLimits.SingleLine,
             )
         },
         confirmButton = {
             TextButton(
-                onClick = { onCreate(state.text.toString()) },
-                enabled = !processing && state.text.isNotEmpty() && !storeAlreadyExists,
+                onClick = create,
+                enabled = canCreate,
             ) {
                 Text(
                     text = stringResource(

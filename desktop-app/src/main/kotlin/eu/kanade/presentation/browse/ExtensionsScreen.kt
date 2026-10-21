@@ -429,9 +429,7 @@ private fun ExtensionItemMetadata(
                 else -> null
             },
             extension.contentWarning.label?.let { it.title to it.color },
-            (extension as? Extension.Loaded)
-                ?.takeIf { !it.isShared }
-                ?.let { MR.strings.ext_installer_private to MaterialTheme.colorScheme.onSurfaceVariant },
+            // desktop: no "Private" pill, every desktop install is private (there are no shared, system-wide ones)
         )
         notable.forEach { (label, color) ->
             ExtensionPill(text = stringResource(label), color = color)

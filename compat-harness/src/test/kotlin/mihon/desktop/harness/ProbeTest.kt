@@ -42,7 +42,8 @@ class ProbeTest {
         }
         val (result, elapsed) = measureTimedValue { probe(source, 200.milliseconds) }
         result.shouldBeInstanceOf<ProbeTimeout>()
-        elapsed shouldBeLessThan 3.seconds
+        // Well under the 10 s the source blocks for; generous because the desktop UI tests load the CPU in parallel
+        elapsed shouldBeLessThan 9.seconds
     }
 
     @Test

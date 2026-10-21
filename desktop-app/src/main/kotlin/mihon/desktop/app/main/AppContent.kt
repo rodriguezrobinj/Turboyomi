@@ -1,7 +1,10 @@
 package mihon.desktop.app.main
 
+import androidx.compose.foundation.DefaultContextMenuRepresentation
+import androidx.compose.foundation.LocalContextMenuRepresentation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -39,7 +42,18 @@ fun AppProviders(graph: AppGraph, content: @Composable () -> Unit) {
         LocalMetroViewModelFactory provides graph.metroViewModelFactory,
         LocalViewModelStoreOwner provides rootViewModels,
     ) {
-        TachiyomiTheme(content = content)
+        TachiyomiTheme {
+            // CMP's right-click menu has its own light style; draw it with the theme's colors
+            val colors = MaterialTheme.colorScheme
+            val contextMenu = remember(colors) {
+                DefaultContextMenuRepresentation(
+                    backgroundColor = colors.surfaceContainer,
+                    textColor = colors.onSurface,
+                    itemHoverColor = colors.onSurface.copy(alpha = 0.08f),
+                )
+            }
+            CompositionLocalProvider(LocalContextMenuRepresentation provides contextMenu, content = content)
+        }
     }
 }
 
