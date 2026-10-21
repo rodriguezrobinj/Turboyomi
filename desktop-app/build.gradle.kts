@@ -71,6 +71,7 @@ dependencies {
     implementation(libs.composeGrid)
     implementation(libs.composeRichEditor)
     implementation(libs.diskLruCache)
+    implementation(libs.zoomable)
 
     testImplementation(libs.bundles.test)
     testImplementation(libs.compose.ui.test)

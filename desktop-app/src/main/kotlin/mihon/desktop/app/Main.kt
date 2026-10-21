@@ -7,6 +7,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
@@ -33,12 +34,16 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.launch
 import logcat.LogPriority
 import mihon.desktop.app.image.DesktopImageLoader
 import mihon.desktop.app.main.AppContent
 import mihon.desktop.app.main.AppEvents
 import mihon.desktop.app.main.shortcutFor
 import mihon.desktop.app.platform.AppMessages
+import mihon.desktop.app.platform.ExitHooks
+import mihon.desktop.app.platform.LocalWindowControls
+import mihon.desktop.app.platform.WindowControls
 import mihon.desktop.app.startup.MIN_HEIGHT
 import mihon.desktop.app.startup.MIN_WIDTH
 import mihon.desktop.app.startup.SavedWindow
@@ -108,6 +113,8 @@ fun main(args: Array<String>) {
             position = WindowPosition(initial.x.dp, initial.y.dp),
             size = DpSize(initial.width.dp, initial.height.dp),
         )
+        val windowControls = remember { WindowControls(windowState) }
+        val exitScope = rememberCoroutineScope()
         var crash by remember { mutableStateOf<Throwable?>(null) }
         var restarts by remember { mutableIntStateOf(0) }
         CompositionLocalProvider(
@@ -121,9 +128,13 @@ fun main(args: Array<String>) {
             Window(
                 state = windowState,
                 onCloseRequest = {
-                    windowStore.save(windowState.toSaved())
-                    instance.close()
-                    exitApplication()
+                    // The reader's last progress write and history finish first (at most 2 s)
+                    exitScope.launch {
+                        ExitHooks.runAll()
+                        windowStore.save(windowState.toSaved(windowControls.placementToSave))
+                        instance.close()
+                        exitApplication()
+                    }
                 },
                 title = AppDirs.APP_NAME,
                 onPreviewKeyEvent = { event -> handleShortcut(event, beforeFocusedComponent = true) },
@@ -139,10 +150,12 @@ fun main(args: Array<String>) {
                         window.isAlwaysOnTop = false
                     }
                 }
-                key(restarts) {
-                    AppContent(graph, crash) {
-                        crash = null
-                        restarts++
+                CompositionLocalProvider(LocalWindowControls provides windowControls) {
+                    key(restarts) {
+                        AppContent(graph, crash) {
+                            crash = null
+                            restarts++
+                        }
                     }
                 }
             }
@@ -156,7 +169,7 @@ private fun handleShortcut(event: KeyEvent, beforeFocusedComponent: Boolean): Bo
             ?.takeIf { it.beforeFocusedComponent == beforeFocusedComponent }
             ?.let(AppEvents::send) == true
 
-private fun WindowState.toSaved() = SavedWindow(
+private fun WindowState.toSaved(placement: WindowPlacement) = SavedWindow(
     x = position.x.value.toInt(),
     y = position.y.value.toInt(),
     width = size.width.value.toInt(),

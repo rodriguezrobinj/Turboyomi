@@ -47,7 +47,7 @@ import kotlinx.coroutines.withContext
 import logcat.LogPriority
 import mihon.desktop.app.main.AppEvents
 import mihon.desktop.app.platform.FileDialogs
-import mihon.desktop.app.reader.ReaderLauncher
+import mihon.desktop.app.reader.ReaderScreen
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.chapter.model.Chapter
 import tachiyomi.domain.manga.model.Manga
@@ -107,7 +107,7 @@ class MangaScreen(
             chapterSwipeStartAction = viewModel.chapterSwipeStartAction,
             chapterSwipeEndAction = viewModel.chapterSwipeEndAction,
             navigateUp = navigator::pop,
-            onChapterClicked = { ReaderLauncher.open(context, it.mangaId, it.id) }, // desktop: reader in plan 2
+            onChapterClicked = { navigator.push(ReaderScreen(it.mangaId, it.id)) },
             onDownloadChapter = null, // desktop: downloads arrive in subproject 4
             downloadProgressProvider = { 0 },
             onAddToLibraryClicked = {
@@ -134,7 +134,7 @@ class MangaScreen(
             onTagSearch = { scope.launch { performGenreSearch(navigator, it, viewModel.source!!) } },
             onFilterButtonClicked = viewModel::showSettingsDialog,
             onRefresh = viewModel::fetchAllFromSource,
-            onContinueReading = { continueReading(context, viewModel.getNextUnreadChapter()) },
+            onContinueReading = { continueReading(navigator, viewModel.getNextUnreadChapter()) },
             onSearch = { query, global -> scope.launch { performSearch(navigator, query, global) } },
             onCoverClicked = viewModel::showCoverDialog,
             onShareClicked = null, // desktop: no Android share sheet
@@ -242,9 +242,9 @@ class MangaScreen(
         }
     }
 
-    private fun continueReading(context: Context, unreadChapter: Chapter?) {
-        // desktop: the reader arrives in plan 2
-        if (unreadChapter != null) ReaderLauncher.open(context, unreadChapter.mangaId, unreadChapter.id)
+    private fun continueReading(navigator: Navigator, unreadChapter: Chapter?) {
+        // desktop: the reader is a screen, not an Activity
+        if (unreadChapter != null) navigator.push(ReaderScreen(unreadChapter.mangaId, unreadChapter.id))
     }
 
     private fun getMangaUrl(manga_: Manga?, source_: Source?): String? {

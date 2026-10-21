@@ -7,6 +7,7 @@ import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.tachiyomi.data.cache.ChapterCache
 import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.extension.ExtensionManager
+import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
 import mihon.desktop.core.DesktopGraph
 import mihon.domain.extension.interactor.GetExtensionStoreCountAsFlow
 
@@ -21,5 +22,6 @@ interface AppGraph : DesktopGraph, ViewModelGraph {
     val chapterCache: ChapterCache
     val mihonExtensionManager: ExtensionManager
     val sourcePreferences: SourcePreferences
+    val readerPreferences: ReaderPreferences
     val getExtensionStoreCountAsFlow: GetExtensionStoreCountAsFlow
 }
