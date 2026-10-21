@@ -9,8 +9,10 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runComposeUiTest
 import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
+import mihon.desktop.app.browser.EmbeddedBrowser
 import mihon.desktop.app.main.AppContent
 import mihon.desktop.app.testing.startTestApp
 import mihon.desktop.app.testing.str
@@ -18,6 +20,9 @@ import mihon.desktop.core.ContentWarningPrefs
 import mihon.domain.extension.model.ContentWarning
 import org.junit.jupiter.api.Test
 import tachiyomi.i18n.MR
+import java.net.CookieHandler
+import java.net.HttpCookie
+import java.net.URI
 
 @OptIn(ExperimentalTestApi::class)
 class SettingsTest {
@@ -72,5 +77,38 @@ class SettingsTest {
         waitForIdle()
 
         graph.readerPreferences.defaultReadingMode.get() shouldBe ReadingMode.WEBTOON.flagValue
+    }
+
+    @Test
+    fun `the advanced settings offer to install the embedded browser`() = runComposeUiTest {
+        val graph = startTestApp()
+        setContent { AppContent(graph, crash = null, onRestart = {}) }
+
+        onNodeWithText(str(MR.strings.label_settings)).performClick()
+        waitForText(str(MR.strings.pref_category_advanced))
+        onNodeWithText(str(MR.strings.pref_category_advanced)).performClick()
+        waitForText(str(MR.strings.desktop_cef_status_not_installed))
+        onNodeWithText(str(MR.strings.desktop_cef_install)).performClick()
+
+        // The same download dialog as WebView's
+        waitForText(str(MR.strings.desktop_cef_download))
+        runOnIdle { EmbeddedBrowser.dismissConsent() }
+    }
+
+    @Test
+    fun `clearing cookies empties the app's cookie store`() = runComposeUiTest {
+        val graph = startTestApp()
+        val store = (CookieHandler.getDefault() as java.net.CookieManager).cookieStore
+        store.add(URI("https://example.com/"), HttpCookie("sesion", "José").apply { path = "/" })
+        setContent { AppContent(graph, crash = null, onRestart = {}) }
+
+        onNodeWithText(str(MR.strings.label_settings)).performClick()
+        waitForText(str(MR.strings.pref_category_advanced))
+        onNodeWithText(str(MR.strings.pref_category_advanced)).performClick()
+        waitForText(str(MR.strings.pref_clear_cookies))
+        onNodeWithText(str(MR.strings.pref_clear_cookies)).performClick()
+        waitForIdle()
+
+        store.cookies.shouldBeEmpty()
     }
 }
