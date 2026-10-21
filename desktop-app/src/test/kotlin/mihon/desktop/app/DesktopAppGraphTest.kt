@@ -27,7 +27,7 @@ class DesktopAppGraphTest {
 
     @Test
     fun `the leaf graph replaces the source manager and keeps the platform bindings`(): Unit = runBlocking {
-        graph.sourceManager.getAll() shouldBe listOf(TestSources.fake)
+        graph.sourceManager.getAll() shouldBe listOf(TestSources.fake, TestSources.http)
         graph.extensionStoreRepository.getAll() shouldBe emptyList()
     }
 

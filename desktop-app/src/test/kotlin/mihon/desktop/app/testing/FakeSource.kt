@@ -9,6 +9,7 @@ import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.model.SMangaUpdate
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.flow.MutableStateFlow
+import okhttp3.mockwebserver.MockWebServer
 import tachiyomi.domain.source.model.StubSource
 import tachiyomi.domain.source.service.SourceManager
 
@@ -101,4 +102,13 @@ class FakeSourceManager(vararg initial: Source) : SourceManager {
 
 object TestSources {
     val fake = FakeSource()
+
+    val images = FakeImages()
+    private val server = MockWebServer().apply {
+        dispatcher = images
+        start()
+    }
+
+    /** One per test JVM (the test task forks per class), like [fake]. */
+    val http = FakeHttpSource(server, images)
 }

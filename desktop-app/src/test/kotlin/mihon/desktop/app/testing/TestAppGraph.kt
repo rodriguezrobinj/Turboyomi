@@ -43,7 +43,7 @@ interface TestAppGraph : AppGraph {
 object TestBindings {
     @Provides
     @SingleIn(AppScope::class)
-    fun sourceManager(): SourceManager = FakeSourceManager(TestSources.fake)
+    fun sourceManager(): SourceManager = FakeSourceManager(TestSources.fake, TestSources.http)
 }
 
 private var started: TestAppGraph? = null

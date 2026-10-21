@@ -70,6 +70,7 @@ dependencies {
     implementation(libs.swipe)
     implementation(libs.composeGrid)
     implementation(libs.composeRichEditor)
+    implementation(libs.diskLruCache)
 
     testImplementation(libs.bundles.test)
     testImplementation(libs.compose.ui.test)
