@@ -30,6 +30,8 @@ dependencies {
     testImplementation(libs.bundles.test)
     testImplementation(libs.okhttp.mockwebserver)
     testImplementation(libs.jcef)
+    // Mihon's messages, which the Cloudflare test compares
+    testImplementation(projects.i18n)
     testFixturesImplementation(libs.okhttp.mockwebserver)
     testRuntimeOnly(libs.junit.platform.launcher)
 }

@@ -21,12 +21,11 @@ import java.net.CookieManager as JavaCookieManager
 
 /**
  * Desktop copy of Mihon's NetworkHelper. Same public API, which extensions link against.
- * ponytail: its CloudflareInterceptor passes through until the desktop WebView exists (subproject 2).
  */
 @Inject
 @SingleIn(AppScope::class)
 class NetworkHelper(
-    @Suppress("UNUSED_PARAMETER") @AppCoroutineScope scope: CoroutineScope,
+    @AppCoroutineScope private val scope: CoroutineScope,
     private val context: Context,
     private val preferences: NetworkPreferences,
 ) {
@@ -78,7 +77,7 @@ class NetworkHelper(
             else -> builder
         }
             // Same position as Mihon: after the default interceptors, applied to the regular client
-            .addInterceptor(CloudflareInterceptor())
+            .addInterceptor(CloudflareInterceptor(context, cookieJar, scope, ::defaultUserAgentProvider))
             .build()
     }
 

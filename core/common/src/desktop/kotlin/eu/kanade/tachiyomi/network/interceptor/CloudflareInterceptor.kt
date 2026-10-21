@@ -1,13 +1,196 @@
 package eu.kanade.tachiyomi.network.interceptor
 
+import android.content.Context
+import android.os.Handler
+import android.os.Looper
+import android.webkit.JavascriptInterface
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import eu.kanade.tachiyomi.network.AndroidCookieJar
+import eu.kanade.tachiyomi.util.system.toWebViewHeaders
+import kotlinx.coroutines.CoroutineScope
+import okhttp3.HttpUrl
 import okhttp3.Interceptor
+import okhttp3.Request
 import okhttp3.Response
+import tachiyomi.core.common.i18n.stringResource
+import tachiyomi.i18n.MR
+import java.io.IOException
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executor
+import java.util.concurrent.locks.ReentrantReadWriteLock
+import kotlin.concurrent.read
+import kotlin.concurrent.write
 
 /**
- * Desktop stand-in for Mihon's CloudflareInterceptor. Extensions find interceptors in NetworkHelper.client by
- * class simple name and refuse to build their client without this one, so it must exist under this exact name.
- * ponytail: passes requests through; solving challenges needs the desktop WebView (KCEF, subproject 2)
+ * Desktop copy of Mihon's CloudflareInterceptor (spec 2b §3 A): it solves the challenge in AndroidCompat's WebView over
+ * the embedded browser. Extensions find it in NetworkHelper.client by class simple name, so the name stays.
+ *
+ * desktop: there's no androidx.webkit, so the bridge is the WebView's JavaScript interface (Mihon's fallback).
+ * AndroidCompat doesn't report onReceivedHttpError, so the challenge counts as found: OkHttp already got it. There
+ * are no WebView updates to suggest.
  */
-class CloudflareInterceptor : Interceptor {
-    override fun intercept(chain: Interceptor.Chain): Response = chain.proceed(chain.request())
+class CloudflareInterceptor(
+    private val context: Context,
+    private val cookieManager: AndroidCookieJar,
+    scope: CoroutineScope,
+    defaultUserAgentProvider: () -> String,
+) : WebViewInterceptor(context, scope, defaultUserAgentProvider) {
+
+    // desktop: AndroidCompat's main looper, where its WebViews live (Mihon: ContextCompat.getMainExecutor)
+    private val executor = Executor { Handler(Looper.getMainLooper()).post(it) }
+
+    // Requests to a host share its lock while a challenge is solved under it alone, so concurrent requests wait for
+    // one WebView instead of each opening their own
+    private val hostLocks = ConcurrentHashMap<String, ReentrantReadWriteLock>()
+
+    private val listenerScript = """
+        addEventListener("message", ({data}) => {
+            if (data?.source === "cloudflare-challenge") {
+                mihon?.postMessage(data.event);
+            }
+        })
+    """.trimIndent()
+
+    override fun shouldIntercept(response: Response): Boolean {
+        // Checking the cf-mitigated header is the official way to detect a Cloudflare challenge:
+        // https://developers.cloudflare.com/cloudflare-challenges/challenge-types/challenge-pages/detect-response/
+        return response.header("cf-mitigated") == "challenge" && response.header("Server") in SERVER_CHECK
+    }
+
+    override fun intercept(chain: Interceptor.Chain): Response {
+        val request = chain.request()
+        val lock = hostLocks.computeIfAbsent(request.url.host) { ReentrantReadWriteLock() }
+
+        val (response, clearance) = lock.read {
+            val response = chain.proceed(request)
+            if (!shouldIntercept(response)) return response
+            response to clearance(request.url)
+        }
+
+        // write releases the read hold of a request made from within another to the same host, like an extension
+        // refreshing a token, which would otherwise wait on itself
+        lock.write {
+            // Another request may have solved the challenge while this one waited
+            if (isCleared(request.url, clearance)) {
+                response.close()
+            } else {
+                if (!prepareWebView()) return response
+                solve(request, response, clearance)
+            }
+        }
+
+        return chain.proceed(request)
+    }
+
+    override fun intercept(chain: Interceptor.Chain, request: Request, response: Response): Response {
+        solve(request, response, clearance(request.url))
+        return chain.proceed(request)
+    }
+
+    private fun clearance(url: HttpUrl): String? {
+        return cookieManager.get(url).firstOrNull { it.name == "cf_clearance" }?.value
+    }
+
+    private fun isCleared(url: HttpUrl, previousClearance: String?): Boolean {
+        val clearance = clearance(url)
+        return !clearance.isNullOrBlank() && clearance != previousClearance
+    }
+
+    private fun solve(request: Request, response: Response, clearance: String?) {
+        try {
+            response.close()
+            cookieManager.remove(request.url, COOKIE_NAMES, 0)
+            resolveWithWebView(request, clearance)
+        }
+        // Because OkHttp's enqueue only handles IOExceptions, wrap the exception so that
+        // we don't crash the entire app
+        catch (e: CloudflareBypassException) {
+            throw IOException(context.stringResource(MR.strings.information_cloudflare_bypass_failure), e)
+        } catch (e: IOException) {
+            throw e
+        } catch (e: Exception) {
+            throw IOException(e)
+        }
+    }
+
+    private fun resolveWithWebView(originalRequest: Request, originalClearance: String?) {
+        // We need to lock this thread until the WebView finds the challenge solution url, because
+        // OkHttp doesn't support asynchronous interceptors.
+        val latch = CountDownLatch(1)
+
+        var webview: WebView? = null
+        var cloudflareBypassed = false
+        var challengeFailed = false
+
+        val origRequestUrl = originalRequest.url.toString()
+        // A WebView can only load a page with GET, and loading the url of another method usually reaches an
+        // endpoint that answers GET without a challenge to solve. The clearance covers the whole site, so it's
+        // earned on the site's root page instead.
+        val challengeUrl = if (originalRequest.method == "GET") {
+            origRequestUrl
+        } else {
+            originalRequest.url.newBuilder().encodedPath("/").query(null).fragment(null).build().toString()
+        }
+        val headers = originalRequest.headers.toWebViewHeaders()
+
+        executor.execute {
+            val view = createWebView(originalRequest)
+            webview = view
+
+            view.addJavascriptInterface(
+                object {
+                    @Suppress("unused")
+                    @JavascriptInterface
+                    fun postMessage(event: String) {
+                        when (event) {
+                            // The challenge cannot be solved non-interactively, abort.
+                            "interactiveBegin" -> latch.countDown()
+                            "fail" -> {
+                                challengeFailed = true
+                                latch.countDown()
+                            }
+                        }
+                    }
+                },
+                "mihon",
+            )
+
+            view.webViewClient = object : WebViewClient() {
+                override fun onPageFinished(view: WebView, url: String) {
+                    if (!challengeFailed && isCleared(originalRequest.url, originalClearance)) {
+                        cloudflareBypassed = true
+                        latch.countDown()
+                    }
+
+                    if (url == challengeUrl) view.evaluateJavascript(listenerScript, null)
+                }
+            }
+
+            view.loadUrl(challengeUrl, headers)
+        }
+
+        latch.awaitFor30Seconds()
+
+        executor.execute {
+            webview?.run {
+                removeJavascriptInterface("mihon")
+                stopLoading()
+                destroy()
+            }
+        }
+
+        // Throw exception if we failed to bypass Cloudflare
+        if (!cloudflareBypassed) {
+            // A clearance from a failed challenge would only be rejected again
+            cookieManager.remove(originalRequest.url, COOKIE_NAMES, 0)
+            throw CloudflareBypassException()
+        }
+    }
 }
+
+private val SERVER_CHECK = arrayOf("cloudflare-nginx", "cloudflare")
+private val COOKIE_NAMES = listOf("cf_clearance")
+
+private class CloudflareBypassException : Exception()

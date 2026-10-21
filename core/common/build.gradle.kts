@@ -18,8 +18,8 @@ sourceSets {
     main {
         kotlin {
             srcDir("src/desktop/kotlin")
-            // Android-only until the desktop WebView (subproject 2) and image pipeline (subproject 2/4) exist.
-            // Files with a desktop copy in src/desktop share their relative path, so only src/main is filtered.
+            // Android-only, or with a desktop copy of the same relative path in src/desktop (NetworkHelper, the
+            // WebView interceptors and WebViewUtil), so only src/main is filtered.
             // Local val: a script-level one would drag the script object into the configuration cache.
             val androidOnly = setOf(
                 "eu/kanade/tachiyomi/network/NetworkHelper.kt",
@@ -39,6 +39,8 @@ dependencies {
     implementation(projects.i18n)
     api(projects.androidCompat)
     api(projects.compatShims)
+    // Types of CefHelper.cefApp, which the interceptors read; the jar comes at runtime with android-compat
+    compileOnly(libs.jcef)
 
     api(libs.rxJava)
     api(libs.okhttp.core)
