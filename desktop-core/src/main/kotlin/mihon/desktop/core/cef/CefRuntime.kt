@@ -36,6 +36,9 @@ object CefRuntime {
 
     /** At app launch and after the download: on its own thread, it loads big DLLs. */
     fun startAsync(installDir: Path, cacheDir: Path) {
+        // Starting from now, not from when the thread gets going: a WebView window opened right after the download
+        // must wait for the browser, not read "not installed"
+        if (!isRunning) CefHelper.cefApp.value = Result.success(null)
         thread(name = "cef-start", isDaemon = true) { start(installDir, cacheDir) }
     }
 
