@@ -24,7 +24,10 @@ import cafe.adriel.voyager.navigator.Navigator
 import eu.kanade.presentation.util.DefaultNavigatorScreenTransition
 import eu.kanade.presentation.util.Screen
 import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.string.shouldContain
 import kotlinx.coroutines.runBlocking
+import mihon.desktop.app.browser.EmbeddedBrowser
 import mihon.desktop.app.main.AppProviders
 import mihon.desktop.app.main.ConnectWindowBack
 import mihon.desktop.app.platform.LocalWindowControls
@@ -105,10 +108,15 @@ class ReaderControlsTest {
     }
 
     @Test
-    fun `a chapter whose page list fails offers retry and opening it in the browser`() = runComposeUiTest {
+    fun `a chapter whose page list fails offers retry and opening it in WebView`() = runComposeUiTest {
         open(failPageList = true)
         waitFor("José")
-        onNodeWithText(str(MR.strings.action_open_in_browser)).assertExists()
+
+        // Without the embedded browser, WebView asks to download it first and then opens the chapter
+        onNodeWithText(str(MR.strings.action_open_in_web_view)).performClick()
+        EmbeddedBrowser.consent?.then?.url.shouldNotBeNull() shouldContain "/c1"
+        runOnIdle { EmbeddedBrowser.dismissConsent() }
+
         onNodeWithText(str(MR.strings.action_retry)).performClick()
         waitForTag("page 1 ready")
     }

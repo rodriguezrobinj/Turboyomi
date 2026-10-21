@@ -21,6 +21,7 @@ import eu.kanade.tachiyomi.extension.model.Extension
 import eu.kanade.tachiyomi.ui.browse.extension.details.ExtensionDetailsScreen
 import eu.kanade.tachiyomi.util.system.isPackageInstalled
 import eu.kanade.tachiyomi.util.system.openInBrowser
+import mihon.desktop.app.browser.EmbeddedBrowser
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
 
@@ -74,8 +75,7 @@ fun extensionsTab(
                 onClickItemCancel = extensionsViewModel::cancelInstallUpdateExtension,
                 onClickUpdateAll = extensionsViewModel::updateAllExtensions,
                 onOpenWebView = { extension ->
-                    // desktop: the system browser until the embedded WebView (subproject 2b)
-                    extension.sources.getOrNull(0)?.let { context.openInBrowser(it.baseUrl) }
+                    extension.sources.getOrNull(0)?.let { EmbeddedBrowser.open(context, it.baseUrl) }
                 },
                 onInstallExtension = extensionsViewModel::installExtension,
                 onOpenExtension = { navigator.push(ExtensionDetailsScreen(it.pkgName)) },

@@ -1,6 +1,7 @@
 package eu.kanade.presentation.util
 
 import android.content.Context
+import eu.kanade.tachiyomi.network.EmbeddedBrowserUnavailableException
 import eu.kanade.tachiyomi.network.HttpException
 import eu.kanade.tachiyomi.util.system.isOnline
 import tachiyomi.core.common.i18n.stringResource
@@ -12,6 +13,15 @@ import java.net.UnknownHostException
 context(context: Context)
 val Throwable.formattedMessage: String
     get() {
+        // desktop: the embedded browser missing or not started (spec 2b §3 A), however deep an extension wrapped it
+        generateSequence(this) { it.cause }.filterIsInstance<EmbeddedBrowserUnavailableException>().firstOrNull()?.let {
+            return when (it.reason) {
+                EmbeddedBrowserUnavailableException.Reason.NOT_INSTALLED ->
+                    context.stringResource(MR.strings.desktop_cef_not_installed)
+                EmbeddedBrowserUnavailableException.Reason.NOT_STARTED ->
+                    context.stringResource(MR.strings.desktop_cef_not_started, it.cause?.message ?: it.cause.toString())
+            }
+        }
         when (this) {
             is HttpException -> return context.stringResource(MR.strings.exception_http, code)
             is UnknownHostException -> {

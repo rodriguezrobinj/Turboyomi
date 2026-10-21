@@ -37,6 +37,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.zacsweers.metrox.viewmodel.assistedMetroViewModel
 import eu.kanade.presentation.util.Screen
 import eu.kanade.presentation.util.formattedMessage
+import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.ui.reader.ReaderViewModel
 import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
@@ -46,6 +47,7 @@ import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import mihon.desktop.app.browser.EmbeddedBrowser
 import mihon.desktop.app.platform.ExitHooks
 import mihon.desktop.app.platform.FileDialogs
 import mihon.desktop.app.platform.LocalWindowControls
@@ -156,8 +158,8 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
                             viewModel.retryInit()
                         },
                         url?.let {
-                            EmptyScreenAction(MR.strings.action_open_in_browser, MaterialSymbols.Rounded.Public) {
-                                context.openInBrowser(it)
+                            EmptyScreenAction(MR.strings.action_open_in_web_view, MaterialSymbols.Rounded.Public) {
+                                EmbeddedBrowser.open(context, it, (state.source as? HttpSource)?.headers)
                             }
                         },
                     ),
@@ -222,6 +224,9 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
             mode = mode,
             onBack = onClose,
             onToggleBookmark = viewModel::toggleChapterBookmark,
+            onOpenInWebView = chapterUrl?.let { url ->
+                { EmbeddedBrowser.open(context, url, (state.source as? HttpSource)?.headers) }
+            },
             onOpenInBrowser = chapterUrl?.let { url -> { context.openInBrowser(url) } },
             onPreviousChapter = { scope.launch { viewModel.loadPreviousChapter() } },
             onNextChapter = { scope.launch { viewModel.loadNextChapter() } },

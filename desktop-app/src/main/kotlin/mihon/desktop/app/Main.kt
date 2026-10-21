@@ -35,6 +35,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import logcat.LogPriority
+import mihon.desktop.app.browser.EmbeddedBrowserWindow
 import mihon.desktop.app.image.DesktopImageLoader
 import mihon.desktop.app.main.AppContent
 import mihon.desktop.app.main.AppEvents
@@ -163,6 +164,8 @@ fun main(args: Array<String>) {
                     }
                 }
             }
+            // The WebView window, while a page is open in it (spec 2b §3 E)
+            EmbeddedBrowserWindow(graph)
         }
     }
 }

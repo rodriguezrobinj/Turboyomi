@@ -49,6 +49,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import mihon.desktop.app.browser.EmbeddedBrowser
 import mihon.desktop.app.main.AppEvents
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.FilterList
@@ -116,8 +117,7 @@ data class BrowseSourceScreen(
         val onHelpClick = { uriHandler.openUri(LocalSource.HELP_URL) }
         val onWebViewClick = f@{
             val httpSource = source as? HttpSource ?: return@f
-            // desktop: the system browser until the embedded WebView (subproject 2b)
-            context.openInBrowser(httpSource.getHomeUrl())
+            EmbeddedBrowser.open(context, httpSource.getHomeUrl(), httpSource.headers)
         }
 
         LaunchedEffect(source) {

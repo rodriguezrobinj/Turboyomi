@@ -52,4 +52,6 @@ val cefTest by tasks.registering(Test::class) {
     forkEvery = 1
     useJUnitPlatform { includeTags("cef") }
     systemProperty("cef.dir", layout.settingsDirectory.dir("build/cef").asFile.absolutePath)
+    // JCEF's windowed browser reaches into AWT's internals; JetBrains Runtime opens them, other JDKs need this
+    jvmArgs("--add-exports=java.desktop/sun.awt=ALL-UNNAMED", "--add-exports=java.desktop/sun.awt.windows=ALL-UNNAMED")
 }

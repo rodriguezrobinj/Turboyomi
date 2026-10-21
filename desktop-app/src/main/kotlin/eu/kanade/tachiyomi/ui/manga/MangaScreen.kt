@@ -45,6 +45,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import logcat.LogPriority
+import mihon.desktop.app.browser.EmbeddedBrowser
 import mihon.desktop.app.main.AppEvents
 import mihon.desktop.app.platform.FileDialogs
 import mihon.desktop.app.reader.ReaderScreen
@@ -119,9 +120,8 @@ class MangaScreen(
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             },
             onWebViewClicked = {
-                // desktop: the system browser until the embedded WebView (subproject 2b)
                 val url = getMangaUrl(viewModel.manga, viewModel.source)
-                if (url != null) context.openInBrowser(url)
+                if (url != null) EmbeddedBrowser.open(context, url, (viewModel.source as? HttpSource)?.headers)
             }.takeIf { isHttpSource },
             onWebViewLongClicked = {
                 copyMangaUrl(

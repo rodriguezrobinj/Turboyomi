@@ -8,6 +8,12 @@ plugins {
 
 application {
     mainClass = "mihon.desktop.app.MainKt"
+    // The WebView window's browser (JCEF, windowed) reaches into AWT's internals; JetBrains Runtime opens them, other
+    // JDKs need this (spec 2b). The installer's launcher must pass the same
+    applicationDefaultJvmArgs = listOf(
+        "--add-exports=java.desktop/sun.awt=ALL-UNNAMED",
+        "--add-exports=java.desktop/sun.awt.windows=ALL-UNNAMED",
+    )
 }
 
 kotlin {
