@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import android.os.Looper
 import dev.zacsweers.metro.createGraphFactory
+import mihon.desktop.core.cookies.PersistentCookieStore
 import org.koin.core.context.startKoin
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.InjektScope
@@ -12,6 +13,8 @@ import xyz.nulldev.androidcompat.AndroidCompatInitializer
 import xyz.nulldev.androidcompat.androidCompatModule
 import xyz.nulldev.androidcompat.webkit.CefHelper
 import xyz.nulldev.ts.config.configManagerModule
+import java.net.CookieHandler
+import java.net.CookiePolicy
 import java.util.concurrent.CountDownLatch
 import kotlin.concurrent.thread
 
@@ -60,6 +63,11 @@ object Platform {
         System.setProperty("kotlinx.coroutines.fast.service.loader", "false")
         // AndroidCompat resolves every path (settings/, android-compat/) from this root
         System.setProperty("suwayomi.tachidesk.config.server.rootDir", dirs.data.toString())
+
+        // Logins and Cloudflare clearances survive restarts (spec 2b §2). NetworkHelper keeps this handler
+        val cookies = PersistentCookieStore(dirs.cookies)
+        CookieHandler.setDefault(java.net.CookieManager(cookies, CookiePolicy.ACCEPT_ALL))
+        Runtime.getRuntime().addShutdownHook(thread(start = false, name = "cookie-flush") { cookies.flush() })
 
         startKoin { modules(androidCompatModule(), configManagerModule()) }
         startMainLooper()

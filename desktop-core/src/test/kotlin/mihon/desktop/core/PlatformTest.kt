@@ -6,12 +6,15 @@ import eu.kanade.tachiyomi.network.NetworkHelper
 import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldNotBeBlank
+import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.runBlocking
+import mihon.desktop.core.cookies.PersistentCookieStore
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
+import java.net.CookieHandler
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.exists
 import kotlin.time.Duration.Companion.seconds
@@ -51,5 +54,11 @@ class PlatformTest {
     fun `app info reports the image formats the v1 reader supports`() {
         eu.kanade.tachiyomi.AppInfo.getSupportedImageMimeTypes() shouldBe
             listOf("image/jpeg", "image/png", "image/webp", "image/gif", "image/bmp")
+    }
+
+    @Test
+    fun `the app's cookies are kept in the persistent store`() {
+        (CookieHandler.getDefault() as java.net.CookieManager).cookieStore
+            .shouldBeInstanceOf<PersistentCookieStore>()
     }
 }

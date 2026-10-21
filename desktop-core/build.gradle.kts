@@ -2,6 +2,7 @@ plugins {
     alias(mihonx.plugins.kotlin.jvm)
     alias(mihonx.plugins.spotless)
     alias(libs.plugins.metro)
+    alias(libs.plugins.kotlin.serialization)
     `java-test-fixtures`
 }
 
@@ -24,6 +25,7 @@ dependencies {
     runtimeOnly(libs.kotlinx.coroutines.swing)
     implementation(libs.bundles.serialization)
     implementation(libs.logback)
+    implementation(libs.jna.platform)
 
     testImplementation(libs.bundles.test)
     testImplementation(libs.okhttp.mockwebserver)

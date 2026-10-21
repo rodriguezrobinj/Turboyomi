@@ -45,6 +45,7 @@ conscrypt = "2.7.0"
 directionalViewPager = "1.0.0"
 diskLruCache = "2.0.2"
 zoomable = "2.16.0"
+jna = "5.17.0"
 firebase-bom = "35.0.2"
 firebase-crashlytics = "3.0.8"
 flexibleAdapter = "5.1.0"
@@ -184,6 +185,7 @@ conscrypt = { module = "org.conscrypt:conscrypt-android", version.ref = "conscry
 directionalViewPager = { module = "com.github.tachiyomiorg:DirectionalViewPager", version.ref = "directionalViewPager" }
 diskLruCache = { module = "com.jakewharton:disklrucache", version.ref = "diskLruCache" }
 zoomable = { module = "net.engawapg.lib:zoomable", version.ref = "zoomable" }
+jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
 firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
 firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics" }

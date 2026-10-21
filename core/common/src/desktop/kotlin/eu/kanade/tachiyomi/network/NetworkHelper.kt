@@ -32,8 +32,8 @@ class NetworkHelper(
 ) {
 
     init {
-        // AndroidCompat's android.webkit.CookieManager stores cookies in the JVM-wide CookieHandler.
-        // ponytail: in-memory cookies; a persistent store comes with logins and Cloudflare (subproject 2)
+        // AndroidCompat's android.webkit.CookieManager stores cookies in the JVM-wide CookieHandler, which
+        // Platform.start sets to the app's persistent store. This fallback only serves code that skips Platform.
         if (CookieHandler.getDefault() !is JavaCookieManager) {
             CookieHandler.setDefault(JavaCookieManager(null, CookiePolicy.ACCEPT_ALL))
         }
