@@ -25,6 +25,7 @@ import logcat.LogPriority
 import mihon.core.metro.AppCoroutineScope
 import mihon.core.metro.IsDebugBuild
 import mihon.data.database.DatabaseRepositoryImpl
+import mihon.desktop.core.cef.CefInstaller
 import nl.adaptivity.xmlutil.XmlDeclMode
 import nl.adaptivity.xmlutil.core.XmlVersion
 import nl.adaptivity.xmlutil.serialization.XML
@@ -43,6 +44,10 @@ import tachiyomi.data.UpdateStrategyColumnAdapter
 /** Desktop versions of Mihon's AppBindings and DatabaseBindings. */
 @BindingContainer
 object DesktopBindings {
+
+    @Provides
+    @SingleIn(AppScope::class)
+    fun providesCefInstaller(appDirs: AppDirs): CefInstaller = CefInstaller(appDirs.cef)
 
     @Provides
     @SingleIn(AppScope::class)

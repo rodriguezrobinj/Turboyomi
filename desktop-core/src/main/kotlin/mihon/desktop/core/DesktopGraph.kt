@@ -5,6 +5,7 @@ import eu.kanade.tachiyomi.network.JavaScriptEngine
 import eu.kanade.tachiyomi.network.NetworkHelper
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.protobuf.ProtoBuf
+import mihon.desktop.core.cef.CefInstaller
 import mihon.desktop.extension.ExtensionTrust
 import mihon.domain.extension.repository.ExtensionStoreRepository
 import nl.adaptivity.xmlutil.serialization.XML
@@ -32,4 +33,5 @@ interface DesktopGraph {
     val extensionTrust: ExtensionTrust
     val extensionManager: DesktopExtensionManager
     val sourceManager: SourceManager
+    val cefInstaller: CefInstaller
 }

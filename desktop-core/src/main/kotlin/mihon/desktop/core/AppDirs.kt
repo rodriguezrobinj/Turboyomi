@@ -14,6 +14,11 @@ data class AppDirs(val data: Path, val local: Path) {
     val extensions: Path get() = local.resolve("extensions")
     val logs: Path get() = local.resolve("logs")
 
+    /** The embedded browser (spec 2b §2): its files, its cache, and the app's cookies, which only this machine reads. */
+    val cef: Path get() = local.resolve("cef")
+    val cefCache: Path get() = cache.resolve("cef")
+    val cookies: Path get() = local.resolve("cookies.bin")
+
     fun createAll() {
         listOf(data, db, backups, settings, local, cache, extensions, logs).forEach { it.createDirectories() }
     }

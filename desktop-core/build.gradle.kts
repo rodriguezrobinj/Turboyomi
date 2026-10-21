@@ -2,6 +2,7 @@ plugins {
     alias(mihonx.plugins.kotlin.jvm)
     alias(mihonx.plugins.spotless)
     alias(libs.plugins.metro)
+    `java-test-fixtures`
 }
 
 dependencies {
@@ -26,6 +27,7 @@ dependencies {
 
     testImplementation(libs.bundles.test)
     testImplementation(libs.okhttp.mockwebserver)
+    testFixturesImplementation(libs.okhttp.mockwebserver)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 

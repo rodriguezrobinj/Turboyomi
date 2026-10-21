@@ -11,4 +11,10 @@ for file in extension-loader/src/main/kotlin/mihon/desktop/extension/vendor/*.kt
   grep -q "Mozilla Public" "$file" || { echo "missing MPL header: $file"; status=1; }
 done
 
+for file in desktop-core/src/main/kotlin/mihon/desktop/core/cef/CefInstaller.kt \
+  desktop-core/src/main/kotlin/mihon/desktop/core/cef/CefRuntime.kt; do
+  [[ -f "$file" ]] || continue
+  grep -q "Mozilla Public" "$file" || { echo "missing MPL header: $file"; status=1; }
+done
+
 exit $status
