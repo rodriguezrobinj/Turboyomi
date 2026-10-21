@@ -24,7 +24,6 @@ import androidx.compose.ui.window.WindowExceptionHandler
 import androidx.compose.ui.window.WindowExceptionHandlerFactory
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
-import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import dev.icerock.moko.resources.desc.Resource
@@ -131,7 +130,7 @@ fun main(args: Array<String>) {
                     // The reader's last progress write and history finish first (at most 2 s)
                     exitScope.launch {
                         ExitHooks.runAll()
-                        windowStore.save(windowState.toSaved(windowControls.placementToSave))
+                        windowStore.save(windowControls.toSaved())
                         instance.close()
                         exitApplication()
                     }
@@ -169,10 +168,11 @@ private fun handleShortcut(event: KeyEvent, beforeFocusedComponent: Boolean): Bo
             ?.takeIf { it.beforeFocusedComponent == beforeFocusedComponent }
             ?.let(AppEvents::send) == true
 
-private fun WindowState.toSaved(placement: WindowPlacement) = SavedWindow(
-    x = position.x.value.toInt(),
-    y = position.y.value.toInt(),
-    width = size.width.value.toInt(),
-    height = size.height.value.toInt(),
-    maximized = placement == WindowPlacement.Maximized,
+// Never the fullscreen bounds: the window opens normal next time
+private fun WindowControls.toSaved() = SavedWindow(
+    x = positionToSave.x.value.toInt(),
+    y = positionToSave.y.value.toInt(),
+    width = sizeToSave.width.value.toInt(),
+    height = sizeToSave.height.value.toInt(),
+    maximized = placementToSave == WindowPlacement.Maximized,
 )

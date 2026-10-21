@@ -4,6 +4,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasTestTag
@@ -86,6 +87,35 @@ class WebtoonAndDualTest {
             waitForIdle()
         }
         waitUntil(timeoutMillis = 10_000) { leftChapter() }
+    }
+
+    @Test
+    fun `a short last page in webtoon still marks the chapter read`() = runComposeUiTest {
+        val chapters = open(ReadingMode.WEBTOON, ReaderPreferences.DualPageView.NEVER)
+        // Shorter than the window: it never gets to the top of the list
+        TestSources.images.short += "${chapters[0].url}/5.png"
+        waitForTag("page 1 ready")
+        // Scrolled down to the bottom of the chapter, pages loading as they come into view; not past it, which would
+        // open the next chapter
+        fun atBottom(): Boolean {
+            val range = onNodeWithTag(
+                WEBTOON_TAG,
+            ).fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange]
+            return range.value() >= range.maxValue()
+        }
+        repeat(40) {
+            if (atBottom() && onAllNodes(hasTestTag("page 6 ready")).fetchSemanticsNodes().isNotEmpty()) return@repeat
+            onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.PageDown) }
+            waitForIdle()
+        }
+        atBottom() shouldBe true
+
+        waitUntil(timeoutMillis = 10_000) {
+            runBlocking { startTestApp().getChaptersByMangaId.await(chapters[0].mangaId) }.single {
+                it.id ==
+                    chapters[0].id
+            }.read
+        }
     }
 
     @Test

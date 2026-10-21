@@ -70,7 +70,18 @@ fun WebtoonViewer(
     val state = rememberLazyListState(initialFirstVisibleItemIndex = items.itemOfPage(current.requestedPage))
 
     LaunchedEffect(state) {
-        snapshotFlow { state.firstVisibleItemIndex }.distinctUntilChanged().collect { index ->
+        snapshotFlow {
+            // The page at the top; at the bottom of the chapter, the last one in view, which may be too short to ever
+            // reach the top and would leave the chapter unread
+            if (state.canScrollForward) {
+                state.firstVisibleItemIndex
+            } else {
+                state.layoutInfo.visibleItemsInfo.lastOrNull {
+                    latestItems.getOrNull(it.index) is ViewerItem.Pages
+                }?.index
+            }
+        }.distinctUntilChanged().collect { index ->
+            index ?: return@collect
             val item = latestItems.getOrNull(index) as? ViewerItem.Pages ?: return@collect
             onPageSelected(item.pages.single())
             cache.retainAround(current.chapter.id, item.pages.single().index)

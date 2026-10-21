@@ -1,6 +1,9 @@
 package mihon.desktop.app.platform
 
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPlacement
+import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
@@ -21,5 +24,22 @@ class WindowControlsTest {
         val controls = WindowControls(WindowState(placement = WindowPlacement.Floating))
         controls.toggleFullscreen()
         controls.placementToSave shouldBe WindowPlacement.Floating
+    }
+
+    @Test
+    fun `closing in fullscreen saves the size and position from before it`() {
+        val state = WindowState(
+            placement = WindowPlacement.Floating,
+            position = WindowPosition(100.dp, 50.dp),
+            size = DpSize(1280.dp, 800.dp),
+        )
+        val controls = WindowControls(state)
+        controls.toggleFullscreen()
+        // What the window reports once it covers the screen
+        state.position = WindowPosition(0.dp, 0.dp)
+        state.size = DpSize(1920.dp, 1080.dp)
+
+        controls.positionToSave shouldBe WindowPosition(100.dp, 50.dp)
+        controls.sizeToSave shouldBe DpSize(1280.dp, 800.dp)
     }
 }

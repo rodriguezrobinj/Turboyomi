@@ -17,13 +17,20 @@ import java.io.ByteArrayOutputStream
 import java.util.concurrent.ConcurrentHashMap
 import javax.imageio.ImageIO
 
-/** Serves a 600×900 PNG for every `.png` path, except the [failing] (HTTP 500) and [corrupt] (not an image) ones. */
+/**
+ * Serves a 600×900 PNG for every `.png` path, except the [failing] (HTTP 500), [corrupt] (not an image) and
+ * [short] (600×100) ones.
+ */
 class FakeImages : Dispatcher() {
     val failing: MutableSet<String> = ConcurrentHashMap.newKeySet()
     val corrupt: MutableSet<String> = ConcurrentHashMap.newKeySet()
+    val short: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
-    private val png: ByteArray = ByteArrayOutputStream().also {
-        ImageIO.write(BufferedImage(600, 900, BufferedImage.TYPE_INT_RGB), "png", it)
+    private val png = png(600, 900)
+    private val shortPng = png(600, 100)
+
+    private fun png(width: Int, height: Int): ByteArray = ByteArrayOutputStream().also {
+        ImageIO.write(BufferedImage(width, height, BufferedImage.TYPE_INT_RGB), "png", it)
     }.toByteArray()
 
     override fun dispatch(request: RecordedRequest): MockResponse {
@@ -31,6 +38,7 @@ class FakeImages : Dispatcher() {
         return when {
             path in failing -> MockResponse().setResponseCode(500)
             path in corrupt -> MockResponse().setHeader("Content-Type", "image/png").setBody("no es una imagen")
+            path in short -> MockResponse().setHeader("Content-Type", "image/png").setBody(Buffer().write(shortPng))
             path.endsWith(".png") -> MockResponse().setHeader("Content-Type", "image/png").setBody(Buffer().write(png))
             else -> MockResponse().setResponseCode(404)
         }
