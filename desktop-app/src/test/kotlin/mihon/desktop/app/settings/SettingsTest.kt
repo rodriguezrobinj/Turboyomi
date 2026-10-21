@@ -8,7 +8,9 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runComposeUiTest
+import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
 import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.shouldBe
 import mihon.desktop.app.main.AppContent
 import mihon.desktop.app.testing.startTestApp
 import mihon.desktop.app.testing.str
@@ -54,5 +56,21 @@ class SettingsTest {
         waitForText(str(MR.strings.pref_category_advanced))
         onNodeWithText(str(MR.strings.pref_category_advanced)).performClick()
         waitForText(str(MR.strings.desktop_open_logs_folder))
+    }
+
+    @Test
+    fun `the reader's default mode is chosen in the settings`() = runComposeUiTest {
+        val graph = startTestApp()
+        setContent { AppContent(graph, crash = null, onRestart = {}) }
+
+        onNodeWithText(str(MR.strings.label_settings)).performClick()
+        waitForText(str(MR.strings.pref_category_reader))
+        onNodeWithText(str(MR.strings.pref_category_reader)).performClick()
+        waitForText(str(MR.strings.pref_viewer_type))
+        onNodeWithText(str(MR.strings.pref_viewer_type)).performClick()
+        onNodeWithText(str(MR.strings.webtoon_viewer)).performClick()
+        waitForIdle()
+
+        graph.readerPreferences.defaultReadingMode.get() shouldBe ReadingMode.WEBTOON.flagValue
     }
 }

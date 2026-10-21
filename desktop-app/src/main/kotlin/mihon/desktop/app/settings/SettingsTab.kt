@@ -15,6 +15,7 @@ import eu.kanade.presentation.util.Tab
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.Code
 import mihon.icons.materialsymbols.rounded.Explore
+import mihon.icons.materialsymbols.rounded.Image
 import mihon.icons.materialsymbols.rounded.Palette
 import mihon.icons.materialsymbols.rounded.Settings
 import tachiyomi.i18n.MR
@@ -36,6 +37,7 @@ data object SettingsTab : Tab {
         val entries = listOf(
             Triple(MR.strings.pref_category_appearance, MaterialSymbols.Rounded.Palette, SettingsAppearanceScreen),
             Triple(MR.strings.browse, MaterialSymbols.Rounded.Explore, SettingsBrowseScreen),
+            Triple(MR.strings.pref_category_reader, MaterialSymbols.Rounded.Image, SettingsReaderScreen),
             Triple(MR.strings.pref_category_advanced, MaterialSymbols.Rounded.Code, AdvancedSettingsScreen),
         )
         Scaffold(topBar = {

@@ -29,6 +29,7 @@ object AdvancedSettingsScreen : SearchableSettings {
                     val loader = SingletonImageLoader.get(PlatformContext.INSTANCE)
                     loader.memoryCache?.clear()
                     loader.diskCache?.clear()
+                    context.appGraph.chapterCache.clear() // spec 2a §3: Avanzado › borrar caché
                     context.toast(MR.strings.desktop_image_cache_cleared)
                 },
             ),
