@@ -50,10 +50,16 @@ import mihon.desktop.app.startup.SavedWindow
 import mihon.desktop.app.startup.Startup
 import mihon.desktop.app.startup.WindowStateStore
 import mihon.desktop.app.startup.placeOnScreens
+import mihon.desktop.app.tray.AppTray
+import mihon.desktop.app.tray.CloseAction
+import mihon.desktop.app.tray.Notice
+import mihon.desktop.app.tray.TrayNotifier
+import mihon.desktop.app.tray.closeAction
 import mihon.desktop.core.AppDirs
 import mihon.desktop.core.Platform
 import mihon.desktop.core.SingleInstance
 import mihon.desktop.core.jobs.JobScheduler
+import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.i18n.MR
 import java.awt.Dimension
@@ -121,6 +127,20 @@ fun main(args: Array<String>) {
         val windowControls = remember { WindowControls(windowState) }
         val exitScope = rememberCoroutineScope()
         var closing by remember { mutableStateOf(false) }
+        var windowVisible by remember { mutableStateOf(true) }
+        // Exit from the close button (no tray) or the tray's Exit: the reader's last write first, and the update stops
+        val exit = {
+            if (!closing) {
+                closing = true
+                graph.libraryUpdateJob.cancel()
+                exitScope.launch {
+                    ExitHooks.runAll()
+                    windowStore.save(windowControls.toSaved())
+                    instance.close()
+                    exitApplication()
+                }
+            }
+        }
         var crash by remember { mutableStateOf<Throwable?>(null) }
         var restarts by remember { mutableIntStateOf(0) }
         CompositionLocalProvider(
@@ -133,16 +153,24 @@ fun main(args: Array<String>) {
         ) {
             Window(
                 state = windowState,
+                visible = windowVisible,
                 onCloseRequest = {
-                    // Once, even if the close button is clicked again while the exit work runs
-                    if (!closing) {
-                        closing = true
-                        // The reader's last progress write and history finish first (at most 2 s)
-                        exitScope.launch {
-                            ExitHooks.runAll()
-                            windowStore.save(windowControls.toSaved())
-                            instance.close()
-                            exitApplication()
+                    val trayPreferences = graph.trayPreferences
+                    when (closeAction(trayPreferences.traySupported, trayPreferences.closeToTray.get())) {
+                        // Once, even if the close button is clicked again while the exit work runs (at most 2 s)
+                        CloseAction.Exit -> exit()
+                        CloseAction.Hide -> {
+                            windowVisible = false
+                            if (!trayPreferences.hintShown.get()) {
+                                trayPreferences.hintShown.set(true)
+                                TrayNotifier.send(
+                                    Notice(
+                                        AppDirs.APP_NAME,
+                                        graph.context.stringResource(MR.strings.desktop_tray_hint),
+                                        opensUpdates = false,
+                                    ),
+                                )
+                            }
                         }
                     }
                 },
@@ -153,11 +181,17 @@ fun main(args: Array<String>) {
                 window.minimumSize = Dimension(MIN_WIDTH, MIN_HEIGHT)
                 LaunchedEffect(Unit) {
                     bringToFront.collect {
+                        windowVisible = true
                         windowState.isMinimized = false
                         // Windows doesn't let a background process take the foreground with toFront() alone
                         window.isAlwaysOnTop = true
                         window.toFront()
                         window.isAlwaysOnTop = false
+                        // A notification clicked while the window was away opens on the updates it announced
+                        if (TrayNotifier.unread) {
+                            TrayNotifier.unread = false
+                            AppEvents.openUpdates()
+                        }
                     }
                 }
                 CompositionLocalProvider(LocalWindowControls provides windowControls) {
@@ -171,6 +205,8 @@ fun main(args: Array<String>) {
             }
             // The WebView window, while a page is open in it (spec 2b §3 E)
             EmbeddedBrowserWindow(graph)
+            // The tray icon, notifications and close to tray (spec 3a §3 G)
+            AppTray(graph, onOpen = { bringToFront.tryEmit(Unit) }, onExit = exit)
         }
     }
 }

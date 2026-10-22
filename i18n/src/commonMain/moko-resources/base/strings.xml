@@ -1154,4 +1154,7 @@
     <string name="desktop_time_ago">%1$s ago</string>
     <string name="desktop_close_to_tray">Close to the system tray</string>
     <string name="desktop_close_to_tray_summary">The app keeps running in the tray so the library updates with the window closed</string>
+    <string name="desktop_tray_open">Open</string>
+    <string name="desktop_tray_exit">Exit</string>
+    <string name="desktop_tray_hint">Still running in the tray; the library will keep updating</string>
 </resources>

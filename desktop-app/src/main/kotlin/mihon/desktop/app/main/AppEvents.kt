@@ -24,6 +24,14 @@ object AppEvents {
     private val _categoryStep = MutableSharedFlow<Int>(extraBufferCapacity = 1)
     val categoryStep: SharedFlow<Int> = _categoryStep
 
+    private val _updatesRequests = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val updatesRequests: SharedFlow<Unit> = _updatesRequests
+
+    /** From a tray notification click: the Updates tab, over whatever screen is open. */
+    fun openUpdates() {
+        _updatesRequests.tryEmit(Unit)
+    }
+
     /** True when something handled it, so the key event stops there. */
     fun send(shortcut: Shortcut): Boolean = when (shortcut) {
         Shortcut.Back -> {

@@ -26,6 +26,7 @@ import eu.kanade.presentation.theme.TachiyomiTheme
 import eu.kanade.presentation.util.DefaultNavigatorScreenTransition
 import eu.kanade.presentation.util.LocalBackPress
 import eu.kanade.tachiyomi.ui.browse.source.globalsearch.GlobalSearchScreen
+import eu.kanade.tachiyomi.ui.updates.UpdatesTab
 import kotlinx.coroutines.launch
 import mihon.app.di.AppGraph
 import mihon.desktop.app.browser.EmbeddedBrowserConsent
@@ -88,6 +89,12 @@ fun AppContent(graph: AppGraph, crash: Throwable?, onRestart: () -> Unit) {
                         // screen is on top (Voyager only composes the top screen)
                         LaunchedEffect(navigator) {
                             launch { AppEvents.globalSearch.collect { navigator.push(GlobalSearchScreen()) } }
+                            launch {
+                                AppEvents.updatesRequests.collect {
+                                    navigator.popUntilRoot()
+                                    tabNavigator.current = UpdatesTab
+                                }
+                            }
                             AppEvents.openSettings.collect {
                                 navigator.popUntilRoot()
                                 tabNavigator.current = HomeScreen.tabs.last()
