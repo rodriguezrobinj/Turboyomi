@@ -20,6 +20,7 @@ import eu.kanade.presentation.util.Screen
 import eu.kanade.presentation.util.Tab
 import eu.kanade.tachiyomi.ui.history.HistoryTab
 import eu.kanade.tachiyomi.ui.library.LibraryTab
+import eu.kanade.tachiyomi.ui.updates.UpdatesTab
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
 import mihon.app.di.appGraph
@@ -33,7 +34,7 @@ import tachiyomi.presentation.core.util.collectAsState
  */
 object HomeScreen : Screen() {
     /** In rail order; the first one opens at start. Settings must stay last for [AppEvents.openSettings]. */
-    val tabs: List<Tab> = listOf(LibraryTab, HistoryTab, BrowseTab, SettingsTab)
+    val tabs: List<Tab> = listOf(LibraryTab, UpdatesTab, HistoryTab, BrowseTab, SettingsTab)
 
     private val librarySearch = Channel<String>()
 
@@ -63,8 +64,11 @@ object HomeScreen : Screen() {
                         icon = {
                             BadgedBox(
                                 badge = {
-                                    // The Updates tab arrives in the next commit of plan 3a
-                                    if (false && showNewUpdates && newUpdates > 0) Badge { Text("$newUpdates") }
+                                    if (tab == UpdatesTab && showNewUpdates &&
+                                        newUpdates > 0
+                                    ) {
+                                        Badge { Text("$newUpdates") }
+                                    }
                                 },
                             ) { options.icon?.let { Icon(it, contentDescription = options.title) } }
                         },

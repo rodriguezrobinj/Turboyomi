@@ -924,6 +924,7 @@
     <string name="desktop_and_more">y %1$d más</string>
     <string name="desktop_update_errors_hint">Abre la app para ver cuáles</string>
     <string name="desktop_learn_more">Más información</string>
+    <string name="desktop_time_ago">hace %1$s</string>
 
     <!-- Desktop: Mihon strings with no Spanish translation upstream yet; drop each one when Weblate adds it -->
     <string name="action_web_view">WebView</string>
@@ -958,6 +959,7 @@
     <string name="pref_apply_content_warnings_to_installed_summary">Si está desactivado, las extensiones que ya instalaste se siguen cargando y actualizando sea cual sea su aviso</string>
     <string name="pref_category_extensions">Extensiones</string>
     <string name="pref_dual_page_view">Vista de doble página</string>
+    <string name="pref_filter_update_categories_details">Las novedades de las categorías excluidas no se muestran aunque también estén en alguna categoría incluida.</string>
     <string name="pref_time_format">Formato de hora</string>
     <string name="theme_tokyonight">Tokyo Night</string>
     <string name="time_12_hours">12 horas</string>

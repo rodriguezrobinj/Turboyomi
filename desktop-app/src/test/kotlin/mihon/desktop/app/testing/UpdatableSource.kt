@@ -24,6 +24,9 @@ class UpdatableSource : Source {
     val chapters: MutableMap<String, Int> = ConcurrentHashMap()
     val failing: MutableMap<String, Exception> = ConcurrentHashMap()
 
+    /** Recent upload dates: the Updates tab only lists chapters uploaded in the last three months. */
+    private val uploadedAt = System.currentTimeMillis() - 60_000L
+
     @Volatile
     var gate: CompletableDeferred<Unit>? = null
 
@@ -51,7 +54,7 @@ class UpdatableSource : Source {
                     url = "${manga.url}/c$n"
                     name = "Capítulo $n"
                     chapter_number = n.toFloat()
-                    date_upload = 1_700_000_000_000L + n
+                    date_upload = uploadedAt + n
                 }
             },
         )

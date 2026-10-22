@@ -1151,4 +1151,5 @@
     <string name="desktop_and_more">and %1$d more</string>
     <string name="desktop_update_errors_hint">Open the app to see which ones</string>
     <string name="desktop_learn_more">Learn more</string>
+    <string name="desktop_time_ago">%1$s ago</string>
 </resources>
