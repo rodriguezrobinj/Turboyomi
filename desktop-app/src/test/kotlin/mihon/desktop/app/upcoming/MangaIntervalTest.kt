@@ -57,12 +57,9 @@ class MangaIntervalTest {
         val next = runBlocking { graph.getManga.await(mangaId)!!.expectedNextUpdate }
         val days = next?.let { Clock.System.now().daysUntil(it, TimeZone.currentSystemDefault()) }
             ?: return str(MR.strings.not_applicable)
-        return if (days <=
-            0
-        ) {
-            str(MR.strings.manga_interval_expected_update_soon)
-        } else {
-            plural(MR.plurals.day, days, days)
+        return when {
+            days <= 0 -> str(MR.strings.manga_interval_expected_update_soon)
+            else -> plural(MR.plurals.day, days, days)
         }
     }
 
