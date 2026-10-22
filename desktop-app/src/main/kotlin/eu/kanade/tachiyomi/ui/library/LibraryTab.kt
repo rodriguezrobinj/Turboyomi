@@ -40,6 +40,7 @@ import mihon.app.di.appGraph
 import mihon.desktop.app.library.LibraryUpdateProgress
 import mihon.desktop.app.main.AppEvents
 import mihon.desktop.app.reader.ReaderScreen
+import mihon.feature.migration.config.MigrationConfigScreen
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.automirroredrounded.Help
 import mihon.icons.materialsymbols.rounded.CollectionsBookmark
@@ -148,7 +149,11 @@ data object LibraryTab : Tab {
                     onMarkAsUnreadClicked = { viewModel.markReadSelection(false) },
                     onDownloadClicked = null, // desktop: downloads arrive in subproject 4
                     onDeleteClicked = viewModel::openDeleteMangaDialog,
-                    onMigrateClicked = null, // desktop: migration arrives in 3b
+                    onMigrateClicked = {
+                        val selection = state.selection
+                        viewModel.clearSelection()
+                        navigator.push(MigrationConfigScreen(selection))
+                    },
                 )
             },
             snackbarHost = { SnackbarHost(hostState = snackbarHostState) },

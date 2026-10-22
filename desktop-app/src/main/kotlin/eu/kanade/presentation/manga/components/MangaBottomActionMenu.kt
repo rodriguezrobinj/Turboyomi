@@ -236,7 +236,7 @@ fun LibraryBottomActionMenu(
     onMarkAsUnreadClicked: () -> Unit,
     onDownloadClicked: ((DownloadAction) -> Unit)?,
     onDeleteClicked: () -> Unit,
-    onMigrateClicked: (() -> Unit)?, // desktop: null until migration (3b)
+    onMigrateClicked: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     AnimatedVisibility(

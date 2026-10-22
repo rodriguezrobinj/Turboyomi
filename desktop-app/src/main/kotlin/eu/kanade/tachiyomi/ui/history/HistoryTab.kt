@@ -25,6 +25,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import mihon.desktop.app.reader.ReaderScreen
+import mihon.feature.migration.dialog.MigrateMangaDialog
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.Schedule
 import tachiyomi.core.common.i18n.stringResource
@@ -96,7 +97,7 @@ data object HistoryTab : Tab {
                     onDismissRequest = onDismissRequest,
                     onConfirm = { viewModel.addFavorite(dialog.manga) },
                     onOpenManga = { navigator.push(MangaScreen(it.id)) },
-                    onMigrate = null, // desktop: migration comes with 3b
+                    onMigrate = { viewModel.showMigrateDialog(dialog.manga, it) },
                 )
             }
             is HistoryViewModel.Dialog.ChangeCategory -> {
@@ -109,8 +110,16 @@ data object HistoryTab : Tab {
                     },
                 )
             }
-            // desktop: the migration dialog comes with 3b
-            else -> {}
+            is HistoryViewModel.Dialog.Migrate -> {
+                MigrateMangaDialog(
+                    current = dialog.current,
+                    target = dialog.target,
+                    // Initiated from the context of [dialog.target] so we show [dialog.current].
+                    onClickTitle = { navigator.push(MangaScreen(dialog.current.id)) },
+                    onDismissRequest = onDismissRequest,
+                )
+            }
+            null -> {}
         }
 
         LaunchedEffect(Unit) {

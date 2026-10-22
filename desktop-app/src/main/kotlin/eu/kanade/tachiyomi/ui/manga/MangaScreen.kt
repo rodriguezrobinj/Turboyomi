@@ -52,6 +52,8 @@ import mihon.desktop.app.main.AppEvents
 import mihon.desktop.app.main.HomeScreen
 import mihon.desktop.app.platform.FileDialogs
 import mihon.desktop.app.reader.ReaderScreen
+import mihon.feature.migration.config.MigrationConfigScreen
+import mihon.feature.migration.dialog.MigrateMangaDialog
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.chapter.model.Chapter
 import tachiyomi.domain.manga.model.Manga
@@ -143,10 +145,11 @@ class MangaScreen(
             onShareClicked = null, // desktop: no Android share sheet
             onDownloadActionClicked = null, // desktop: downloads arrive in subproject 4
             onEditCategoryClicked = viewModel::showChangeCategoryDialog.takeIf { successState.manga.favorite },
-            // desktop: fetch interval and migration arrive in 3b, notes in subproject 5
-            onEditFetchIntervalClicked = null,
-            onMigrateClicked = null,
-            onEditNotesClicked = null,
+            onEditFetchIntervalClicked = null, // desktop: wired in the interval task of 3b
+            onMigrateClicked = {
+                navigator.push(MigrationConfigScreen(successState.manga.id))
+            }.takeIf { successState.manga.favorite },
+            onEditNotesClicked = null, // desktop: notes arrive in subproject 5
             onMultiBookmarkClicked = viewModel::bookmarkChapters,
             onMultiMarkAsReadClicked = viewModel::markChaptersRead,
             onMarkPreviousAsReadClicked = viewModel::markPreviousChapterRead,
@@ -197,7 +200,7 @@ class MangaScreen(
                     onDismissRequest = onDismissRequest,
                     onConfirm = { viewModel.toggleFavorite(onRemoved = {}, checkDuplicate = false) },
                     onOpenManga = { navigator.push(MangaScreen(it.id)) },
-                    onMigrate = null, // desktop: migration arrives in 3b
+                    onMigrate = { viewModel.showMigrateDialog(it) },
                 )
             }
 
@@ -241,7 +244,16 @@ class MangaScreen(
                     )
                 } ?: LoadingScreen()
             }
-            // desktop: no Migrate, TrackSheet or SetFetchInterval dialogs yet (3b and subproject 5)
+            is MangaViewModel.Dialog.Migrate -> {
+                MigrateMangaDialog(
+                    current = dialog.current,
+                    target = dialog.target,
+                    // Initiated from the context of [dialog.target] so we show [dialog.current].
+                    onClickTitle = { navigator.push(MangaScreen(dialog.current.id)) },
+                    onDismissRequest = onDismissRequest,
+                )
+            }
+            // desktop: no TrackSheet (subproject 5); SetFetchInterval comes with the interval task
             else -> {}
         }
 

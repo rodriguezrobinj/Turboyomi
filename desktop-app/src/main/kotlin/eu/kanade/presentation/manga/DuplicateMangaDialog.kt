@@ -84,7 +84,7 @@ fun DuplicateMangaDialog(
     onDismissRequest: () -> Unit,
     onConfirm: () -> Unit,
     onOpenManga: (manga: Manga) -> Unit,
-    onMigrate: ((manga: Manga) -> Unit)?, // desktop: null until migration (3b)
+    onMigrate: ((manga: Manga) -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -176,7 +176,7 @@ private fun DuplicateMangaListItem(
     getSource: suspend () -> Source,
     onDismissRequest: () -> Unit,
     onOpenManga: () -> Unit,
-    onMigrate: (() -> Unit)?, // desktop: null until migration (3b)
+    onMigrate: (() -> Unit)?,
 ) {
     val source by produceState<Source?>(initialValue = null) { value = getSource() }
     val manga = duplicate.manga
