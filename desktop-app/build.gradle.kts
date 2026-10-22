@@ -79,6 +79,7 @@ dependencies {
     implementation(libs.diskLruCache)
     implementation(libs.zoomable)
     implementation(libs.reorderable)
+    implementation(libs.stringSimilarity)
 
     // Types of CefHelper.cefApp and of the WebView window's browser; the jar comes at runtime with android-compat
     compileOnly(libs.jcef)

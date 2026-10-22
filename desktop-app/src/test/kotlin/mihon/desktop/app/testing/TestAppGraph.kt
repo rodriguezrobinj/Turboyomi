@@ -17,9 +17,11 @@ import mihon.desktop.core.AppDirs
 import mihon.desktop.core.DesktopBindings
 import mihon.desktop.core.DesktopSourceManager
 import mihon.desktop.core.Platform
+import mihon.domain.migration.usecases.MigrateMangaUseCase
 import tachiyomi.domain.category.interactor.CreateCategoryWithName
 import tachiyomi.domain.category.interactor.SetMangaCategories
 import tachiyomi.domain.chapter.interactor.GetChaptersByMangaId
+import tachiyomi.domain.chapter.interactor.UpdateChapter
 import tachiyomi.domain.history.interactor.GetHistory
 import tachiyomi.domain.history.interactor.RemoveHistory
 import tachiyomi.domain.history.interactor.UpsertHistory
@@ -52,6 +54,8 @@ interface TestAppGraph : AppGraph {
     val getLibraryManga: GetLibraryManga
     val getManga: GetManga
     val updatesPreferences: UpdatesPreferences
+    val migrateMangaUseCase: MigrateMangaUseCase
+    val updateChapter: UpdateChapter
 
     @DependencyGraph.Factory
     fun interface Factory {

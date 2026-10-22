@@ -2,6 +2,7 @@
 package eu.kanade.tachiyomi.data.track
 
 import eu.kanade.tachiyomi.source.Source
+import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.track.model.Track
 
 interface Tracker {
@@ -13,4 +14,8 @@ interface Tracker {
 
 interface EnhancedTracker {
     fun accept(source: Source): Boolean
+
+    fun isTrackFrom(track: Track, manga: Manga, source: Source?): Boolean = false
+
+    fun migrateTrack(track: Track, manga: Manga, newSource: Source): Track? = null
 }

@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.flowOf
 @Inject
 @SingleIn(AppScope::class)
 class TrackerManager {
+    val trackers: List<Tracker> = emptyList()
+
     fun loggedInTrackers(): List<Tracker> = emptyList()
 
     fun loggedInTrackersFlow(): Flow<List<Tracker>> = flowOf(emptyList())
