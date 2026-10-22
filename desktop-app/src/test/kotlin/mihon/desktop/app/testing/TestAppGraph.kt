@@ -18,6 +18,7 @@ import mihon.desktop.core.DesktopBindings
 import mihon.desktop.core.DesktopSourceManager
 import mihon.desktop.core.Platform
 import mihon.domain.migration.usecases.MigrateMangaUseCase
+import mihon.feature.migration.list.MigrationListViewModel
 import tachiyomi.domain.category.interactor.CreateCategoryWithName
 import tachiyomi.domain.category.interactor.SetMangaCategories
 import tachiyomi.domain.chapter.interactor.GetChaptersByMangaId
@@ -56,6 +57,7 @@ interface TestAppGraph : AppGraph {
     val updatesPreferences: UpdatesPreferences
     val migrateMangaUseCase: MigrateMangaUseCase
     val updateChapter: UpdateChapter
+    val migrationListViewModelFactory: MigrationListViewModel.Factory
 
     @DependencyGraph.Factory
     fun interface Factory {
