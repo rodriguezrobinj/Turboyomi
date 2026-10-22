@@ -28,6 +28,10 @@ Cerrar el subproyecto 3 con lo que 3a dejó en `null` y marcado "3b":
 ### Desviaciones respecto a Mihon
 - `MigrateMangaUseCase` traga en silencio cualquier error. Aquí, además, lo escribe en el log con `logcat`.
 - La opción "Borrar descargas" (`MigrationFlag.REMOVE_DOWNLOAD`) no se muestra.
+- Intervalo fijo por manga: Mihon solo muestra el selector de días en builds de depuración (`!isReleaseBuildType`),
+  porque lo considera experimental. Aquí se activa en todas las builds (decisión del usuario, 2026-10-21). Por
+  coherencia también se activa el filtro de biblioteca "Intervalo personalizado", que Mihon esconde con la misma
+  condición.
 
 ### Fuera de alcance (3b)
 | Qué | Dónde |
@@ -80,13 +84,15 @@ Se sustituyen los `null` y comentarios marcados "3b":
 ### A. Configuración de la migración (`MigrationConfigScreen`)
 - Lista de fuentes instaladas, ordenable con arrastre. Se marcan las fuentes destino. Hay atajos para
   seleccionar todas, ninguna, las habilitadas o las fijadas, como en Mihon.
-- Hoja de opciones:
+- "Continuar" con varios mangas abre la hoja de opciones:
   - Qué copiar: capítulos, categorías, portada personalizada, notas.
+  - Texto de búsqueda adicional, que se añade al título en cada búsqueda.
   - Cómo buscar: búsqueda profunda y "priorizar por capítulos".
   - Qué ocultar: los no encontrados y los que no tienen capítulos nuevos.
 - Todo se guarda en `SourcePreferences`: `migrationSources`, `migrationFlags`, `migrationDeepSearchMode`,
   `migrationPrioritizeByChapters`, `migrationHideUnmatched` y `migrationHideWithoutUpdates`.
-- Con un solo manga, "Búsqueda manual" va directo a `MigrateSearchScreen`.
+- Con un solo manga, "Continuar" va directo a `MigrateSearchScreen`: una búsqueda global en las fuentes
+  elegidas, donde el usuario escoge el destino.
 
 ### B. Lista de migración (`MigrationListScreen`)
 - Los mangas se buscan de uno en uno. Para cada manga:
@@ -126,7 +132,9 @@ mismo use case.
 - En ventana ancha, calendario y lista van lado a lado (`TwoPanelBox`), como en la tablet de Mihon.
 
 ### F. Intervalo por manga
-- El botón de intervalo de la ficha abre `SetIntervalDialog`: automático o un número fijo de días.
+- El botón de intervalo de la ficha abre `SetIntervalDialog`: muestra la próxima actualización estimada y deja elegir
+  "Por defecto" (automático) o de 1 a 28 días. Solo se puede editar si la restricción de biblioteca "Fuera del periodo
+  de publicación" está activa (activa por defecto, como en Mihon); si no, el diálogo solo informa.
 - Guarda `fetchInterval` y recalcula `nextUpdate` con el `UpdateManga` ya portado.
 
 ## 4. Errores
@@ -136,7 +144,7 @@ mismo use case.
 | Falla el refresco del destino al migrar | Se para la migración de ese manga. Lo ya escrito se queda (como en Mihon) y el error va al log con `logcat` (desviación) |
 | La fuente origen está desinstalada | Se migra igual: el origen solo se lee de la BD |
 | El destino ya está en la biblioteca | Se actualiza el existente (Mihon) |
-| Un manga sin `nextUpdate` | No sale en Próximos |
+| Un manga sin `nextUpdate`, con `nextUpdate` anterior a hoy o con estado distinto de "En publicación" / "Publicación terminada" | No sale en Próximos (consulta de Mihon) |
 | Biblioteca vacía o sin próximos | `EmptyScreen` con el texto de Mihon |
 
 ## 5. Testing y aceptación
@@ -153,8 +161,9 @@ mismo use case.
   - Si la primera fuente falla, encuentra el manga en la segunda.
   - Queda "No encontrado" si ninguna fuente tiene el manga.
   - "Migrar todo" salta los no encontrados.
-- `UpcomingViewModel`: agrupa por día y marca los días del mes con indicador. Un manga sin `nextUpdate` queda fuera.
-- Intervalo: fijar 3 días guarda `fetchInterval` y mueve `nextUpdate`.
+- `UpcomingViewModel`: agrupa por día y marca los días del mes con indicador. Un manga sin `nextUpdate` o completado queda fuera.
+- Intervalo: fijar 3 días guarda `fetchInterval = -3`, da un `nextUpdate` y el manga sale en Próximos; "Por defecto"
+  vuelve al automático.
 
 ### UI (`runComposeUiTest`)
 - Explorar muestra la pestaña Migrar con la fuente del manga guardado.
