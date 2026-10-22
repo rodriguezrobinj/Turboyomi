@@ -57,7 +57,13 @@ class MangaIntervalTest {
         val next = runBlocking { graph.getManga.await(mangaId)!!.expectedNextUpdate }
         val days = next?.let { Clock.System.now().daysUntil(it, TimeZone.currentSystemDefault()) }
             ?: return str(MR.strings.not_applicable)
-        return if (days <= 0) str(MR.strings.manga_interval_expected_update_soon) else plural(MR.plurals.day, days, days)
+        return if (days <=
+            0
+        ) {
+            str(MR.strings.manga_interval_expected_update_soon)
+        } else {
+            plural(MR.plurals.day, days, days)
+        }
     }
 
     @Test
@@ -69,7 +75,9 @@ class MangaIntervalTest {
         }
 
         // Opening the manga refreshes it from the source, which may move its next update: read the label each time
-        waitUntil(timeoutMillis = 15_000) { onAllNodes(hasText(intervalLabel(graph, manga.id))).fetchSemanticsNodes().isNotEmpty() }
+        waitUntil(timeoutMillis = 15_000) {
+            onAllNodes(hasText(intervalLabel(graph, manga.id))).fetchSemanticsNodes().isNotEmpty()
+        }
         onAllNodesWithText(intervalLabel(graph, manga.id)).onFirst().performClick()
         waitUntil(timeoutMillis = 10_000) {
             onAllNodes(hasText(str(MR.strings.pref_library_update_smart_update))).fetchSemanticsNodes().isNotEmpty()
