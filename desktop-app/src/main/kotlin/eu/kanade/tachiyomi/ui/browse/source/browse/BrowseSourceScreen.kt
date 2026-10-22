@@ -258,11 +258,11 @@ data class BrowseSourceScreen(
                     onDismissRequest = onDismissRequest,
                     onConfirm = { viewModel.addFavorite(dialog.manga) },
                     onOpenManga = { navigator.push(MangaScreen(it.id)) },
-                    onMigrate = null, // desktop: migration arrives in subproject 3
+                    onMigrate = null, // desktop: migration arrives in 3b
                 )
             }
 
-            // desktop: no Migrate dialog until subproject 3
+            // desktop: no Migrate dialog until 3b
             is BrowseSourceViewModel.Dialog.RemoveManga -> {
                 RemoveMangaDialog(
                     onDismissRequest = onDismissRequest,

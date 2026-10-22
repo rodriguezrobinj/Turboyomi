@@ -197,7 +197,7 @@ class MangaScreen(
                     onDismissRequest = onDismissRequest,
                     onConfirm = { viewModel.toggleFavorite(onRemoved = {}, checkDuplicate = false) },
                     onOpenManga = { navigator.push(MangaScreen(it.id)) },
-                    onMigrate = null, // desktop: migration arrives in subproject 3
+                    onMigrate = null, // desktop: migration arrives in 3b
                 )
             }
 

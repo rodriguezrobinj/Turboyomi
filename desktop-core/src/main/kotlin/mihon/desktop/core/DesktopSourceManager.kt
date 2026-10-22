@@ -36,6 +36,6 @@ class DesktopSourceManager(
 
     override suspend fun getOnlineSources(): List<HttpSource> = sources.value.filterIsInstance<HttpSource>()
 
-    // ponytail: stubs for library entries whose extension is gone come with the library (subproject 3)
+    // ponytail: stubs for library entries whose extension is gone come with migration (3b)
     override suspend fun getStubSources(): List<StubSource> = emptyList()
 }

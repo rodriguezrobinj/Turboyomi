@@ -96,7 +96,7 @@ data object HistoryTab : Tab {
                     onDismissRequest = onDismissRequest,
                     onConfirm = { viewModel.addFavorite(dialog.manga) },
                     onOpenManga = { navigator.push(MangaScreen(it.id)) },
-                    onMigrate = null, // desktop: migration comes with subproject 3
+                    onMigrate = null, // desktop: migration comes with 3b
                 )
             }
             is HistoryViewModel.Dialog.ChangeCategory -> {

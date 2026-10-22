@@ -18,7 +18,7 @@ import mihon.icons.materialsymbols.rounded.Explore
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
 
-/** Mihon's BrowseTab without migration (subproject 3) and with a static rail icon. */
+/** Mihon's BrowseTab without migration (3b) and with a static rail icon. */
 data object BrowseTab : Tab {
     override val options: TabOptions
         @Composable get() = TabOptions(
