@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -71,7 +72,12 @@ fun AppContent(graph: AppGraph, crash: Throwable?, onRestart: () -> Unit) {
                 return@Surface
             }
             val snackbar = remember { SnackbarHostState() }
-            LaunchedEffect(Unit) { AppMessages.messages.collect { snackbar.showSnackbar(it) } }
+            LaunchedEffect(Unit) {
+                AppMessages.messages.collect {
+                    val result = snackbar.showSnackbar(it.text, actionLabel = it.actionLabel)
+                    if (result == SnackbarResult.ActionPerformed) it.onAction?.invoke()
+                }
+            }
             Box(Modifier.fillMaxSize()) {
                 // The tabs' navigator sits above the screens' navigator, so it stays composed while a screen covers
                 // HomeScreen; inside HomeScreen it lost every tab's state (pager page, scroll) on the way back.

@@ -30,7 +30,7 @@ class AppMessagesTest {
     fun `an extension's toast reaches the window's messages`(): Unit = runBlocking {
         // Subscribe before the toast: the flow has no replay
         val received = async(start = CoroutineStart.UNDISPATCHED) {
-            withTimeout(5.seconds) { AppMessages.messages.first() }
+            withTimeout(5.seconds) { AppMessages.messages.first().text }
         }
         Toast.makeText(Injekt.get<Context>(), "Inicia sesión en José Pérez", Toast.LENGTH_SHORT).show()
         received.await() shouldBe "Inicia sesión en José Pérez"
@@ -40,7 +40,7 @@ class AppMessagesTest {
     fun `ported code's context toast reaches them too`(): Unit = runBlocking {
         // Subscribe before the toast: the flow has no replay
         val received = async(start = CoroutineStart.UNDISPATCHED) {
-            withTimeout(5.seconds) { AppMessages.messages.first() }
+            withTimeout(5.seconds) { AppMessages.messages.first().text }
         }
         Injekt.get<Context>().toast("hola")
         received.await() shouldBe "hola"

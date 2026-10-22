@@ -1147,4 +1147,8 @@
     <string name="desktop_dual_page_shift">Shift by one page</string>
     <string name="desktop_reader_preload_pages">Pages loaded ahead</string>
     <string name="desktop_image_copied">Image copied</string>
+    <string name="desktop_update_progress">Updating %1$d/%2$d · %3$s</string>
+    <string name="desktop_and_more">and %1$d more</string>
+    <string name="desktop_update_errors_hint">Open the app to see which ones</string>
+    <string name="desktop_learn_more">Learn more</string>
 </resources>

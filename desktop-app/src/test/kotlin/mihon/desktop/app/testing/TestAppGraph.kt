@@ -8,6 +8,7 @@ import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
 import dev.zacsweers.metro.createGraphFactory
 import eu.kanade.domain.chapter.interactor.SyncChaptersWithSource
+import eu.kanade.domain.manga.interactor.UpdateManga
 import eu.kanade.tachiyomi.ui.reader.ReaderViewModel
 import mihon.app.di.AppGraph
 import mihon.core.metro.IsDebugBuild
@@ -16,10 +17,14 @@ import mihon.desktop.core.AppDirs
 import mihon.desktop.core.DesktopBindings
 import mihon.desktop.core.DesktopSourceManager
 import mihon.desktop.core.Platform
+import tachiyomi.domain.category.interactor.CreateCategoryWithName
+import tachiyomi.domain.category.interactor.SetMangaCategories
 import tachiyomi.domain.chapter.interactor.GetChaptersByMangaId
 import tachiyomi.domain.history.interactor.GetHistory
 import tachiyomi.domain.history.interactor.RemoveHistory
 import tachiyomi.domain.history.interactor.UpsertHistory
+import tachiyomi.domain.manga.interactor.GetLibraryManga
+import tachiyomi.domain.manga.interactor.GetManga
 import tachiyomi.domain.manga.interactor.GetMangaByUrlAndSourceId
 import tachiyomi.domain.manga.interactor.NetworkToLocalManga
 import tachiyomi.domain.source.service.SourceManager
@@ -40,6 +45,11 @@ interface TestAppGraph : AppGraph {
     val getHistory: GetHistory
     val upsertHistory: UpsertHistory
     val removeHistory: RemoveHistory
+    val updateManga: UpdateManga
+    val setMangaCategories: SetMangaCategories
+    val createCategoryWithName: CreateCategoryWithName
+    val getLibraryManga: GetLibraryManga
+    val getManga: GetManga
 
     @DependencyGraph.Factory
     fun interface Factory {
@@ -55,7 +65,7 @@ interface TestAppGraph : AppGraph {
 object TestBindings {
     @Provides
     @SingleIn(AppScope::class)
-    fun sourceManager(): SourceManager = FakeSourceManager(TestSources.fake, TestSources.http)
+    fun sourceManager(): SourceManager = FakeSourceManager(TestSources.fake, TestSources.http, TestSources.updatable)
 }
 
 private var started: TestAppGraph? = null

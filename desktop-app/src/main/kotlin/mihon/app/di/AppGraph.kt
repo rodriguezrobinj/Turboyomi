@@ -6,10 +6,14 @@ import eu.kanade.domain.source.service.SourcePreferences
 import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.tachiyomi.data.cache.ChapterCache
 import eu.kanade.tachiyomi.data.cache.CoverCache
+import eu.kanade.tachiyomi.data.library.LibraryUpdateJob
 import eu.kanade.tachiyomi.extension.ExtensionManager
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
 import mihon.desktop.core.DesktopGraph
 import mihon.domain.extension.interactor.GetExtensionStoreCountAsFlow
+import tachiyomi.domain.category.interactor.GetCategories
+import tachiyomi.domain.category.interactor.ResetCategoryFlags
+import tachiyomi.domain.library.service.LibraryPreferences
 
 /**
  * Desktop counterpart of Mihon's AppGraph: the accessors ported code reaches through `context.appGraph`.
@@ -24,4 +28,8 @@ interface AppGraph : DesktopGraph, ViewModelGraph {
     val sourcePreferences: SourcePreferences
     val readerPreferences: ReaderPreferences
     val getExtensionStoreCountAsFlow: GetExtensionStoreCountAsFlow
+    val libraryPreferences: LibraryPreferences
+    val libraryUpdateJob: LibraryUpdateJob
+    val getCategories: GetCategories
+    val resetCategoryFlags: ResetCategoryFlags
 }

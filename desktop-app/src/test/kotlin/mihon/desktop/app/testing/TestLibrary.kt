@@ -20,4 +20,29 @@ object TestLibrary {
         graph.syncChaptersWithSource.await(chapters, manga, source)
         return manga to graph.getChaptersByMangaId.await(manga.id).sortedBy { it.chapterNumber }
     }
+
+    /**
+     * A manga of [TestSources.updatable] (or of [sourceId], which may be an uninstalled source) in the library and in
+     * [category], with its current chapters already synced.
+     */
+    suspend fun libraryManga(graph: TestAppGraph, category: Long, sourceId: Long = TestSources.updatable.id): Manga {
+        val n = next.incrementAndGet()
+        val manga = graph.networkToLocalManga(
+            Manga.create().copy(url = "/u/$n", title = "Manga José $n", source = sourceId),
+        )
+        if (sourceId == TestSources.updatable.id) {
+            val chapters = TestSources.updatable.getMangaUpdate(manga.toSManga(), emptyList(), false, true).chapters
+            graph.syncChaptersWithSource.await(chapters, manga, TestSources.updatable)
+        }
+        graph.updateManga.awaitUpdateFavorite(manga.id, true)
+        graph.setMangaCategories.await(manga.id, listOf(category))
+        return graph.getManga.await(manga.id)!!
+    }
+
+    /** A new category of its own, so each test updates only its manga. */
+    suspend fun category(graph: TestAppGraph): Long {
+        val name = "Categoría ${next.incrementAndGet()}"
+        graph.createCategoryWithName.await(name)
+        return graph.getCategories.await().first { it.name == name }.id
+    }
 }

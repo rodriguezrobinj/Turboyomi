@@ -103,6 +103,9 @@ class FakeSourceManager(vararg initial: Source) : SourceManager {
 object TestSources {
     val fake = FakeSource()
 
+    /** For library updates; see [UpdatableSource]. */
+    val updatable = UpdatableSource()
+
     val images = FakeImages()
     private val server = MockWebServer().apply {
         dispatcher = images
