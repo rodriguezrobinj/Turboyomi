@@ -89,6 +89,13 @@ private fun CategoryContent(
         onChangeOrder(item, to.index)
     }
 
+    // desktop: what dragging one row by one place does, for the move buttons
+    fun move(from: Int, to: Int) {
+        val item = categoriesState.removeAt(from)
+        categoriesState.add(to, item)
+        onChangeOrder(item, to)
+    }
+
     LaunchedEffect(categories) {
         if (!reorderableState.isAnyItemDragging) {
             categoriesState.clear()
@@ -114,6 +121,9 @@ private fun CategoryContent(
                     category = category,
                     onRename = { onClickRename(category) },
                     onDelete = { onClickDelete(category) },
+                    onMoveUp = categoriesState.indexOf(category).let { i -> { move(i, i - 1) }.takeIf { i > 0 } },
+                    onMoveDown = categoriesState.indexOf(category)
+                        .let { i -> { move(i, i + 1) }.takeIf { i < categoriesState.lastIndex } },
                 )
             }
         }

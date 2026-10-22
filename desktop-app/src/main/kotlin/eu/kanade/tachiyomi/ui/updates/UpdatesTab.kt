@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import mihon.desktop.app.main.AppEvents
 import mihon.desktop.app.reader.ReaderScreen
+import mihon.desktop.app.tray.TrayNotifier
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.Autorenew
 import tachiyomi.core.common.i18n.stringResource
@@ -107,6 +108,8 @@ data object UpdatesTab : Tab {
         // desktop: no bottom bar to hide and no Activity to report ready
         DisposableEffect(Unit) {
             viewModel.resetNewUpdatesCount()
+            // desktop: the updates were seen, so a later Open from the tray doesn't jump here again
+            TrayNotifier.unread = false
 
             onDispose {
                 viewModel.resetNewUpdatesCount()

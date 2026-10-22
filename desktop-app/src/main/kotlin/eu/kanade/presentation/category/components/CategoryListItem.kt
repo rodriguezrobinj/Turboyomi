@@ -13,6 +13,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import mihon.icons.materialsymbols.MaterialSymbols
+import mihon.icons.materialsymbols.rounded.ArrowDownward
+import mihon.icons.materialsymbols.rounded.ArrowUpward
 import mihon.icons.materialsymbols.rounded.Delete
 import mihon.icons.materialsymbols.rounded.DragHandle
 import mihon.icons.materialsymbols.rounded.Edit
@@ -27,6 +29,9 @@ fun ReorderableCollectionItemScope.CategoryListItem(
     category: Category,
     onRename: () -> Unit,
     onDelete: () -> Unit,
+    // desktop: buttons beside the drag handle, so the order can change without dragging (keyboard, touchpad)
+    onMoveUp: (() -> Unit)?,
+    onMoveDown: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     ElevatedCard(modifier = modifier) {
@@ -52,6 +57,18 @@ fun ReorderableCollectionItemScope.CategoryListItem(
                 text = category.name,
                 modifier = Modifier.weight(1f),
             )
+            IconButton(onClick = { onMoveUp?.invoke() }, enabled = onMoveUp != null) {
+                Icon(
+                    imageVector = MaterialSymbols.Rounded.ArrowUpward,
+                    contentDescription = stringResource(MR.strings.desktop_move_up),
+                )
+            }
+            IconButton(onClick = { onMoveDown?.invoke() }, enabled = onMoveDown != null) {
+                Icon(
+                    imageVector = MaterialSymbols.Rounded.ArrowDownward,
+                    contentDescription = stringResource(MR.strings.desktop_move_down),
+                )
+            }
             IconButton(onClick = onRename) {
                 Icon(
                     imageVector = MaterialSymbols.Rounded.Edit,

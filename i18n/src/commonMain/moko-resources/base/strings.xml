@@ -1151,10 +1151,11 @@
     <string name="desktop_and_more">and %1$d more</string>
     <string name="desktop_update_errors_hint">Open the app to see which ones</string>
     <string name="desktop_learn_more">Learn more</string>
-    <string name="desktop_time_ago">%1$s ago</string>
     <string name="desktop_close_to_tray">Close to the system tray</string>
     <string name="desktop_close_to_tray_summary">The app keeps running in the tray so the library updates with the window closed</string>
     <string name="desktop_tray_open">Open</string>
     <string name="desktop_tray_exit">Exit</string>
     <string name="desktop_tray_hint">Still running in the tray; the library will keep updating</string>
+    <string name="desktop_move_up">Move up</string>
+    <string name="desktop_move_down">Move down</string>
 </resources>

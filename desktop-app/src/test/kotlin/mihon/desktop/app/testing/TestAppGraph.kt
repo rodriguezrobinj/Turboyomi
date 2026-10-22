@@ -28,6 +28,7 @@ import tachiyomi.domain.manga.interactor.GetManga
 import tachiyomi.domain.manga.interactor.GetMangaByUrlAndSourceId
 import tachiyomi.domain.manga.interactor.NetworkToLocalManga
 import tachiyomi.domain.source.service.SourceManager
+import tachiyomi.domain.updates.service.UpdatesPreferences
 import kotlin.io.path.createTempDirectory
 
 /** The app graph with [TestSources.fake] as the only source, instead of the installed extensions. */
@@ -50,6 +51,7 @@ interface TestAppGraph : AppGraph {
     val createCategoryWithName: CreateCategoryWithName
     val getLibraryManga: GetLibraryManga
     val getManga: GetManga
+    val updatesPreferences: UpdatesPreferences
 
     @DependencyGraph.Factory
     fun interface Factory {

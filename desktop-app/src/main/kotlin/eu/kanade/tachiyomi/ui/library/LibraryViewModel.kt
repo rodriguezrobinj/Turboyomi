@@ -403,8 +403,10 @@ class LibraryViewModel(
                 localBadge = it[2] as Boolean,
                 languageBadge = it[3] as Boolean,
                 skipOutsideReleasePeriod = LibraryPreferences.MANGA_OUTSIDE_RELEASE_PERIOD in (it[4] as Set<*>),
-                globalFilterDownloaded = it[5] as Boolean,
-                filterDownloaded = it[6] as TriState,
+                // desktop: no downloads until subproject 4; a stored downloaded filter (e.g. from a backup) would
+                // hide the whole library, so it's ignored
+                globalFilterDownloaded = false,
+                filterDownloaded = TriState.DISABLED,
                 filterUnread = it[7] as TriState,
                 filterStarted = it[8] as TriState,
                 filterBookmarked = it[9] as TriState,

@@ -13,6 +13,7 @@ import mihon.desktop.app.testing.TestSources
 import mihon.desktop.app.testing.startTestApp
 import mihon.desktop.app.testing.str
 import org.junit.jupiter.api.Test
+import tachiyomi.core.common.preference.TriState
 import tachiyomi.i18n.MR
 
 @OptIn(ExperimentalTestApi::class)
@@ -54,5 +55,21 @@ class LibraryTabTest {
             onAllNodes(hasText(str(MR.strings.action_cancel))).fetchSemanticsNodes().isEmpty()
         }
         TestSources.updatable.gate = null
+    }
+
+    @Test
+    fun `a stored downloaded filter doesn't hide the library while there are no downloads`() = runComposeUiTest {
+        val graph = startTestApp()
+        val category = runBlocking { TestLibrary.category(graph) }
+        val name = runBlocking { graph.getCategories.await().first { it.id == category }.name }
+        val manga = runBlocking { TestLibrary.libraryManga(graph, category) }
+        // As a backup from Android could leave it
+        graph.libraryPreferences.filterDownloaded.set(TriState.ENABLED_IS)
+        setContent { AppContent(graph, crash = null, onRestart = {}) }
+
+        waitUntil(timeoutMillis = 10_000) { onAllNodes(hasText(name)).fetchSemanticsNodes().isNotEmpty() }
+        onNodeWithText(name).performClick()
+        waitUntil(timeoutMillis = 10_000) { onAllNodes(hasText(manga.title)).fetchSemanticsNodes().isNotEmpty() }
+        graph.libraryPreferences.filterDownloaded.set(TriState.DISABLED)
     }
 }

@@ -1,6 +1,8 @@
 package mihon.desktop.app.library
 
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
@@ -57,5 +59,23 @@ class CategoriesTest {
 
         waitUntil(timeoutMillis = 10_000) { runBlocking { graph.getManga.await(manga.id)!!.favorite } }
         runBlocking { graph.getCategories.await(manga.id) }.map { it.id } shouldContain category
+    }
+
+    @Test
+    fun `a category moves up with its button, no dragging needed`() = runComposeUiTest {
+        val graph = startTestApp()
+        runBlocking {
+            graph.createCategoryWithName.await("Primera José")
+            graph.createCategoryWithName.await("Segunda José")
+        }
+        fun order(name: String) = runBlocking { graph.getCategories.await() }.first { it.name == name }.order
+        setContent { AppProviders(graph) { Navigator(CategoryScreen()) } }
+        waitUntil(timeoutMillis = 10_000) { onAllNodes(hasText("Segunda José")).fetchSemanticsNodes().isNotEmpty() }
+
+        onNode(
+            hasContentDescription(str(MR.strings.desktop_move_up)) and hasAnyAncestor(hasText("Segunda José")),
+        ).performClick()
+
+        waitUntil(timeoutMillis = 10_000) { order("Segunda José") < order("Primera José") }
     }
 }

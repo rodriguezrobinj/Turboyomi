@@ -2,6 +2,8 @@ package mihon.desktop.app.tray
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runComposeUiTest
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CompletableDeferred
@@ -95,5 +97,19 @@ class TrayTest {
         TestSources.updatable.gate = null
         TrayNotifier.sink = null
         TrayNotifier.unread = false
+    }
+
+    @Test
+    fun `opening the updates tab marks the tray's notification as seen`() = runComposeUiTest {
+        val graph = startTestApp()
+        TrayNotifier.unread = true
+        setContent { AppContent(graph, crash = null, onRestart = {}) }
+        waitUntil(timeoutMillis = 10_000) {
+            onAllNodes(hasText(str(MR.strings.label_recent_updates))).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        onNodeWithText(str(MR.strings.label_recent_updates)).performClick()
+
+        waitUntil(timeoutMillis = 10_000) { !TrayNotifier.unread }
     }
 }
