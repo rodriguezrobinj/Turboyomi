@@ -12,13 +12,14 @@ import eu.kanade.presentation.components.TabbedScreen
 import eu.kanade.presentation.util.Tab
 import eu.kanade.tachiyomi.ui.browse.extension.ExtensionsViewModel
 import eu.kanade.tachiyomi.ui.browse.extension.extensionsTab
+import eu.kanade.tachiyomi.ui.browse.migration.sources.migrateSourceTab
 import eu.kanade.tachiyomi.ui.browse.source.sourcesTab
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.Explore
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
 
-/** Mihon's BrowseTab without migration (3b) and with a static rail icon. */
+/** Mihon's BrowseTab with a static rail icon. */
 data object BrowseTab : Tab {
     override val options: TabOptions
         @Composable get() = TabOptions(
@@ -36,6 +37,7 @@ data object BrowseTab : Tab {
         val tabs = listOf(
             sourcesTab(),
             extensionsTab(extensionsViewModel),
+            migrateSourceTab(),
         )
         val state = rememberPagerState { tabs.size }
 
