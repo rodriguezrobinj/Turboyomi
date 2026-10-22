@@ -365,6 +365,7 @@ class MigrationListViewModel(
 
     sealed interface Dialog {
         data class Migrate(val copy: Boolean, val totalCount: Int, val skippedCount: Int) : Dialog
+
         // desktop: no androidx.annotation on desktop; progress stays within 0..1
         data class Progress(val progress: Float) : Dialog
         data object Exit : Dialog

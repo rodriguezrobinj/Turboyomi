@@ -21,6 +21,7 @@ import kotlinx.coroutines.launch
 import mihon.desktop.app.main.AppEvents
 import mihon.desktop.app.reader.ReaderScreen
 import mihon.desktop.app.tray.TrayNotifier
+import mihon.feature.upcoming.UpcomingScreen
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.Autorenew
 import tachiyomi.core.common.i18n.stringResource
@@ -67,7 +68,7 @@ data object UpdatesTab : Tab {
                 // desktop: the reader is a screen, not an Activity
                 navigator.push(ReaderScreen(it.update.mangaId, it.update.chapterId))
             },
-            onCalendarClicked = null, // desktop: Upcoming arrives in 3b
+            onCalendarClicked = { navigator.push(UpcomingScreen()) },
             onFilterClicked = viewModel::showFilterDialog,
             hasActiveFilters = state.hasActiveFilters,
         )

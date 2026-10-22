@@ -1,9 +1,12 @@
 package mihon.desktop.app.testing
 
 import eu.kanade.domain.manga.model.toSManga
+import eu.kanade.tachiyomi.source.model.SManga
 import tachiyomi.domain.chapter.model.Chapter
 import tachiyomi.domain.manga.model.Manga
+import tachiyomi.domain.manga.model.MangaUpdate
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.Instant
 
 object TestLibrary {
     private val next = AtomicInteger()
@@ -36,6 +39,28 @@ object TestLibrary {
         }
         graph.updateManga.awaitUpdateFavorite(manga.id, true)
         graph.setMangaCategories.await(manga.id, listOf(category))
+        return graph.getManga.await(manga.id)!!
+    }
+
+    /** A library manga with [status] and [nextUpdate], without chapters: what Upcoming reads. */
+    suspend fun ongoingManga(
+        graph: TestAppGraph,
+        category: Long,
+        nextUpdate: Instant?,
+        status: Long = SManga.ONGOING.toLong(),
+    ): Manga {
+        val n = next.incrementAndGet()
+        val manga = graph.networkToLocalManga(
+            Manga.create().copy(
+                url = "/p/$n",
+                title = "Próximo $n",
+                source = TestSources.updatable.id,
+                status = status,
+            ),
+        )
+        graph.updateManga.awaitUpdateFavorite(manga.id, true)
+        graph.setMangaCategories.await(manga.id, listOf(category))
+        if (nextUpdate != null) graph.updateManga.await(MangaUpdate(manga.id) { this.nextUpdate = nextUpdate })
         return graph.getManga.await(manga.id)!!
     }
 

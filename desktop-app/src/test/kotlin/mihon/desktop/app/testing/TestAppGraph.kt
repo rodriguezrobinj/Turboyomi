@@ -18,6 +18,7 @@ import mihon.desktop.core.DesktopBindings
 import mihon.desktop.core.DesktopSourceManager
 import mihon.desktop.core.Platform
 import mihon.domain.migration.usecases.MigrateMangaUseCase
+import mihon.domain.upcoming.interactor.GetUpcomingManga
 import mihon.feature.migration.list.MigrationListViewModel
 import tachiyomi.domain.category.interactor.CreateCategoryWithName
 import tachiyomi.domain.category.interactor.SetMangaCategories
@@ -31,6 +32,7 @@ import tachiyomi.domain.manga.interactor.GetManga
 import tachiyomi.domain.manga.interactor.GetMangaByUrlAndSourceId
 import tachiyomi.domain.manga.interactor.NetworkToLocalManga
 import tachiyomi.domain.source.service.SourceManager
+import tachiyomi.domain.upcoming.service.UpcomingPreferences
 import tachiyomi.domain.updates.service.UpdatesPreferences
 import kotlin.io.path.createTempDirectory
 
@@ -58,6 +60,8 @@ interface TestAppGraph : AppGraph {
     val migrateMangaUseCase: MigrateMangaUseCase
     val updateChapter: UpdateChapter
     val migrationListViewModelFactory: MigrationListViewModel.Factory
+    val getUpcomingManga: GetUpcomingManga
+    val upcomingPreferences: UpcomingPreferences
 
     @DependencyGraph.Factory
     fun interface Factory {

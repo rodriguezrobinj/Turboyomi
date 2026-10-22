@@ -763,6 +763,7 @@
     <string name="upcoming_guide">Próxima guía</string>
     <string name="upcoming_calendar_next">Próximo mes</string>
     <string name="upcoming_calendar_prev">Mes anterior</string>
+    <string name="pref_filter_upcoming_categories_details">Los títulos de las categorías excluidas no se muestran, aunque también estén en alguna de las categorías incluidas.</string>
     <string name="file_picker_uri_permission_unsupported">No se ha podido obtener un acceso continuo a la carpeta, por lo que la aplicación puede fallar de vez en cuando.</string>
     <string name="pref_flash_page_interval">Parpadear cada</string>
     <string name="pref_flash_with">Parpadear a</string>
