@@ -1,5 +1,9 @@
 package mihon.desktop.app.migration
 
+import ch.qos.logback.classic.Level
+import ch.qos.logback.classic.Logger
+import ch.qos.logback.classic.spi.ILoggingEvent
+import ch.qos.logback.core.read.ListAppender
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
@@ -9,6 +13,7 @@ import mihon.desktop.app.testing.TestSources
 import mihon.desktop.app.testing.startTestApp
 import mihon.domain.migration.models.MigrationFlag
 import org.junit.jupiter.api.Test
+import org.slf4j.LoggerFactory
 import tachiyomi.domain.chapter.model.ChapterUpdate
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MangaUpdate
@@ -117,9 +122,18 @@ class MigrateMangaUseCaseTest {
         val current = TestLibrary.libraryManga(graph, TestLibrary.category(graph))
         val target = target(TestSources.updatable.id)
         TestSources.updatable.failing[target.url] = IOException("sin red")
+        val errors = ListAppender<ILoggingEvent>().apply { start() }
+        val root = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME) as Logger
+        root.addAppender(errors)
 
-        graph.migrateMangaUseCase(current, target, replace = true)
+        try {
+            graph.migrateMangaUseCase(current, target, replace = true)
+        } finally {
+            root.detachAppender(errors)
+        }
 
+        // Logged once, by the refresh: the migration doesn't log the same failure again
+        errors.list.count { it.level == Level.ERROR && "sin red" in it.formattedMessage } shouldBe 1
         graph.getManga.await(current.id)!!.favorite shouldBe true
         graph.getManga.await(target.id)!!.favorite shouldBe false
         graph.getCategories.await(target.id) shouldBe emptyList()

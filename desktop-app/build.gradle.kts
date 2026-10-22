@@ -88,6 +88,7 @@ dependencies {
     testImplementation(libs.bundles.test)
     testImplementation(libs.compose.ui.test)
     testImplementation(libs.okhttp.mockwebserver)
+    testImplementation(libs.logback)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 

@@ -53,7 +53,8 @@ class MigrateMangaUseCase(
         val flags = sourcePreferences.migrationFlags.get()
 
         try {
-            updateMangaFromRemote(target, fetchChapters = true).getOrThrow()
+            // desktop: UpdateMangaFromRemote already logs its failure; stop here instead of logging it again below
+            updateMangaFromRemote(target, fetchChapters = true).getOrElse { return }
 
             // Update chapters read, bookmark and dateFetch
             if (MigrationFlag.CHAPTER in flags) {
@@ -135,7 +136,7 @@ class MigrateMangaUseCase(
             if (e is CancellationException) {
                 throw e
             }
-            // desktop: Mihon drops the error silently; log it (spec 3b §1)
+            // desktop: Mihon drops the error silently; log the ones nothing logged yet (spec 3b §1)
             logcat(LogPriority.ERROR, e) { "Migrating ${current.id} to ${target.id}" }
         }
     }
