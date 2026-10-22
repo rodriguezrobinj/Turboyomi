@@ -925,6 +925,8 @@
     <string name="desktop_update_errors_hint">Abre la app para ver cuáles</string>
     <string name="desktop_learn_more">Más información</string>
     <string name="desktop_time_ago">hace %1$s</string>
+    <string name="desktop_close_to_tray">Cerrar a la bandeja del sistema</string>
+    <string name="desktop_close_to_tray_summary">La app sigue en la bandeja y la biblioteca se actualiza con la ventana cerrada</string>
 
     <!-- Desktop: Mihon strings with no Spanish translation upstream yet; drop each one when Weblate adds it -->
     <string name="action_web_view">WebView</string>

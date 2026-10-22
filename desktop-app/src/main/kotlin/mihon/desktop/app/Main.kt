@@ -53,6 +53,7 @@ import mihon.desktop.app.startup.placeOnScreens
 import mihon.desktop.core.AppDirs
 import mihon.desktop.core.Platform
 import mihon.desktop.core.SingleInstance
+import mihon.desktop.core.jobs.JobScheduler
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.i18n.MR
 import java.awt.Dimension
@@ -91,6 +92,10 @@ fun main(args: Array<String>) {
     DesktopImageLoader.install(graph)
     // Loads the installed extensions (their sources feed SourceManager) and the store listings at startup
     graph.mihonExtensionManager
+    // Periodic jobs while the app is open or in the tray (parent spec §5.1); only the library update for now
+    JobScheduler(
+        listOf(graph.libraryUpdateJob.periodicJob()),
+    ).start(CoroutineScope(SupervisorJob() + Dispatchers.Default))
     val windowStore = WindowStateStore(graph.preferenceStore)
     // Each screen's work area: its bounds without the taskbar, so a default-sized window never hides under it
     val screens = GraphicsEnvironment.getLocalGraphicsEnvironment().screenDevices.map { device ->

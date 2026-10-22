@@ -1,12 +1,14 @@
 package mihon.desktop.app.settings
 
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.runComposeUiTest
 import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -23,6 +25,7 @@ import tachiyomi.i18n.MR
 import java.net.CookieHandler
 import java.net.HttpCookie
 import java.net.URI
+import kotlin.time.Duration.Companion.hours
 
 @OptIn(ExperimentalTestApi::class)
 class SettingsTest {
@@ -110,5 +113,42 @@ class SettingsTest {
         waitForIdle()
 
         store.cookies.shouldBeEmpty()
+    }
+
+    private fun androidx.compose.ui.test.ComposeUiTest.openLibrarySettings() {
+        onNodeWithText(str(MR.strings.label_settings)).performClick()
+        waitForText(str(MR.strings.pref_category_library))
+        // "Biblioteca" is also the rail entry: the settings entry is the last one
+        onAllNodesWithText(str(MR.strings.pref_category_library)).onLast().performClick()
+        waitForText(str(MR.strings.pref_library_update_interval))
+    }
+
+    @Test
+    fun `the library settings save the update interval where the scheduler reads it`() = runComposeUiTest {
+        val graph = startTestApp()
+        setContent { AppContent(graph, crash = null, onRestart = {}) }
+
+        openLibrarySettings()
+        onNodeWithText(str(MR.strings.pref_library_update_interval)).performClick()
+        onNodeWithText(str(MR.strings.update_12hour)).performClick()
+
+        waitUntil(timeoutMillis = 5_000) { graph.libraryPreferences.autoUpdateInterval.get() == 12 }
+        graph.libraryUpdateJob.periodicJob().interval() shouldBe 12.hours
+        graph.libraryPreferences.autoUpdateInterval.set(0)
+    }
+
+    @Test
+    fun `close to tray is a library setting`() = runComposeUiTest {
+        val graph = startTestApp()
+        graph.trayPreferences.traySupported = true
+        setContent { AppContent(graph, crash = null, onRestart = {}) }
+
+        openLibrarySettings()
+        // The setting is near the end of a lazy list: scroll the list to it first
+        onNode(hasScrollToNodeAction()).performScrollToNode(hasText(str(MR.strings.desktop_close_to_tray)))
+        onNodeWithText(str(MR.strings.desktop_close_to_tray)).performClick()
+
+        waitUntil(timeoutMillis = 5_000) { graph.trayPreferences.closeToTray.get() }
+        graph.trayPreferences.closeToTray.set(false)
     }
 }

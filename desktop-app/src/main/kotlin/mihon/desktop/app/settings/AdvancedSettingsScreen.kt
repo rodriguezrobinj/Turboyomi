@@ -47,6 +47,14 @@ object AdvancedSettingsScreen : SearchableSettings {
                 title = stringResource(MR.strings.desktop_open_logs_folder),
                 onClick = { Desktop.getDesktop().open(context.appGraph.appDirs.logs.toFile()) },
             ),
+            // desktop: Mihon's "Refresh library metadata", on the library update job (spec 3a §3 D)
+            Preference.PreferenceItem.TextPreference(
+                title = stringResource(MR.strings.pref_refresh_library_covers),
+                onClick = {
+                    val started = context.appGraph.libraryUpdateJob.startMetadata()
+                    context.toast(if (started) MR.strings.updating_library else MR.strings.update_already_running)
+                },
+            ),
             embeddedBrowser(context),
         )
     }

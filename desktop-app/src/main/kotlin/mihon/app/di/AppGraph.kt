@@ -9,6 +9,7 @@ import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.data.library.LibraryUpdateJob
 import eu.kanade.tachiyomi.extension.ExtensionManager
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
+import mihon.desktop.app.tray.TrayPreferences
 import mihon.desktop.core.DesktopGraph
 import mihon.domain.extension.interactor.GetExtensionStoreCountAsFlow
 import tachiyomi.domain.category.interactor.GetCategories
@@ -32,4 +33,5 @@ interface AppGraph : DesktopGraph, ViewModelGraph {
     val libraryUpdateJob: LibraryUpdateJob
     val getCategories: GetCategories
     val resetCategoryFlags: ResetCategoryFlags
+    val trayPreferences: TrayPreferences
 }
