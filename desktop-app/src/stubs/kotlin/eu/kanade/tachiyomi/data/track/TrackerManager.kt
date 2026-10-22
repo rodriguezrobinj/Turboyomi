@@ -13,4 +13,7 @@ class TrackerManager {
     fun loggedInTrackers(): List<Tracker> = emptyList()
 
     fun loggedInTrackersFlow(): Flow<List<Tracker>> = flowOf(emptyList())
+
+    @Suppress("UNUSED_PARAMETER")
+    fun getAll(ids: Set<Long>): List<Tracker> = emptyList()
 }

@@ -24,6 +24,8 @@ class ShortcutNavigationTest {
         setContent { AppContent(graph, crash = null, onRestart = {}) }
 
         // Push a screen on top of HomeScreen: the extension stores
+        // The app opens on the library (spec 3a)
+        onNodeWithText(str(MR.strings.browse)).performClick()
         onNodeWithText(str(MR.strings.label_extensions)).performClick()
         waitUntil(timeoutMillis = 10_000) {
             onAllNodes(hasText(str(MR.strings.extensionStores))).fetchSemanticsNodes().isNotEmpty()
@@ -59,6 +61,8 @@ class ShortcutNavigationTest {
             onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty()
         }
 
+        // The app opens on the library (spec 3a)
+        onNodeWithText(str(MR.strings.browse)).performClick()
         onNodeWithText(str(MR.strings.label_extensions)).performClick()
         waitFor(str(MR.strings.extensionStores))
         onNodeWithText(str(MR.strings.extensionStores)).performClick()
@@ -83,6 +87,8 @@ class ShortcutNavigationTest {
             onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty()
         }
 
+        // The app opens on the library (spec 3a)
+        onNodeWithText(str(MR.strings.browse)).performClick()
         onNodeWithText(str(MR.strings.label_extensions)).performClick()
         waitFor(str(MR.strings.extensionStores))
         onNodeWithText(str(MR.strings.extensionStores)).performClick()
@@ -101,6 +107,8 @@ class ShortcutNavigationTest {
             onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty()
         }
 
+        // The app opens on the library (spec 3a)
+        onNodeWithText(str(MR.strings.browse)).performClick()
         onNodeWithText(str(MR.strings.label_extensions)).performClick()
         waitFor(str(MR.strings.extensionStores))
         onNodeWithText(str(MR.strings.extensionStores)).performClick()

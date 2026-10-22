@@ -25,6 +25,9 @@ class DownloadManager {
 
     fun getDownloadCount(manga: Manga): Int = 0
 
+    /** Every manga with 0: callers read it with getValue. */
+    fun getDownloadCounts(manga: List<Manga>): Map<Long, Int> = manga.associate { it.id to 0 }
+
     fun getDownloadedChapterIds(chapters: List<Chapter>, manga: Manga): Set<Long> = emptySet()
 
     fun getQueuedDownloadOrNull(chapterId: Long): Download? = null

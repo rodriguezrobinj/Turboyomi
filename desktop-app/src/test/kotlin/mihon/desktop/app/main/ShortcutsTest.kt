@@ -30,4 +30,14 @@ class ShortcutsTest {
         Shortcut.Refresh.beforeFocusedComponent shouldBe true
         Shortcut.Settings.beforeFocusedComponent shouldBe true
     }
+
+    @Test
+    fun `library shortcuts`() {
+        shortcutFor(Key.A, ctrl = true, alt = false, shift = false) shouldBe Shortcut.SelectAll
+        shortcutFor(Key.Tab, ctrl = true, alt = false, shift = false) shouldBe Shortcut.NextCategory
+        shortcutFor(Key.Tab, ctrl = true, alt = false, shift = true) shouldBe Shortcut.PreviousCategory
+        shortcutFor(Key.A, ctrl = false, alt = false, shift = false) shouldBe null
+        // A search field's own Ctrl+A wins: select all only goes to the screen when nothing handled it
+        Shortcut.SelectAll.beforeFocusedComponent shouldBe false
+    }
 }

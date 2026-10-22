@@ -49,6 +49,7 @@ import kotlinx.coroutines.withContext
 import logcat.LogPriority
 import mihon.desktop.app.browser.EmbeddedBrowser
 import mihon.desktop.app.main.AppEvents
+import mihon.desktop.app.main.HomeScreen
 import mihon.desktop.app.platform.FileDialogs
 import mihon.desktop.app.reader.ReaderScreen
 import tachiyomi.core.common.util.system.logcat
@@ -286,7 +287,10 @@ class MangaScreen(
         }
 
         when (val previousController = navigator.items[navigator.size - 2]) {
-            // desktop: Mihon's HomeScreen.search (library search) arrives with the library (subproject 3)
+            is HomeScreen -> {
+                navigator.pop()
+                HomeScreen.search(query)
+            }
             is BrowseSourceScreen -> {
                 navigator.pop()
                 previousController.search(query)

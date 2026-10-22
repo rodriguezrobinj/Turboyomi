@@ -16,6 +16,8 @@ class ExploreEmptyStateTest {
         val graph = startTestApp()
         setContent { AppContent(graph, crash = null, onRestart = {}) }
 
+        // The app opens on the library (spec 3a)
+        onNodeWithText(str(MR.strings.browse)).performClick()
         onNodeWithText(str(MR.strings.label_extensions)).performClick()
         waitUntil(timeoutMillis = 10_000) {
             onAllNodes(

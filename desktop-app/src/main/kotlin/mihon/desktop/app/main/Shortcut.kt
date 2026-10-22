@@ -13,6 +13,11 @@ enum class Shortcut(
     GlobalSearch(true),
     Refresh(true),
     Settings(true),
+
+    /** After the focused component, so a text field's own Ctrl+A wins. */
+    SelectAll(false),
+    NextCategory(true),
+    PreviousCategory(true),
 }
 
 /** The window-wide shortcuts (spec 2a, section 3). Anything else stays with the focused component. */
@@ -22,5 +27,7 @@ fun shortcutFor(key: Key, ctrl: Boolean, alt: Boolean, shift: Boolean): Shortcut
     key == Key.F && ctrl && !alt -> Shortcut.GlobalSearch
     key == Key.F5 && !ctrl && !alt -> Shortcut.Refresh
     key == Key.Comma && ctrl && !alt -> Shortcut.Settings
+    key == Key.A && ctrl && !alt && !shift -> Shortcut.SelectAll
+    key == Key.Tab && ctrl && !alt -> if (shift) Shortcut.PreviousCategory else Shortcut.NextCategory
     else -> null
 }

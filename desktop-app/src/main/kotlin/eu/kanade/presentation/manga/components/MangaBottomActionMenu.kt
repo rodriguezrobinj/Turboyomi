@@ -236,7 +236,7 @@ fun LibraryBottomActionMenu(
     onMarkAsUnreadClicked: () -> Unit,
     onDownloadClicked: ((DownloadAction) -> Unit)?,
     onDeleteClicked: () -> Unit,
-    onMigrateClicked: () -> Unit,
+    onMigrateClicked: (() -> Unit)?, // desktop: null until migration (3b)
     modifier: Modifier = Modifier,
 ) {
     AnimatedVisibility(
@@ -310,13 +310,15 @@ fun LibraryBottomActionMenu(
                     }
                 }
                 if (!itemOverflow) {
-                    Button(
-                        title = stringResource(MR.strings.migrate),
-                        icon = MaterialSymbols.Rounded.SwapCalls,
-                        toConfirm = confirm[4],
-                        onLongClick = { onLongClickItem(4) },
-                        onClick = onMigrateClicked,
-                    )
+                    if (onMigrateClicked != null) {
+                        Button(
+                            title = stringResource(MR.strings.migrate),
+                            icon = MaterialSymbols.Rounded.SwapCalls,
+                            toConfirm = confirm[4],
+                            onLongClick = { onLongClickItem(4) },
+                            onClick = onMigrateClicked,
+                        )
+                    }
                     Button(
                         title = stringResource(MR.strings.action_delete),
                         icon = MaterialSymbols.Rounded.Delete,
@@ -338,10 +340,12 @@ fun LibraryBottomActionMenu(
                             onDismissRequest = { overflowMenuOpen = false },
                             offset = BottomBarMenuDpOffset,
                         ) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(MR.strings.migrate)) },
-                                onClick = onMigrateClicked,
-                            )
+                            if (onMigrateClicked != null) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(MR.strings.migrate)) },
+                                    onClick = onMigrateClicked,
+                                )
+                            }
                             DropdownMenuItem(
                                 text = { Text(stringResource(MR.strings.action_delete)) },
                                 onClick = onDeleteClicked,
