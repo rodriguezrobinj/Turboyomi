@@ -4,6 +4,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.runComposeUiTest
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
@@ -12,6 +13,8 @@ import kotlinx.coroutines.withTimeout
 import mihon.desktop.app.main.AppContent
 import mihon.desktop.app.main.AppEvents
 import mihon.desktop.app.platform.AppMessages
+import mihon.desktop.app.testing.TestLibrary
+import mihon.desktop.app.testing.TestSources
 import mihon.desktop.app.testing.startTestApp
 import mihon.desktop.app.testing.str
 import org.junit.jupiter.api.Test
@@ -71,5 +74,26 @@ class TrayTest {
         waitUntil(timeoutMillis = 10_000) {
             onAllNodes(hasText(str(MR.strings.label_recent_updates))).fetchSemanticsNodes().size >= 2
         }
+    }
+
+    @Test
+    fun `updating from the tray while an update runs says so, even with the window hidden`(): Unit = runBlocking {
+        val graph = startTestApp()
+        graph.libraryPreferences.autoUpdateMangaRestrictions.set(emptySet())
+        val category = TestLibrary.category(graph)
+        TestLibrary.libraryManga(graph, category)
+        val gate = CompletableDeferred<Unit>().also { TestSources.updatable.gate = it }
+        val sent = mutableListOf<Notice>()
+        TrayNotifier.sink = { sent += it }
+        graph.libraryUpdateJob.start(category) shouldBe true
+
+        updateFromTray(graph.libraryUpdateJob, graph.context)
+
+        sent.single().message shouldBe str(MR.strings.update_already_running)
+        gate.complete(Unit)
+        withTimeout(30.seconds) { graph.libraryUpdateJob.awaitIdle() }
+        TestSources.updatable.gate = null
+        TrayNotifier.sink = null
+        TrayNotifier.unread = false
     }
 }

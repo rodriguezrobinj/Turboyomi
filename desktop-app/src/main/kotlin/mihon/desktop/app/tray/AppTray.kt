@@ -1,5 +1,6 @@
 package mihon.desktop.app.tray
 
+import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
@@ -15,6 +16,7 @@ import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.Notification
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.rememberTrayState
+import eu.kanade.tachiyomi.data.library.LibraryUpdateJob
 import mihon.app.di.AppGraph
 import mihon.desktop.core.AppDirs
 import mihon.icons.materialsymbols.MaterialSymbols
@@ -64,11 +66,23 @@ fun ApplicationScope.AppTray(graph: AppGraph, onOpen: () -> Unit, onExit: () -> 
         onAction = onOpen,
         menu = {
             Item(context.stringResource(MR.strings.desktop_tray_open), onClick = onOpen)
-            Item(context.stringResource(MR.strings.action_update_library), onClick = { graph.libraryUpdateJob.start() })
+            Item(
+                context.stringResource(MR.strings.action_update_library),
+                onClick = { updateFromTray(graph.libraryUpdateJob, context) },
+            )
             Separator()
             Item(context.stringResource(MR.strings.desktop_tray_exit), onClick = onExit)
         },
     )
+}
+
+/** The tray's "Update library": the window may be hidden, so "already running" comes as a notification. */
+fun updateFromTray(job: LibraryUpdateJob, context: Context) {
+    if (!job.start()) {
+        TrayNotifier.send(
+            Notice(AppDirs.APP_NAME, context.stringResource(MR.strings.update_already_running), opensUpdates = false),
+        )
+    }
 }
 
 private val TRAY_TINT = Color(0xFF3B82F6)
