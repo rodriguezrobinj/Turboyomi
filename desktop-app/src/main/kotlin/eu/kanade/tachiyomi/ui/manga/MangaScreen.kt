@@ -21,6 +21,7 @@ import dev.zacsweers.metrox.viewmodel.assistedMetroViewModel
 import eu.kanade.domain.manga.model.hasCustomCover
 import eu.kanade.domain.manga.model.toSManga
 import eu.kanade.presentation.browse.components.RemoveMangaDialog
+import eu.kanade.presentation.category.components.ChangeCategoryDialog
 import eu.kanade.presentation.components.NavigatorAdaptiveSheet
 import eu.kanade.presentation.manga.ChapterSettingsDialog
 import eu.kanade.presentation.manga.DuplicateMangaDialog
@@ -38,6 +39,7 @@ import eu.kanade.tachiyomi.source.isLocalOrStub
 import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.ui.browse.source.browse.BrowseSourceScreen
 import eu.kanade.tachiyomi.ui.browse.source.globalsearch.GlobalSearchScreen
+import eu.kanade.tachiyomi.ui.category.CategoryScreen
 import eu.kanade.tachiyomi.util.system.copyToClipboard
 import eu.kanade.tachiyomi.util.system.openInBrowser
 import eu.kanade.tachiyomi.util.system.toast
@@ -139,8 +141,8 @@ class MangaScreen(
             onCoverClicked = viewModel::showCoverDialog,
             onShareClicked = null, // desktop: no Android share sheet
             onDownloadActionClicked = null, // desktop: downloads arrive in subproject 4
-            // desktop: categories, fetch interval and migration arrive in subproject 3, notes in subproject 5
-            onEditCategoryClicked = null,
+            onEditCategoryClicked = viewModel::showChangeCategoryDialog.takeIf { successState.manga.favorite },
+            // desktop: fetch interval and migration arrive in 3b, notes in subproject 5
             onEditFetchIntervalClicked = null,
             onMigrateClicked = null,
             onEditNotesClicked = null,
@@ -166,6 +168,16 @@ class MangaScreen(
                         if (successState.manga.favorite) viewModel.toggleFavorite()
                     },
                     mangaToRemove = successState.manga,
+                )
+            }
+            is MangaViewModel.Dialog.ChangeCategory -> {
+                ChangeCategoryDialog(
+                    initialSelection = dialog.initialSelection,
+                    onDismissRequest = onDismissRequest,
+                    onEditCategories = { navigator.push(CategoryScreen()) },
+                    onConfirm = { include, _ ->
+                        viewModel.moveMangaToCategoriesAndAddToLibrary(dialog.manga, include)
+                    },
                 )
             }
             is MangaViewModel.Dialog.DeleteChapters -> {
@@ -228,7 +240,7 @@ class MangaScreen(
                     )
                 } ?: LoadingScreen()
             }
-            // desktop: no ChangeCategory, Migrate, TrackSheet or SetFetchInterval dialogs yet (subprojects 3 and 5)
+            // desktop: no Migrate, TrackSheet or SetFetchInterval dialogs yet (3b and subproject 5)
             else -> {}
         }
 

@@ -78,6 +78,7 @@ dependencies {
     implementation(libs.composeRichEditor)
     implementation(libs.diskLruCache)
     implementation(libs.zoomable)
+    implementation(libs.reorderable)
 
     // Types of CefHelper.cefApp and of the WebView window's browser; the jar comes at runtime with android-compat
     compileOnly(libs.jcef)
