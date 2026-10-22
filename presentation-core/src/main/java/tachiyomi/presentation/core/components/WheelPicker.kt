@@ -45,7 +45,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import tachiyomi.presentation.core.components.material.padding
 import tachiyomi.presentation.core.util.clearFocusOnSoftKeyboardHide
@@ -124,7 +124,8 @@ private fun <T> WheelPicker(
 
     LaunchedEffect(lazyListState, onSelectionChanged) {
         snapshotFlow { lazyListState.firstVisibleItemScrollOffset }
-            .map { calculateSnappedItemIndex(lazyListState) }
+            // desktop: the first emission can come before the list's first layout, with no visible items yet
+            .mapNotNull { calculateSnappedItemIndex(lazyListState) }
             .distinctUntilChanged()
             .collectLatest {
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -243,10 +244,10 @@ private fun calculateAnimatedAlpha(
     }
 }
 
-private fun calculateSnappedItemIndex(lazyListState: LazyListState): Int {
+private fun calculateSnappedItemIndex(lazyListState: LazyListState): Int? {
     return lazyListState.layoutInfo.visibleItemsInfo
-        .maxBy { calculateAnimatedAlpha(lazyListState, it.index) }
-        .index
+        .maxByOrNull { calculateAnimatedAlpha(lazyListState, it.index) }
+        ?.index
 }
 
 object WheelPickerDefaults {

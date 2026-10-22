@@ -145,7 +145,9 @@ class MangaScreen(
             onShareClicked = null, // desktop: no Android share sheet
             onDownloadActionClicked = null, // desktop: downloads arrive in subproject 4
             onEditCategoryClicked = viewModel::showChangeCategoryDialog.takeIf { successState.manga.favorite },
-            onEditFetchIntervalClicked = null, // desktop: wired in the interval task of 3b
+            onEditFetchIntervalClicked = viewModel::showSetFetchIntervalDialog.takeIf {
+                successState.manga.favorite
+            },
             onMigrateClicked = {
                 navigator.push(MigrationConfigScreen(successState.manga.id))
             }.takeIf { successState.manga.favorite },
@@ -253,7 +255,16 @@ class MangaScreen(
                     onDismissRequest = onDismissRequest,
                 )
             }
-            // desktop: no TrackSheet (subproject 5); SetFetchInterval comes with the interval task
+            is MangaViewModel.Dialog.SetFetchInterval -> {
+                SetIntervalDialog(
+                    interval = dialog.manga.fetchInterval,
+                    nextUpdate = dialog.manga.expectedNextUpdate,
+                    onDismissRequest = onDismissRequest,
+                    onValueChanged = { interval: Int -> viewModel.setFetchInterval(dialog.manga, interval) }
+                        .takeIf { viewModel.isUpdateIntervalEnabled },
+                )
+            }
+            // desktop: no TrackSheet dialog until subproject 5
             else -> {}
         }
 

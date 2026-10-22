@@ -17,7 +17,6 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import eu.kanade.presentation.components.TabbedDialog
 import eu.kanade.presentation.components.TabbedDialogPaddings
 import eu.kanade.tachiyomi.ui.library.LibrarySettingsViewModel
-import eu.kanade.tachiyomi.util.system.isReleaseBuildType
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.Refresh
 import tachiyomi.core.common.preference.TriState
@@ -103,8 +102,8 @@ private fun ColumnScope.FilterPage(
         state = filterCompleted,
         onClick = { viewModel.toggleFilter(LibraryPreferences::filterCompleted) },
     )
-    // TODO: re-enable when custom intervals are ready for stable
-    if ((!isReleaseBuildType) && LibraryPreferences.MANGA_OUTSIDE_RELEASE_PERIOD in autoUpdateMangaRestrictions) {
+    // desktop: custom intervals in every build (spec 3b §1), so their filter shows too
+    if (LibraryPreferences.MANGA_OUTSIDE_RELEASE_PERIOD in autoUpdateMangaRestrictions) {
         val filterIntervalCustom by viewModel.libraryPreferences.filterIntervalCustom.collectAsState()
         TriStateItem(
             label = stringResource(MR.strings.action_filter_interval_custom),

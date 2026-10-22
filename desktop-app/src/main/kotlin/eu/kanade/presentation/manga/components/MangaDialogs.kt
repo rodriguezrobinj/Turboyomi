@@ -19,7 +19,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import eu.kanade.tachiyomi.util.system.isReleaseBuildType
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.daysUntil
 import tachiyomi.domain.manga.interactor.FetchInterval
@@ -109,7 +108,8 @@ fun SetIntervalDialog(
                 }
                 Spacer(Modifier.height(MaterialTheme.padding.small))
 
-                if (onValueChanged != null && (!isReleaseBuildType)) {
+                // desktop: custom intervals in every build, not only debug ones (spec 3b §1)
+                if (onValueChanged != null) {
                     Text(stringResource(MR.strings.manga_interval_custom_amount))
 
                     BoxWithConstraints(
