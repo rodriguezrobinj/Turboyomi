@@ -15,7 +15,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -26,6 +28,9 @@ import eu.kanade.presentation.util.Screen
 import eu.kanade.tachiyomi.ui.manga.MangaScreen
 import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.coroutines.flow.collectLatest
+import mihon.desktop.app.main.AppEvents
+import mihon.desktop.app.platform.SelectionClick
+import mihon.desktop.app.platform.selectionClick
 import mihon.feature.migration.config.MigrationConfigScreen
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.automirroredrounded.ArrowForward
@@ -47,6 +52,7 @@ data class MigrateMangaScreen(
     override fun Content() {
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
+        val windowInfo = LocalWindowInfo.current
         val viewModel =
             assistedMetroViewModel<MigrateMangaViewModel, MigrateMangaViewModel.Factory> { create(sourceId = sourceId) }
 
@@ -108,10 +114,18 @@ data class MigrateMangaScreen(
                 lazyListState = lazyListState,
                 contentPadding = contentPadding,
                 state = state,
-                onClickItem = viewModel::toggleSelection,
+                // desktop: shift+click while selecting picks a range (spec 3a §3 A)
+                onClickItem = { manga ->
+                    when (selectionClick(windowInfo.keyboardModifiers.isShiftPressed, state.selectionMode)) {
+                        SelectionClick.Range -> viewModel.selectRange(manga)
+                        SelectionClick.Open, SelectionClick.Toggle -> viewModel.toggleSelection(manga)
+                    }
+                },
                 onClickCover = { navigator.push(MangaScreen(it.id)) },
             )
         }
+
+        LaunchedEffect(Unit) { AppEvents.selectAll.collect { viewModel.selectAll() } } // desktop: Ctrl+A
 
         LaunchedEffect(Unit) {
             viewModel.events.collectLatest { event ->

@@ -74,12 +74,31 @@ class MigrateMangaViewModel(
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5.seconds), State())
 
+    // desktop: the last title clicked, where a shift+click range starts (as in the 3a library)
+    private var rangeStart: Long? = null
+
     fun toggleSelection(item: Manga) {
         selection.update { selection ->
             selection.mutate { list ->
                 if (!list.remove(item.id)) list.add(item.id)
             }
         }
+        rangeStart = item.id // desktop
+    }
+
+    // desktop: shift+click selects every title between the last one clicked and this one
+    fun selectRange(item: Manga) {
+        val titles = state.value.titles
+        val from = titles.indexOfFirst { it.id == rangeStart }
+        val to = titles.indexOfFirst { it.id == item.id }
+        if (from < 0 || to < 0) return toggleSelection(item)
+        selection.update { it + titles.subList(minOf(from, to), maxOf(from, to) + 1).map(Manga::id) }
+        rangeStart = item.id
+    }
+
+    // desktop: Ctrl+A
+    fun selectAll() {
+        selection.update { state.value.titles.map(Manga::id).toSet() }
     }
 
     fun clearSelection() {
