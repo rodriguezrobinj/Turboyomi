@@ -106,7 +106,21 @@ fun MigrationConfigScreenSheet(
                             )
                         }
                 }
-                // desktop: removing downloads arrives with downloads (subproject 4b)
+                val removeDownloads = MigrationFlag.REMOVE_DOWNLOAD in migrationFlags
+                MigrationSheetSwitchItem(
+                    title = stringResource(MR.strings.migrationConfigScreen_removeDownloadsTitle),
+                    subtitle = null,
+                    checked = removeDownloads,
+                    onClick = {
+                        preferences.migrationFlags.getAndSet {
+                            if (removeDownloads) {
+                                it - MigrationFlag.REMOVE_DOWNLOAD
+                            } else {
+                                it + MigrationFlag.REMOVE_DOWNLOAD
+                            }
+                        }
+                    },
+                )
                 MigrationSheetDividerItem()
                 OutlinedTextField(
                     value = extraSearchQuery,

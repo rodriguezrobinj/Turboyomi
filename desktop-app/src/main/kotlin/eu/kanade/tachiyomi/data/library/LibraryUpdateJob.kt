@@ -5,6 +5,7 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import eu.kanade.presentation.util.formattedMessage
+import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.source.UnmeteredSource
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.model.UpdateStrategy
@@ -33,6 +34,7 @@ import mihon.desktop.app.tray.errorsNotice
 import mihon.desktop.app.tray.newChaptersNotice
 import mihon.desktop.core.AppDirs
 import mihon.desktop.core.jobs.PeriodicJob
+import mihon.domain.chapter.interactor.FilterChaptersForDownload
 import mihon.domain.source.interactor.UpdateMangaFromRemote
 import tachiyomi.core.common.i18n.pluralStringResource
 import tachiyomi.core.common.i18n.stringResource
@@ -56,6 +58,7 @@ import java.awt.Desktop
 import java.io.File
 import java.net.URI
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.io.path.createDirectories
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
@@ -76,6 +79,8 @@ class LibraryUpdateJob(
     private val getManga: GetManga,
     private val fetchInterval: FetchInterval,
     private val updateMangaFromRemote: UpdateMangaFromRemote,
+    private val downloadManager: DownloadManager,
+    private val filterChaptersForDownload: FilterChaptersForDownload,
     @AppCoroutineScope private val scope: CoroutineScope,
 ) {
     /** [done] of [total] manga; [current] are the titles being fetched right now. */
@@ -136,6 +141,7 @@ class LibraryUpdateJob(
 
         val newUpdates = CopyOnWriteArrayList<Pair<Manga, List<Chapter>>>()
         val failed = CopyOnWriteArrayList<Pair<Manga, String?>>()
+        val hasDownloads = AtomicBoolean(false)
         forEachWithProgress(queue) { manga ->
             // Don't continue to update if manga is not in library
             if (getManga.await(manga.id)?.favorite != true) return@forEachWithProgress
@@ -154,6 +160,12 @@ class LibraryUpdateJob(
                         libraryPreferences.newUpdatesCount.getAndSet { it + newChapters.size }
                     }
                     newUpdates += manga to newChapters.sortedByDescending { it.sourceOrder }
+                    // desktop: Mihon's automatic download of new chapters (spec 4b §2)
+                    val toDownload = filterChaptersForDownload.await(manga, newChapters)
+                    if (toDownload.isNotEmpty()) {
+                        downloadManager.downloadChapters(manga, toDownload, autoStart = false)
+                        hasDownloads.set(true)
+                    }
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -167,6 +179,7 @@ class LibraryUpdateJob(
             }
         }
 
+        if (hasDownloads.get()) downloadManager.startDownloads()
         if (newUpdates.isNotEmpty()) TrayNotifier.send(newChaptersNotice(context, newUpdates))
         if (failed.isNotEmpty()) {
             val file = writeErrorFile(failed)
