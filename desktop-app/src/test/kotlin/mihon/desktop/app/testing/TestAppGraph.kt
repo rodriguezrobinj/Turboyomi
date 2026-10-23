@@ -35,6 +35,7 @@ import tachiyomi.domain.manga.interactor.NetworkToLocalManga
 import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.domain.upcoming.service.UpcomingPreferences
 import tachiyomi.domain.updates.service.UpdatesPreferences
+import tachiyomi.source.local.LocalSource
 import kotlin.io.path.createTempDirectory
 
 /** The app graph with [TestSources.fake] as the only source, instead of the installed extensions. */
@@ -62,6 +63,7 @@ interface TestAppGraph : AppGraph {
     val updateChapter: UpdateChapter
     val migrationListViewModelFactory: MigrationListViewModel.Factory
     val getUpcomingManga: GetUpcomingManga
+    val localSource: LocalSource
     val migrateMangaViewModelFactory: MigrateMangaViewModel.Factory
     val upcomingPreferences: UpcomingPreferences
 
@@ -79,7 +81,8 @@ interface TestAppGraph : AppGraph {
 object TestBindings {
     @Provides
     @SingleIn(AppScope::class)
-    fun sourceManager(): SourceManager = FakeSourceManager(TestSources.fake, TestSources.http, TestSources.updatable)
+    fun sourceManager(local: LocalSource): SourceManager =
+        FakeSourceManager(local, TestSources.fake, TestSources.http, TestSources.updatable)
 }
 
 private var started: TestAppGraph? = null

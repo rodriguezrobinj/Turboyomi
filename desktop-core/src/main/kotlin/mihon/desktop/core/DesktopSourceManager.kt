@@ -15,18 +15,21 @@ import kotlinx.coroutines.flow.stateIn
 import mihon.core.metro.AppCoroutineScope
 import tachiyomi.domain.source.model.StubSource
 import tachiyomi.domain.source.service.SourceManager
+import tachiyomi.source.local.LocalSource
 
 @Inject
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
 class DesktopSourceManager(
     extensionManager: DesktopExtensionManager,
+    // desktop: the local source comes first, as in Mihon's AndroidSourceManager
+    localSource: LocalSource,
     @AppCoroutineScope scope: CoroutineScope,
 ) : SourceManager {
 
     override val sources: StateFlow<List<Source>> = extensionManager.installed
-        .map { list -> list.filterIsInstance<Extension.Loaded>().flatMap { it.sources } }
-        .stateIn(scope, SharingStarted.Eagerly, emptyList())
+        .map { list -> listOf<Source>(localSource) + list.filterIsInstance<Extension.Loaded>().flatMap { it.sources } }
+        .stateIn(scope, SharingStarted.Eagerly, listOf(localSource))
 
     override suspend fun get(sourceKey: Long): Source? = sources.value.find { it.id == sourceKey }
 

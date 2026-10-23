@@ -12,6 +12,7 @@ dependencies {
     api(projects.data)
     api(projects.core.common)
     api(projects.extensionLoader)
+    api(projects.sourceLocal)
     implementation(projects.core.metro)
     implementation(projects.androidCompat)
     // Types of CefHelper.cefApp; the jar itself comes at runtime with android-compat
