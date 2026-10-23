@@ -37,6 +37,7 @@ import kotlinx.coroutines.launch
 import logcat.LogPriority
 import mihon.desktop.app.browser.EmbeddedBrowserWindow
 import mihon.desktop.app.image.DesktopImageLoader
+import mihon.desktop.app.local.startStorage
 import mihon.desktop.app.main.AppContent
 import mihon.desktop.app.main.AppEvents
 import mihon.desktop.app.main.shortcutFor
@@ -98,9 +99,7 @@ fun main(args: Array<String>) {
     DesktopImageLoader.install(graph)
     // Loads the installed extensions (their sources feed SourceManager) and the store listings at startup
     graph.mihonExtensionManager
-    // Listens for storage location changes from now on, as on Android, where it's created with the app: created on
-    // first use, a change made before then wouldn't create the new folder's local/, downloads/ and autobackup/
-    graph.storageManager
+    graph.startStorage()
     // Periodic jobs while the app is open or in the tray (parent spec §5.1); only the library update for now
     JobScheduler(
         listOf(graph.libraryUpdateJob.periodicJob()),

@@ -60,4 +60,18 @@ class AppDirsTest {
         val dirs = AppDirs.fromEnvironment(mapOf("MANGAREADER_HOME" to "D:\\Portable"))
         dirs.storage shouldBe Path("D:\\Portable", "storage")
     }
+
+    @Test
+    fun `the default storage folder is created only while it's the chosen one`() {
+        val root = createTempDirectory("dirs José")
+        val dirs = AppDirs(root.resolve("data"), root.resolve("local"))
+        dirs.createAll()
+        dirs.storage.isDirectory() shouldBe false
+
+        dirs.createStorageIfChosen(root.resolve("otra").toUri().toString())
+        dirs.storage.isDirectory() shouldBe false
+
+        dirs.createStorageIfChosen(dirs.storage.toFile().toURI().toString())
+        dirs.storage.isDirectory() shouldBe true
+    }
 }

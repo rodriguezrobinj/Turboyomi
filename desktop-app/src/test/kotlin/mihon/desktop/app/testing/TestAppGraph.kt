@@ -14,6 +14,7 @@ import eu.kanade.tachiyomi.ui.reader.ReaderViewModel
 import mihon.app.di.AppGraph
 import mihon.core.metro.IsDebugBuild
 import mihon.desktop.app.DesktopApp
+import mihon.desktop.app.local.startStorage
 import mihon.desktop.core.AppDirs
 import mihon.desktop.core.DesktopBindings
 import mihon.desktop.core.DesktopSourceManager
@@ -101,7 +102,7 @@ fun startTestApp(): TestAppGraph {
         createGraphFactory<TestAppGraph.Factory>().create(context, dirs, debug)
     }
     DesktopApp.graph = graph
-    graph.storageManager // as Main does: listening for storage location changes from the start
+    graph.startStorage() // as Main does
     started = graph
     return graph
 }

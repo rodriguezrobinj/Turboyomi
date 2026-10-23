@@ -1,5 +1,6 @@
 package mihon.desktop.core
 
+import java.net.URI
 import java.nio.file.Path
 import javax.swing.filechooser.FileSystemView
 import kotlin.io.path.Path
@@ -24,7 +25,15 @@ data class AppDirs(val data: Path, val local: Path, val storage: Path = data.res
     val cookies: Path get() = local.resolve("cookies.bin")
 
     fun createAll() {
-        listOf(data, db, backups, settings, local, cache, extensions, logs, storage).forEach { it.createDirectories() }
+        listOf(data, db, backups, settings, local, cache, extensions, logs).forEach { it.createDirectories() }
+    }
+
+    /**
+     * Creates the default storage folder only while [chosen] (the storage_dir preference) is it: once the user moves the
+     * storage elsewhere, Documents isn't given an empty MangaReader folder on every start.
+     */
+    fun createStorageIfChosen(chosen: String) {
+        if (runCatching { Path.of(URI(chosen)) }.getOrNull() == storage) storage.createDirectories()
     }
 
     companion object {
