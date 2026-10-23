@@ -7,7 +7,8 @@ import javax.swing.JFileChooser
 
 /** The native Windows file dialogs. */
 object FileDialogs {
-    fun saveFile(title: String, defaultName: String): File? = show(title, FileDialog.SAVE) { file = defaultName }
+    fun saveFile(title: String, defaultName: String): File? =
+        show(title, FileDialog.SAVE) { file = defaultName }?.let { withDefaultExtension(it, defaultName) }
 
     fun openImage(title: String): File? = show(title, FileDialog.LOAD) {
         setFilenameFilter { _, name -> name.substringAfterLast('.').lowercase() in IMAGE_EXTENSIONS }
@@ -36,4 +37,14 @@ object FileDialogs {
     }
 
     private val IMAGE_EXTENSIONS = setOf("jpg", "jpeg", "png", "webp", "gif", "bmp")
+}
+
+/**
+ * AWT's save dialog keeps a name typed without extension as it is: [chosen] gets [defaultName]'s extension then, so a
+ * backup saved as "copia" is "copia.tachibk" and the open dialog's filter finds it.
+ */
+internal fun withDefaultExtension(chosen: File, defaultName: String): File {
+    val extension = defaultName.substringAfterLast('.', "")
+    if (extension.isEmpty() || chosen.name.endsWith(".$extension", ignoreCase = true)) return chosen
+    return File(chosen.path + ".$extension")
 }
