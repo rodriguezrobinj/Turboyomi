@@ -8,3 +8,10 @@ extension-loader/src/main/kotlin/mihon/desktop/extension/vendor/ are derived fro
 Suwayomi-Server (https://github.com/Suwayomi/Suwayomi-Server) at commit
 e2ce828abb81f0f5ce1a3fb86194a2746b519c85 and are licensed under the
 Mozilla Public License 2.0 (see android-compat/LICENSE).
+
+The archive reader uses 7-Zip-JBinding (https://sevenzipjbind.sourceforge.net/), which bundles 7-Zip by Igor
+Pavlov, licensed under the GNU LGPL 2.1 with the unRAR restriction: its RAR code may be used only to read RAR
+archives, never to create them or to recreate the RAR compression algorithm.
+
+The RAR samples core/archive/src/test/resources/archives/rar4.rar and rar5.rar come from the libarchive test suite
+(https://github.com/libarchive/libarchive), licensed under the BSD 2-Clause License.

@@ -1158,4 +1158,5 @@
     <string name="desktop_tray_hint">Still running in the tray; the library will keep updating</string>
     <string name="desktop_move_up">Move up</string>
     <string name="desktop_move_down">Move down</string>
+    <string name="desktop_archive_reader_unavailable">The archive reader couldn\'t load</string>
 </resources>
