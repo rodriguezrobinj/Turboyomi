@@ -6,6 +6,7 @@ import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import mihon.core.archive.ArchiveReader
@@ -13,6 +14,7 @@ import mihon.desktop.app.testing.TestAppGraph
 import mihon.desktop.app.testing.TestLibrary
 import mihon.desktop.app.testing.TestSources
 import mihon.desktop.app.testing.startTestApp
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import tachiyomi.domain.chapter.model.Chapter
 import tachiyomi.domain.manga.model.Manga
@@ -22,6 +24,10 @@ import kotlin.time.Duration.Companion.seconds
 class DownloaderTest {
     private val graph: TestAppGraph = startTestApp()
     private val source = TestSources.http
+
+    /** Each test starts with an empty queue: one left by another test would hold off this test's auto start. */
+    @BeforeEach
+    fun emptyQueue(): Unit = runBlocking { graph.downloadManager.clearQueue() }
 
     private suspend fun awaitQueue(done: (List<Download>) -> Boolean) = withTimeout(60.seconds) {
         while (!done(graph.downloadManager.queueState.value)) delay(100)
@@ -111,7 +117,8 @@ class DownloaderTest {
             graph.downloadManager.downloadChapters(manga, listOf(chapters[0]), autoStart = false)
 
             graph.downloadStore.restore().map { it.chapter.id } shouldContainExactly listOf(chapters[0].id)
-            graph.downloadManager.isDownloaderRunning.value shouldBe false
+            // The running state follows the downloader within a poll; queued without starting, it settles on false
+            withTimeout(5.seconds) { graph.downloadManager.isDownloaderRunning.first { !it } }
 
             // A page left in _tmp by a run that was cut short
             val tmp = File(chapterFile(manga, chapters[0], cbz = false).path + "_tmp").apply { mkdirs() }
