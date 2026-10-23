@@ -100,9 +100,13 @@ fun main(args: Array<String>) {
     // Loads the installed extensions (their sources feed SourceManager) and the store listings at startup
     graph.mihonExtensionManager
     graph.startStorage()
-    // Periodic jobs while the app is open or in the tray (parent spec §5.1); only the library update for now
+    // Mihon clears the chapter cache on launch when asked to (MainActivity)
+    if (graph.libraryPreferences.autoClearChapterCache.get()) {
+        CoroutineScope(Dispatchers.IO).launch { graph.chapterCache.clear() }
+    }
+    // Periodic jobs while the app is open or in the tray (parent spec §5.1)
     JobScheduler(
-        listOf(graph.libraryUpdateJob.periodicJob()),
+        listOf(graph.libraryUpdateJob.periodicJob(), graph.backupJob.periodicJob()),
     ).start(CoroutineScope(SupervisorJob() + Dispatchers.Default))
     val windowStore = WindowStateStore(graph.preferenceStore)
     // Each screen's work area: its bounds without the taskbar, so a default-sized window never hides under it

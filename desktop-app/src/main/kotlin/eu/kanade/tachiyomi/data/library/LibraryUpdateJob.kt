@@ -5,6 +5,7 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import eu.kanade.presentation.util.formattedMessage
+import eu.kanade.tachiyomi.data.backup.BackupJob
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.source.UnmeteredSource
 import eu.kanade.tachiyomi.source.model.SManga
@@ -81,6 +82,7 @@ class LibraryUpdateJob(
     private val updateMangaFromRemote: UpdateMangaFromRemote,
     private val downloadManager: DownloadManager,
     private val filterChaptersForDownload: FilterChaptersForDownload,
+    private val backupJob: BackupJob,
     @AppCoroutineScope private val scope: CoroutineScope,
 ) {
     /** [done] of [total] manga; [current] are the titles being fetched right now. */
@@ -112,7 +114,11 @@ class LibraryUpdateJob(
         name = "LibraryUpdate",
         interval = { libraryPreferences.autoUpdateInterval.get().takeIf { it > 0 }?.hours },
         lastRun = libraryPreferences.lastUpdatedTimestamp,
-        run = { if (start()) awaitIdle() },
+        // desktop: never during a restore, which is rewriting the library (spec 5a §3 E)
+        run = {
+            backupJob.awaitRestore()
+            if (start()) awaitIdle()
+        },
     )
 
     private fun launch(block: suspend () -> Unit): Boolean = synchronized(this) {
