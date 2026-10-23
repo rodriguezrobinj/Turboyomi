@@ -25,7 +25,7 @@ class StorageTest {
         runBlocking {
             val manager = graph.storageManager
             val other = createTempDirectory("Otra José Pérez").toFile()
-            // StorageManager starts listening on the app scope; in the app it exists long before anyone changes the folder
+            // StorageManager starts listening on the app scope; in the app it exists long before the folder changes
             delay(500)
 
             graph.storagePreferences.baseStorageDirectory.set(other.toURI().toString())

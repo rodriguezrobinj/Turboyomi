@@ -35,14 +35,16 @@ class LocalReaderTest {
     /** The page bytes of [chapter] as the reader loads them, or the reader's error. */
     private suspend fun open(manga: Manga, chapter: Chapter): Result<List<ByteArray>> {
         val viewModel = graph.readerViewModelFactory.create(manga.id, chapter.id)
-        val state = withTimeout(15.seconds) { viewModel.state.first { it.viewerChapters != null || it.initError != null } }
+        val state = withTimeout(15.seconds) {
+            viewModel.state.first { it.viewerChapters != null || it.initError != null }
+        }
         state.initError?.let { return Result.failure(it) }
         val pages = state.currentChapter.shouldNotBeNull().pages.shouldNotBeNull()
         return Result.success(pages.map { page -> page.stream!!().use { it.readBytes() } })
     }
 
     @Test
-    fun `a folder, a CBZ and an EPUB chapter open with their pages in natural order, upper-case extensions included`(): Unit =
+    fun `folder, CBZ and EPUB chapters open with their pages in natural order, upper-case extensions too`(): Unit =
         runBlocking {
             val (manga, chapters) = localManga("Lectura José") { dir ->
                 File(dir, "Cap 1").apply { mkdirs() }.also { cap ->
@@ -83,7 +85,9 @@ class LocalReaderTest {
 
     @Test
     fun `a manga folder deleted after it was added says the chapter wasn't found`(): Unit = runBlocking {
-        val (manga, chapters) = localManga("Borrado José") { dir -> LocalFixtures.zip(File(dir, "Cap 1.cbz"), mapOf("01.png" to png())) }
+        val (manga, chapters) = localManga("Borrado José") { dir ->
+            LocalFixtures.zip(File(dir, "Cap 1.cbz"), mapOf("01.png" to png()))
+        }
         File(LocalFixtures.localDir(graph), "Borrado José").deleteRecursively()
 
         open(manga, chapters.single()).exceptionOrNull()?.message shouldBe str(MR.strings.chapter_not_found)
