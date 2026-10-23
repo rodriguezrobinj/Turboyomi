@@ -3,6 +3,7 @@ package mihon.desktop.app.migration
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -62,11 +63,13 @@ class MigrationScreensTest {
         onNodeWithText(name).performClick()
         waitForText(manga.title)
         runOnIdle { AppEvents.send(Shortcut.SelectAll) }
-        // Without downloads (subproject 4b) the bottom bar has no overflow: Migrate is its own icon button
+        // With downloads the bottom bar overflows: Migrate is in its More menu
         waitUntil(timeoutMillis = 10_000) {
-            onAllNodes(hasContentDescription(str(MR.strings.migrate))).fetchSemanticsNodes().isNotEmpty()
+            onAllNodes(hasContentDescription(str(MR.strings.label_more))).fetchSemanticsNodes().isNotEmpty()
         }
-        onNodeWithContentDescription(str(MR.strings.migrate)).performClick()
+        onNodeWithContentDescription(str(MR.strings.label_more)).performClick()
+        waitForText(str(MR.strings.migrate))
+        onAllNodes(hasText(str(MR.strings.migrate)), useUnmergedTree = true).onFirst().performClick()
         waitForText(str(MR.strings.migrationConfigScreen_continueButtonText))
     }
 }

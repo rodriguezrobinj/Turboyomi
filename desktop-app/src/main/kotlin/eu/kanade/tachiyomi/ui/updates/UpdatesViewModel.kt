@@ -469,9 +469,7 @@ class UpdatesViewModel(
         ) {
             @Suppress("UNCHECKED_CAST")
             ItemPreferences(
-                // desktop: no downloads until subproject 4b; a stored downloaded filter (e.g. from a backup) would
-                // hide every update, so it's ignored
-                filterDownloaded = TriState.DISABLED,
+                filterDownloaded = it[0] as TriState,
                 filterUnread = it[1] as TriState,
                 filterStarted = it[2] as TriState,
                 filterBookmarked = it[3] as TriState,

@@ -2,7 +2,6 @@ package mihon.desktop.app.browse
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performMouseInput
@@ -40,8 +39,6 @@ class BrowseAndMangaTest {
             onNodeWithText("Manga 1").performClick()
             waitForText("Chapter 5")
             waitForText("Description of Manga 1")
-            // Downloads arrive in subproject 4b: no chapter shows a download button
-            onAllNodesWithContentDescription(str(MR.strings.manga_download)).fetchSemanticsNodes().size shouldBe 0
 
             val manga = runBlocking { graph.getMangaByUrlAndSourceId.await("/manga/1", TestSources.fake.id) }!!
             runBlocking { graph.getChaptersByMangaId.await(manga.id) }.size shouldBe 5

@@ -20,7 +20,6 @@ import mihon.desktop.app.testing.startTestApp
 import mihon.desktop.app.testing.str
 import org.junit.jupiter.api.Test
 import tachiyomi.core.common.i18n.pluralStringResource
-import tachiyomi.core.common.preference.TriState
 import tachiyomi.i18n.MR
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
@@ -41,8 +40,6 @@ class UpdatesTabTest {
                 graph.libraryUpdateJob.start(category)
                 withTimeout(30.seconds) { graph.libraryUpdateJob.awaitIdle() }
             }
-            // As a backup from Android could leave it: no downloads yet, so it mustn't hide anything
-            graph.updatesPreferences.filterDownloaded.set(TriState.ENABLED_IS)
             setContent { AppContent(graph, crash = null, onRestart = {}) }
 
             onNodeWithText(str(MR.strings.label_recent_updates)).performClick()
@@ -51,7 +48,6 @@ class UpdatesTabTest {
 
             onAllNodesWithText("Capítulo 4").onFirst().performClick()
             waitUntil(timeoutMillis = 15_000) { onAllNodes(hasTestTag(READER_TAG)).fetchSemanticsNodes().isNotEmpty() }
-            graph.updatesPreferences.filterDownloaded.set(TriState.DISABLED)
         }
 
     @Test

@@ -66,7 +66,13 @@ fun UpdatesFilterDialog(
 private fun ColumnScope.FilterSheet(
     viewModel: UpdatesSettingsViewModel,
 ) {
-    // desktop: no "Downloaded" filter until downloads (subproject 4b)
+    val filterDownloaded by viewModel.updatesPreferences.filterDownloaded.collectAsState()
+    TriStateItem(
+        label = stringResource(MR.strings.label_downloaded),
+        state = filterDownloaded,
+        onClick = { viewModel.toggleFilter(UpdatesPreferences::filterDownloaded) },
+    )
+
     val filterUnread by viewModel.updatesPreferences.filterUnread.collectAsState()
     TriStateItem(
         label = stringResource(MR.strings.action_filter_unread),

@@ -5,6 +5,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runComposeUiTest
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 import mihon.desktop.app.main.AppContent
@@ -58,18 +59,24 @@ class LibraryTabTest {
     }
 
     @Test
-    fun `a stored downloaded filter doesn't hide the library while there are no downloads`() = runComposeUiTest {
+    fun `the downloaded filter hides a manga without downloads`() = runComposeUiTest {
         val graph = startTestApp()
         val category = runBlocking { TestLibrary.category(graph) }
         val name = runBlocking { graph.getCategories.await().first { it.id == category }.name }
         val manga = runBlocking { TestLibrary.libraryManga(graph, category) }
-        // As a backup from Android could leave it
-        graph.libraryPreferences.filterDownloaded.set(TriState.ENABLED_IS)
+        val kept = runBlocking { TestLibrary.libraryManga(graph, category) }
         setContent { AppContent(graph, crash = null, onRestart = {}) }
 
         waitUntil(timeoutMillis = 10_000) { onAllNodes(hasText(name)).fetchSemanticsNodes().isNotEmpty() }
         onNodeWithText(name).performClick()
         waitUntil(timeoutMillis = 10_000) { onAllNodes(hasText(manga.title)).fetchSemanticsNodes().isNotEmpty() }
-        graph.libraryPreferences.filterDownloaded.set(TriState.DISABLED)
+        try {
+            // Neither has downloads: the filter leaves the category empty
+            graph.libraryPreferences.filterDownloaded.set(TriState.ENABLED_IS)
+            waitUntil(timeoutMillis = 10_000) { onAllNodes(hasText(kept.title)).fetchSemanticsNodes().isEmpty() }
+            onAllNodes(hasText(manga.title)).fetchSemanticsNodes().isEmpty() shouldBe true
+        } finally {
+            graph.libraryPreferences.filterDownloaded.set(TriState.DISABLED)
+        }
     }
 }

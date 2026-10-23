@@ -3,7 +3,9 @@ package mihon.desktop.app.main
 import androidx.compose.foundation.DefaultContextMenuRepresentation
 import androidx.compose.foundation.LocalContextMenuRepresentation
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -12,6 +14,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,6 +26,7 @@ import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.TabNavigator
 import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
+import eu.kanade.presentation.components.AppStateBanners
 import eu.kanade.presentation.theme.TachiyomiTheme
 import eu.kanade.presentation.util.DefaultNavigatorScreenTransition
 import eu.kanade.presentation.util.LocalBackPress
@@ -79,37 +84,44 @@ fun AppContent(graph: AppGraph, crash: Throwable?, onRestart: () -> Unit) {
                     if (result == SnackbarResult.ActionPerformed) it.onAction?.invoke()
                 }
             }
-            Box(Modifier.fillMaxSize()) {
-                // The tabs' navigator sits above the screens' navigator, so it stays composed while a screen covers
-                // HomeScreen; inside HomeScreen it lost every tab's state (pager page, scroll) on the way back.
-                // Voyager's default TabDisposable would drop that state too, and the tabs live as long as the app.
-                TabNavigator(HomeScreen.tabs.first(), tabDisposable = {}) { tabNavigator ->
-                    Navigator(HomeScreen) { navigator ->
-                        // Shortcuts that navigate are collected here, at the root, which stays composed whatever
-                        // screen is on top (Voyager only composes the top screen)
-                        LaunchedEffect(navigator) {
-                            launch { AppEvents.globalSearch.collect { navigator.push(GlobalSearchScreen()) } }
-                            launch {
-                                AppEvents.updatesRequests.collect {
+            val downloadedOnly by remember { graph.basePreferences.downloadedOnly.changes() }
+                .collectAsState(graph.basePreferences.downloadedOnly.get())
+            val indexing by graph.downloadCache.isInitializing.collectAsState()
+            // desktop: Mihon's banners over the whole window (MainActivity), without incognito (subproject 5)
+            Column(Modifier.fillMaxSize()) {
+                AppStateBanners(downloadedOnlyMode = downloadedOnly, incognitoMode = false, indexing = indexing)
+                Box(Modifier.weight(1f).fillMaxWidth()) {
+                    // The tabs' navigator sits above the screens' navigator, so it stays composed while a screen covers
+                    // HomeScreen; inside HomeScreen it lost every tab's state (pager page, scroll) on the way back.
+                    // Voyager's default TabDisposable would drop that state too, and the tabs live as long as the app.
+                    TabNavigator(HomeScreen.tabs.first(), tabDisposable = {}) { tabNavigator ->
+                        Navigator(HomeScreen) { navigator ->
+                            // Shortcuts that navigate are collected here, at the root, which stays composed whatever
+                            // screen is on top (Voyager only composes the top screen)
+                            LaunchedEffect(navigator) {
+                                launch { AppEvents.globalSearch.collect { navigator.push(GlobalSearchScreen()) } }
+                                launch {
+                                    AppEvents.updatesRequests.collect {
+                                        navigator.popUntilRoot()
+                                        tabNavigator.current = UpdatesTab
+                                    }
+                                }
+                                AppEvents.openSettings.collect {
                                     navigator.popUntilRoot()
-                                    tabNavigator.current = UpdatesTab
+                                    tabNavigator.current = HomeScreen.tabs.last()
                                 }
                             }
-                            AppEvents.openSettings.collect {
-                                navigator.popUntilRoot()
-                                tabNavigator.current = HomeScreen.tabs.last()
+                            // Like Mihon's SettingsScreen: settings screens draw their up arrow from LocalBackPress
+                            CompositionLocalProvider(LocalBackPress provides navigator::pop) {
+                                DefaultNavigatorScreenTransition(navigator)
                             }
                         }
-                        // Like Mihon's SettingsScreen: settings screens draw their up arrow from LocalBackPress
-                        CompositionLocalProvider(LocalBackPress provides navigator::pop) {
-                            DefaultNavigatorScreenTransition(navigator)
-                        }
                     }
-                }
-                SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
-                // The embedded browser's download dialog, over whatever screen asked for a WebView (spec 2b §3 D)
-                EmbeddedBrowserConsent(graph.cefInstaller) {
-                    CefRuntime.startAsync(graph.appDirs.cef, graph.appDirs.cefCache)
+                    SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
+                    // The embedded browser's download dialog, over whatever screen asked for a WebView (spec 2b §3 D)
+                    EmbeddedBrowserConsent(graph.cefInstaller) {
+                        CefRuntime.startAsync(graph.appDirs.cef, graph.appDirs.cefCache)
+                    }
                 }
             }
         }

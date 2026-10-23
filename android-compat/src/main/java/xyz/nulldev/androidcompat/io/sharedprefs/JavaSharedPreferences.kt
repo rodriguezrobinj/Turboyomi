@@ -25,6 +25,7 @@ import kotlinx.serialization.builtins.serializer
 import xyz.nulldev.androidcompat.util.SafePath
 import xyz.nulldev.ts.config.ApplicationRootDir
 import java.util.Properties
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.io.path.Path
@@ -76,7 +77,8 @@ class JavaSharedPreferences(
         }
     private val preferences = PropertiesSettings(properties)
 
-    private val listeners = mutableMapOf<SharedPreferences.OnSharedPreferenceChangeListener, (String) -> Unit>()
+    // desktop: concurrent, every Preference.changes() collector registers from its own thread
+    private val listeners = ConcurrentHashMap<SharedPreferences.OnSharedPreferenceChangeListener, (String) -> Unit>()
 
     // TODO: 2021-05-29 Need to find a way to get this working with all pref types
     override fun getAll(): MutableMap<String, *> = preferences.keys.associateWith { preferences.getStringOrNull(it) }.toMutableMap()

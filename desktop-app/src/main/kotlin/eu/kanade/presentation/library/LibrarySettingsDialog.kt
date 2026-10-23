@@ -77,7 +77,18 @@ private fun ColumnScope.FilterPage(
 ) {
     val autoUpdateMangaRestrictions by viewModel.libraryPreferences.autoUpdateMangaRestrictions.collectAsState()
 
-    // desktop: no "Downloaded" filter until downloads (subproject 4b)
+    val filterDownloaded by viewModel.libraryPreferences.filterDownloaded.collectAsState()
+    val downloadedOnly by viewModel.preferences.downloadedOnly.collectAsState()
+    TriStateItem(
+        label = stringResource(MR.strings.label_downloaded),
+        state = if (downloadedOnly) {
+            TriState.ENABLED_IS
+        } else {
+            filterDownloaded
+        },
+        enabled = !downloadedOnly,
+        onClick = { viewModel.toggleFilter(LibraryPreferences::filterDownloaded) },
+    )
     val filterUnread by viewModel.libraryPreferences.filterUnread.collectAsState()
     TriStateItem(
         label = stringResource(MR.strings.action_filter_unread),

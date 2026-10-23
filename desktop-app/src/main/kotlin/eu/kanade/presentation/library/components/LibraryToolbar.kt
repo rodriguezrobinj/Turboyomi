@@ -40,6 +40,7 @@ fun LibraryToolbar(
     onSearchQueryChange: (String?) -> Unit,
     scrollBehavior: TopAppBarScrollBehavior?,
     onClickEditCategories: () -> Unit, // desktop: Mihon's More tab doesn't exist here (plan 3a, deviation 3)
+    onClickDownloadedOnly: () -> Unit, // desktop: Mihon's More tab switch (spec 4b §1)
 ) = when {
     selectedCount > 0 -> LibrarySelectionToolbar(
         selectedCount = selectedCount,
@@ -57,6 +58,7 @@ fun LibraryToolbar(
         onClickGlobalUpdate = onClickGlobalUpdate,
         onClickOpenRandomManga = onClickOpenRandomManga,
         onClickEditCategories = onClickEditCategories,
+        onClickDownloadedOnly = onClickDownloadedOnly,
         scrollBehavior = scrollBehavior,
     )
 }
@@ -72,6 +74,7 @@ private fun LibraryRegularToolbar(
     onClickGlobalUpdate: () -> Unit,
     onClickOpenRandomManga: () -> Unit,
     onClickEditCategories: () -> Unit,
+    onClickDownloadedOnly: () -> Unit,
     scrollBehavior: TopAppBarScrollBehavior?,
 ) {
     val pillAlpha = if (isSystemInDarkTheme()) 0.12f else 0.08f
@@ -121,6 +124,11 @@ private fun LibraryRegularToolbar(
                     AppBar.OverflowAction(
                         title = stringResource(MR.strings.action_edit_categories),
                         onClick = onClickEditCategories,
+                    ),
+                    // desktop: Mihon's More tab switch for downloaded-only mode, which desktop has no tab for
+                    AppBar.OverflowAction(
+                        title = stringResource(MR.strings.label_downloaded_only),
+                        onClick = onClickDownloadedOnly,
                     ),
                 ),
             )

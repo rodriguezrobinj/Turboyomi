@@ -16,6 +16,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.util.fastAll
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
@@ -45,6 +46,7 @@ import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.automirroredrounded.Help
 import mihon.icons.materialsymbols.rounded.CollectionsBookmark
 import tachiyomi.core.common.i18n.stringResource
+import tachiyomi.core.common.preference.toggle
 import tachiyomi.domain.category.model.Category
 import tachiyomi.domain.library.model.LibraryManga
 import tachiyomi.domain.manga.model.Manga
@@ -137,6 +139,7 @@ data object LibraryTab : Tab {
                         // For scroll overlay when no tab
                         scrollBehavior = scrollBehavior.takeIf { !state.showCategoryTabs },
                         onClickEditCategories = { navigator.push(CategoryScreen()) },
+                        onClickDownloadedOnly = { context.appGraph.basePreferences.downloadedOnly.toggle() },
                     )
                     LibraryUpdateProgress(updateJob)
                 }
@@ -147,7 +150,8 @@ data object LibraryTab : Tab {
                     onChangeCategoryClicked = viewModel::openChangeCategoryDialog,
                     onMarkAsReadClicked = { viewModel.markReadSelection(true) },
                     onMarkAsUnreadClicked = { viewModel.markReadSelection(false) },
-                    onDownloadClicked = null, // desktop: downloads arrive in subproject 4b
+                    onDownloadClicked = viewModel::performDownloadAction
+                        .takeIf { state.selectedManga.fastAll { !it.isLocal() } },
                     onDeleteClicked = viewModel::openDeleteMangaDialog,
                     onMigrateClicked = {
                         val selection = state.selection

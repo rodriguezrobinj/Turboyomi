@@ -12,6 +12,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 import eu.kanade.presentation.updates.UpdateScreen
+import eu.kanade.presentation.updates.UpdatesDeleteConfirmationDialog
 import eu.kanade.presentation.updates.UpdatesFilterDialog
 import eu.kanade.presentation.util.Tab
 import eu.kanade.tachiyomi.ui.manga.MangaScreen
@@ -59,10 +60,10 @@ data object UpdatesTab : Tab {
             onSelectAll = viewModel::toggleAllSelection,
             onInvertSelection = viewModel::invertSelection,
             onUpdateLibrary = viewModel::updateLibrary,
-            onDownloadChapter = null, // desktop: downloads arrive in subproject 4b
+            onDownloadChapter = viewModel::downloadChapters,
             onMultiBookmarkClicked = viewModel::bookmarkUpdates,
             onMultiMarkAsReadClicked = viewModel::markUpdatesRead,
-            onMultiDeleteClicked = null, // desktop: downloads arrive in subproject 4b
+            onMultiDeleteClicked = viewModel::showConfirmDeleteChapters,
             onUpdateSelected = viewModel::toggleSelection,
             onOpenChapter = {
                 // desktop: the reader is a screen, not an Activity
@@ -74,15 +75,20 @@ data object UpdatesTab : Tab {
         )
 
         val onDismissDialog = { viewModel.setDialog(null) }
-        when (state.dialog) {
+        when (val dialog = state.dialog) {
             is UpdatesViewModel.Dialog.FilterSheet -> {
                 UpdatesFilterDialog(
                     onDismissRequest = onDismissDialog,
                     viewModel = settingsViewModel,
                 )
             }
-            // desktop: no delete confirmation until downloads (subproject 4b)
-            else -> {}
+            is UpdatesViewModel.Dialog.DeleteConfirmation -> {
+                UpdatesDeleteConfirmationDialog(
+                    onDismissRequest = onDismissDialog,
+                    onConfirm = { viewModel.deleteChapters(dialog.toDelete) },
+                )
+            }
+            null -> {}
         }
 
         LaunchedEffect(Unit) {
