@@ -28,6 +28,9 @@ sourceSets {
                 "eu/kanade/tachiyomi/util/system/WebViewUtil.kt",
                 "tachiyomi/core/common/i18n/Localize.kt",
                 "tachiyomi/core/common/util/system/ImageUtil.kt",
+                // Its desktop counterpart is DesktopFolderProvider (desktop-core); both would bind FolderProvider
+                "tachiyomi/core/common/storage/AndroidStorageFolderProvider.kt",
+                "eu/kanade/tachiyomi/util/storage/DiskUtil.kt",
             )
             exclude { it.relativePath.pathString in androidOnly && "/src/main/" in it.file.invariantSeparatorsPath }
         }

@@ -42,4 +42,22 @@ class AppDirsTest {
                 true
         }
     }
+
+    @Test
+    fun `the storage folder is Documents, wherever Windows has it, plus the app name`() {
+        val dirs = AppDirs.fromEnvironment(
+            mapOf(
+                "APPDATA" to "C:\\Users\\José Pérez\\AppData\\Roaming",
+                "LOCALAPPDATA" to "C:\\Users\\José Pérez\\AppData\\Local",
+            ),
+            documents = { Path("C:\\Users\\José Pérez\\OneDrive\\Documentos") },
+        )
+        dirs.storage shouldBe Path("C:\\Users\\José Pérez\\OneDrive\\Documentos", AppDirs.APP_NAME)
+    }
+
+    @Test
+    fun `with the home override the storage folder stays under the home folder`() {
+        val dirs = AppDirs.fromEnvironment(mapOf("MANGAREADER_HOME" to "D:\\Portable"))
+        dirs.storage shouldBe Path("D:\\Portable", "storage")
+    }
 }

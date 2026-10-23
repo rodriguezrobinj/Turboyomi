@@ -15,6 +15,8 @@ import mihon.domain.extension.interactor.GetExtensionStoreCountAsFlow
 import tachiyomi.domain.category.interactor.GetCategories
 import tachiyomi.domain.category.interactor.ResetCategoryFlags
 import tachiyomi.domain.library.service.LibraryPreferences
+import tachiyomi.domain.storage.service.StorageManager
+import tachiyomi.domain.storage.service.StoragePreferences
 
 /**
  * Desktop counterpart of Mihon's AppGraph: the accessors ported code reaches through `context.appGraph`.
@@ -34,4 +36,6 @@ interface AppGraph : DesktopGraph, ViewModelGraph {
     val getCategories: GetCategories
     val resetCategoryFlags: ResetCategoryFlags
     val trayPreferences: TrayPreferences
+    val storagePreferences: StoragePreferences
+    val storageManager: StorageManager
 }

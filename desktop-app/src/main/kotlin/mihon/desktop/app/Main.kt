@@ -98,6 +98,9 @@ fun main(args: Array<String>) {
     DesktopImageLoader.install(graph)
     // Loads the installed extensions (their sources feed SourceManager) and the store listings at startup
     graph.mihonExtensionManager
+    // Listens for storage location changes from now on, as on Android, where it's created with the app: created on
+    // first use, a change made before then wouldn't create the new folder's local/, downloads/ and autobackup/
+    graph.storageManager
     // Periodic jobs while the app is open or in the tray (parent spec §5.1); only the library update for now
     JobScheduler(
         listOf(graph.libraryUpdateJob.periodicJob()),

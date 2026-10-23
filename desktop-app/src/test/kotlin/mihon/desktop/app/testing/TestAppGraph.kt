@@ -96,6 +96,7 @@ fun startTestApp(): TestAppGraph {
         createGraphFactory<TestAppGraph.Factory>().create(context, dirs, debug)
     }
     DesktopApp.graph = graph
+    graph.storageManager // as Main does: listening for storage location changes from the start
     started = graph
     return graph
 }

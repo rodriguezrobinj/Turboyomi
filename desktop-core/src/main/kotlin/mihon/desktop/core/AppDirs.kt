@@ -1,11 +1,15 @@
 package mihon.desktop.core
 
 import java.nio.file.Path
+import javax.swing.filechooser.FileSystemView
 import kotlin.io.path.Path
 import kotlin.io.path.createDirectories
 
-/** Where the app keeps its files: roaming data (synced with the Windows profile) and local machine data. */
-data class AppDirs(val data: Path, val local: Path) {
+/**
+ * Where the app keeps its files: roaming data (synced with the Windows profile), local machine data, and the storage
+ * folder the user sees (spec 4a §2): Mihon's local/, downloads/ and autobackup/, in Documents by default.
+ */
+data class AppDirs(val data: Path, val local: Path, val storage: Path = data.resolveSibling("storage")) {
     val db: Path get() = data.resolve("db")
     val backups: Path get() = data.resolve("backups")
     val settings: Path get() = data.resolve("settings")
@@ -20,7 +24,7 @@ data class AppDirs(val data: Path, val local: Path) {
     val cookies: Path get() = local.resolve("cookies.bin")
 
     fun createAll() {
-        listOf(data, db, backups, settings, local, cache, extensions, logs).forEach { it.createDirectories() }
+        listOf(data, db, backups, settings, local, cache, extensions, logs, storage).forEach { it.createDirectories() }
     }
 
     companion object {
@@ -28,11 +32,15 @@ data class AppDirs(val data: Path, val local: Path) {
         const val APP_NAME = "MangaReader"
         const val HOME_ENV = "MANGAREADER_HOME"
 
-        fun fromEnvironment(env: Map<String, String> = System.getenv()): AppDirs {
+        /** [documents] is the user's Documents folder, which OneDrive may have moved (FileSystemView follows it). */
+        fun fromEnvironment(
+            env: Map<String, String> = System.getenv(),
+            documents: () -> Path = { FileSystemView.getFileSystemView().defaultDirectory.toPath() },
+        ): AppDirs {
             env[HOME_ENV]?.let { home -> return AppDirs(Path(home, "data"), Path(home, "local")) }
             val roaming = env["APPDATA"] ?: error("APPDATA is not set")
             val local = env["LOCALAPPDATA"] ?: error("LOCALAPPDATA is not set")
-            return AppDirs(Path(roaming, APP_NAME), Path(local, APP_NAME))
+            return AppDirs(Path(roaming, APP_NAME), Path(local, APP_NAME), documents().resolve(APP_NAME))
         }
     }
 }
