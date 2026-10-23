@@ -474,8 +474,9 @@ class DownloadCache(
                 ProtoBuf.encodeToByteArray(rootDownloadsDir)
             }
             ensureActive()
+            val tmp = File(diskCacheFile.path + ".tmp")
             try {
-                val tmp = File(diskCacheFile.path + ".tmp").apply { writeBytes(bytes) }
+                tmp.writeBytes(bytes)
                 Files.move(
                     tmp.toPath(),
                     diskCacheFile.toPath(),
@@ -483,6 +484,7 @@ class DownloadCache(
                     StandardCopyOption.ATOMIC_MOVE,
                 )
             } catch (e: Throwable) {
+                tmp.delete()
                 logcat(
                     priority = LogPriority.ERROR,
                     throwable = e,

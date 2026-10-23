@@ -39,4 +39,21 @@ class DownloadCacheTest {
             withTimeout(10.seconds) { while (isDownloaded("Capítulo 1", "Caché José")) delay(100) }
             isDownloaded("Capítulo 1", "Caché José") shouldBe false
         }
+
+    @Test
+    fun `a disk cache that can't be replaced leaves no temp file behind`(): Unit = runBlocking {
+        val diskCache = File(graph.context.cacheDir, "dl_index_cache_v3")
+        // A non-empty folder in its place: the move over it fails
+        diskCache.deleteRecursively()
+        File(diskCache, "blocker").apply { parentFile.mkdirs() }.writeText("x")
+        try {
+            graph.downloadCache.invalidateCache()
+            withTimeout(10.seconds) { while (graph.downloadCache.isInitializing.value) delay(100) }
+            // The write runs a second after the index changes
+            delay(3.seconds)
+            File(diskCache.path + ".tmp").exists() shouldBe false
+        } finally {
+            diskCache.deleteRecursively()
+        }
+    }
 }
