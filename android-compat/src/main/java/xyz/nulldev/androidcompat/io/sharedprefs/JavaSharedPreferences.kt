@@ -127,22 +127,33 @@ class JavaSharedPreferences(
         return all
     }
 
+    // desktop: a key saved before the types were kept takes its type from the first read that names one, so getAll()
+    // and a backup see it typed from then on; the next save writes it to disk
+    private fun <T> typed(key: String, type: String, read: () -> T): T {
+        val stored = preferences.hasKey(key) || (type == TYPE_SET && preferences.hasKey("$key.size"))
+        if (stored && !preferences.hasKey(TYPE_PREFIX + key)) {
+            synchronized(properties) { preferences.putString(TYPE_PREFIX + key, type) }
+        }
+        return read()
+    }
+
     override fun getString(
         key: String,
         defValue: String?,
-    ): String? =
+    ): String? = typed(key, TYPE_STRING) {
         if (defValue != null) {
             preferences.getString(key, defValue)
         } else {
             preferences.getStringOrNull(key)
         }
+    }
 
     override fun getStringSet(
         key: String,
         defValues: Set<String>?,
-    ): Set<String>? {
+    ): Set<String>? = typed(key, TYPE_SET) {
         try {
-            return if (defValues != null) {
+            if (defValues != null) {
                 preferences.decodeValue(SetSerializer(String.serializer()), key, defValues)
             } else {
                 preferences.decodeValueOrNull(SetSerializer(String.serializer()), key)
@@ -155,22 +166,22 @@ class JavaSharedPreferences(
     override fun getInt(
         key: String,
         defValue: Int,
-    ): Int = preferences.getInt(key, defValue)
+    ): Int = typed(key, TYPE_INT) { preferences.getInt(key, defValue) }
 
     override fun getLong(
         key: String,
         defValue: Long,
-    ): Long = preferences.getLong(key, defValue)
+    ): Long = typed(key, TYPE_LONG) { preferences.getLong(key, defValue) }
 
     override fun getFloat(
         key: String,
         defValue: Float,
-    ): Float = preferences.getFloat(key, defValue)
+    ): Float = typed(key, TYPE_FLOAT) { preferences.getFloat(key, defValue) }
 
     override fun getBoolean(
         key: String,
         defValue: Boolean,
-    ): Boolean = preferences.getBoolean(key, defValue)
+    ): Boolean = typed(key, TYPE_BOOLEAN) { preferences.getBoolean(key, defValue) }
 
     override fun contains(key: String): Boolean = key in preferences.keys
 

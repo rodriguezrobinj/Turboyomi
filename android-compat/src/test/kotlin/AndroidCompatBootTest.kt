@@ -107,4 +107,24 @@ class AndroidCompatBootTest {
 
         JavaSharedPreferences("legacy_untyped").all shouldBe mapOf("old" to "x")
     }
+
+    @Test
+    fun `a key saved before the types were kept takes its type from the first typed read`() {
+        val file = Path(ApplicationRootDir, "settings", "legacy_typed_read.xml")
+        file.createParentDirectories()
+        val old = Properties().apply {
+            setProperty("n", "5")
+            setProperty("flag", "true")
+            setProperty("tags.size", "1")
+            setProperty("tags.0", "a")
+        }
+        file.outputStream().use { old.storeToXML(it, null) }
+        val prefs = JavaSharedPreferences("legacy_typed_read")
+
+        prefs.getInt("n", 0) shouldBe 5
+        prefs.getBoolean("flag", false) shouldBe true
+        prefs.getStringSet("tags", null) shouldBe setOf("a")
+
+        prefs.all shouldBe mapOf("n" to 5, "flag" to true, "tags" to setOf("a"))
+    }
 }
