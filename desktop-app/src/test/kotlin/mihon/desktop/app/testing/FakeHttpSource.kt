@@ -15,6 +15,7 @@ import okio.Buffer
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 import javax.imageio.ImageIO
 
 /**
@@ -27,6 +28,12 @@ class FakeImages : Dispatcher() {
     val short: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
     private val png = png(600, 900)
+
+    /** Successful page responses served so far, to tell what a download fetched. */
+    val served = AtomicInteger()
+
+    /** The page image every `.png` path serves. */
+    fun png(): ByteArray = png
     private val shortPng = png(600, 100)
 
     private fun png(width: Int, height: Int): ByteArray = ByteArrayOutputStream().also {
@@ -39,7 +46,10 @@ class FakeImages : Dispatcher() {
             path in failing -> MockResponse().setResponseCode(500)
             path in corrupt -> MockResponse().setHeader("Content-Type", "image/png").setBody("no es una imagen")
             path in short -> MockResponse().setHeader("Content-Type", "image/png").setBody(Buffer().write(shortPng))
-            path.endsWith(".png") -> MockResponse().setHeader("Content-Type", "image/png").setBody(Buffer().write(png))
+            path.endsWith(".png") -> {
+                served.incrementAndGet()
+                MockResponse().setHeader("Content-Type", "image/png").setBody(Buffer().write(png))
+            }
             else -> MockResponse().setResponseCode(404)
         }
     }
@@ -49,8 +59,11 @@ class FakeImages : Dispatcher() {
  * An online source backed by [server]: every manga has three chapters (`<manga url>/c1`..`c3`), each with
  * [pageCount] pages at `<chapter url>/<index>.png`. [failPageList] makes the next page list throw.
  */
-class FakeHttpSource(private val server: MockWebServer, val images: FakeImages) : HttpSource() {
-    override val name = "Fake HTTP"
+class FakeHttpSource(
+    private val server: MockWebServer,
+    val images: FakeImages,
+    override val name: String = "Fake HTTP",
+) : HttpSource() {
     override val lang = "es"
     override val supportsLatest = false
     override val baseUrl: String get() = server.url("/").toString().removeSuffix("/")

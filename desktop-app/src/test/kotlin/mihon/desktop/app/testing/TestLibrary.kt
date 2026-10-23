@@ -12,9 +12,8 @@ object TestLibrary {
     private val next = AtomicInteger()
 
     /** A new manga of [TestSources.http] in the database with its three chapters, oldest first. */
-    suspend fun httpManga(graph: TestAppGraph): Pair<Manga, List<Chapter>> {
+    suspend fun httpManga(graph: TestAppGraph, source: FakeHttpSource = TestSources.http): Pair<Manga, List<Chapter>> {
         val n = next.incrementAndGet()
-        val source = TestSources.http
         val manga = graph.networkToLocalManga(
             Manga.create().copy(url = "/m/$n", title = "Manga HTTP $n", source = source.id),
         )

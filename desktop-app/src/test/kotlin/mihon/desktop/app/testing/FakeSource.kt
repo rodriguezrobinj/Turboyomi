@@ -114,4 +114,7 @@ object TestSources {
 
     /** One per test JVM (the test task forks per class), like [fake]. */
     val http = FakeHttpSource(server, images)
+
+    /** A second online source, for downloads from two sources at once. */
+    val http2 = FakeHttpSource(server, images, name = "Fake HTTP 2")
 }

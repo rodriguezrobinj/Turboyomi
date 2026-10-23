@@ -9,8 +9,8 @@ import dev.zacsweers.metro.SingleIn
 import dev.zacsweers.metro.createGraphFactory
 import eu.kanade.domain.chapter.interactor.SyncChaptersWithSource
 import eu.kanade.domain.manga.interactor.UpdateManga
-import eu.kanade.tachiyomi.data.download.DownloadCache
 import eu.kanade.tachiyomi.data.download.DownloadProvider
+import eu.kanade.tachiyomi.data.download.DownloadStore
 import eu.kanade.tachiyomi.ui.browse.migration.manga.MigrateMangaViewModel
 import eu.kanade.tachiyomi.ui.reader.ReaderViewModel
 import mihon.app.di.AppGraph
@@ -70,7 +70,7 @@ interface TestAppGraph : AppGraph {
     val localSource: LocalSource
     val localCoverManager: LocalCoverManager
     val downloadProvider: DownloadProvider
-    val downloadCache: DownloadCache
+    val downloadStore: DownloadStore
     val migrateMangaViewModelFactory: MigrateMangaViewModel.Factory
     val upcomingPreferences: UpcomingPreferences
 
@@ -89,7 +89,7 @@ object TestBindings {
     @Provides
     @SingleIn(AppScope::class)
     fun sourceManager(local: LocalSource): SourceManager =
-        FakeSourceManager(local, TestSources.fake, TestSources.http, TestSources.updatable)
+        FakeSourceManager(local, TestSources.fake, TestSources.http, TestSources.http2, TestSources.updatable)
 }
 
 private var started: TestAppGraph? = null
