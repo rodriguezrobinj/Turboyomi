@@ -10,6 +10,7 @@ import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -22,8 +23,10 @@ import eu.kanade.tachiyomi.ui.history.HistoryTab
 import eu.kanade.tachiyomi.ui.library.LibraryTab
 import eu.kanade.tachiyomi.ui.updates.UpdatesTab
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import mihon.app.di.appGraph
+import mihon.desktop.app.download.DownloadsTab
 import mihon.desktop.app.settings.SettingsTab
 import tachiyomi.presentation.core.util.collectAsState
 
@@ -34,7 +37,7 @@ import tachiyomi.presentation.core.util.collectAsState
  */
 object HomeScreen : Screen() {
     /** In rail order; the first one opens at start. Settings must stay last for [AppEvents.openSettings]. */
-    val tabs: List<Tab> = listOf(LibraryTab, UpdatesTab, HistoryTab, BrowseTab, SettingsTab)
+    val tabs: List<Tab> = listOf(LibraryTab, UpdatesTab, DownloadsTab, HistoryTab, BrowseTab, SettingsTab)
 
     private val librarySearch = Channel<String>()
 
@@ -48,6 +51,8 @@ object HomeScreen : Screen() {
         val libraryPreferences = remember { context.appGraph.libraryPreferences }
         val newUpdates by libraryPreferences.newUpdatesCount.collectAsState()
         val showNewUpdates by libraryPreferences.newShowUpdatesCount.collectAsState()
+        val queueSize by remember { context.appGraph.downloadManager.queueState.map { it.size } }
+            .collectAsState(0)
         LaunchedEffect(Unit) {
             librarySearch.receiveAsFlow().collect {
                 tabNavigator.current = LibraryTab
@@ -60,7 +65,14 @@ object HomeScreen : Screen() {
                     val options = tab.options
                     NavigationRailItem(
                         selected = tabNavigator.current.key == tab.key,
-                        onClick = { tabNavigator.current = tab },
+                        onClick = {
+                            // desktop: Mihon's Updates onReselect opens the download queue
+                            tabNavigator.current = if (tab == UpdatesTab && tabNavigator.current == UpdatesTab) {
+                                DownloadsTab
+                            } else {
+                                tab
+                            }
+                        },
                         icon = {
                             BadgedBox(
                                 badge = {
@@ -69,6 +81,8 @@ object HomeScreen : Screen() {
                                     ) {
                                         Badge { Text("$newUpdates") }
                                     }
+                                    // desktop: the queue's size on the Downloads entry (spec 4b §2)
+                                    if (tab == DownloadsTab && queueSize > 0) Badge { Text("$queueSize") }
                                 },
                             ) { options.icon?.let { Icon(it, contentDescription = options.title) } }
                         },

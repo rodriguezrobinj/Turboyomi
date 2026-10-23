@@ -41,7 +41,7 @@ data object UpdatesTab : Tab {
             )
         }
 
-    // desktop: no onReselect, the download queue arrives in subproject 4b
+    // desktop: reselecting Updates opens Downloads, in HomeScreen's rail
 
     @Composable
     override fun Content() {
