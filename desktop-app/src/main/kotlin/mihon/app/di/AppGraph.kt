@@ -4,6 +4,8 @@ import dev.zacsweers.metrox.viewmodel.ViewModelGraph
 import eu.kanade.domain.base.BasePreferences
 import eu.kanade.domain.source.service.SourcePreferences
 import eu.kanade.domain.ui.UiPreferences
+import eu.kanade.tachiyomi.data.backup.BackupJob
+import eu.kanade.tachiyomi.data.backup.BackupNotifier
 import eu.kanade.tachiyomi.data.cache.ChapterCache
 import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.data.download.DownloadCache
@@ -48,4 +50,6 @@ interface AppGraph : DesktopGraph, ViewModelGraph {
     val downloadCache: DownloadCache
     val backupPreferences: BackupPreferences
     val getFavorites: GetFavorites
+    val backupJob: BackupJob
+    val backupNotifier: BackupNotifier
 }
