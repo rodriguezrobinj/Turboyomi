@@ -8,7 +8,8 @@ import java.io.File
 class SpanishStringsTest {
     private val strings = File("../i18n/src/commonMain/moko-resources")
 
-    private fun keys(lang: String): Set<String> = Regex("""<string name="([^"]+)"""")
+    // Strings marked translatable="false" (the app's name) are the same in every language
+    private fun keys(lang: String): Set<String> = Regex("""<string name="([^"]+)"(?! translatable="false")""")
         .findAll(strings.resolve("$lang/strings.xml").readText())
         .map { it.groupValues[1].replace('.', '_') }
         .toSet()
