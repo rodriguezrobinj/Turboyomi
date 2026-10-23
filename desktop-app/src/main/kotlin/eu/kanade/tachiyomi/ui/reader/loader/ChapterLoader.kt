@@ -1,6 +1,7 @@
 package eu.kanade.tachiyomi.ui.reader.loader
 
 import android.content.Context
+import eu.kanade.domain.chapter.model.toSChapter
 import eu.kanade.tachiyomi.data.cache.ChapterCache
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.online.HttpSource
@@ -8,16 +9,20 @@ import eu.kanade.tachiyomi.ui.reader.model.ReaderChapter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import mihon.core.archive.archiveReader
+import mihon.core.archive.epubReader
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.source.model.StubSource
 import tachiyomi.i18n.MR
+import tachiyomi.source.local.LocalSource
+import tachiyomi.source.local.io.Format
 
 /**
  * Loader used to retrieve the [PageLoader] for a given chapter.
  *
- * desktop: only online sources for now; downloaded and local chapters come with subproject 4.
+ * desktop: online and local sources; downloaded chapters come with subproject 4b.
  */
 class ChapterLoader(
     private val context: Context,
@@ -54,6 +59,11 @@ class ChapterLoader(
     }
 
     private fun getPageLoader(chapter: ReaderChapter): PageLoader = when (source) {
+        is LocalSource -> when (val format = source.getFormat(chapter.chapter.toSChapter())) {
+            is Format.Directory -> DirectoryPageLoader(format.file)
+            is Format.Archive -> ArchivePageLoader(format.file.archiveReader(context))
+            is Format.Epub -> EpubPageLoader(format.file.epubReader(context))
+        }
         is HttpSource -> HttpPageLoader(chapter, source, chapterCache, appScope, pagesAhead)
         is StubSource -> error(context.stringResource(MR.strings.source_not_installed, source.toString()))
         else -> error(context.stringResource(MR.strings.loader_not_implemented_error))
