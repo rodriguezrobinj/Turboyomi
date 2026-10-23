@@ -14,10 +14,12 @@ import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
 import mihon.desktop.app.tray.TrayPreferences
 import mihon.desktop.core.DesktopGraph
 import mihon.domain.extension.interactor.GetExtensionStoreCountAsFlow
+import tachiyomi.domain.backup.service.BackupPreferences
 import tachiyomi.domain.category.interactor.GetCategories
 import tachiyomi.domain.category.interactor.ResetCategoryFlags
 import tachiyomi.domain.download.service.DownloadPreferences
 import tachiyomi.domain.library.service.LibraryPreferences
+import tachiyomi.domain.manga.interactor.GetFavorites
 import tachiyomi.domain.storage.service.StorageManager
 import tachiyomi.domain.storage.service.StoragePreferences
 
@@ -44,4 +46,6 @@ interface AppGraph : DesktopGraph, ViewModelGraph {
     val downloadManager: DownloadManager
     val downloadPreferences: DownloadPreferences
     val downloadCache: DownloadCache
+    val backupPreferences: BackupPreferences
+    val getFavorites: GetFavorites
 }

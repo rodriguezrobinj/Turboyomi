@@ -9,6 +9,8 @@ import dev.zacsweers.metro.SingleIn
 import dev.zacsweers.metro.createGraphFactory
 import eu.kanade.domain.chapter.interactor.SyncChaptersWithSource
 import eu.kanade.domain.manga.interactor.UpdateManga
+import eu.kanade.tachiyomi.data.backup.BackupDecoder
+import eu.kanade.tachiyomi.data.backup.create.BackupCreator
 import eu.kanade.tachiyomi.data.download.DownloadProvider
 import eu.kanade.tachiyomi.data.download.DownloadStore
 import eu.kanade.tachiyomi.ui.browse.migration.manga.MigrateMangaViewModel
@@ -36,6 +38,7 @@ import tachiyomi.domain.manga.interactor.GetManga
 import tachiyomi.domain.manga.interactor.GetMangaByUrlAndSourceId
 import tachiyomi.domain.manga.interactor.NetworkToLocalManga
 import tachiyomi.domain.source.service.SourceManager
+import tachiyomi.domain.track.repository.TrackRepository
 import tachiyomi.domain.upcoming.service.UpcomingPreferences
 import tachiyomi.domain.updates.service.UpdatesPreferences
 import tachiyomi.source.local.LocalSource
@@ -73,6 +76,9 @@ interface TestAppGraph : AppGraph {
     val downloadStore: DownloadStore
     val migrateMangaViewModelFactory: MigrateMangaViewModel.Factory
     val upcomingPreferences: UpcomingPreferences
+    val trackRepository: TrackRepository
+    val backupDecoder: BackupDecoder
+    val backupCreatorFactory: BackupCreator.Factory
 
     @DependencyGraph.Factory
     fun interface Factory {
