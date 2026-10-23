@@ -40,7 +40,7 @@ fun BrowseSourceToolbar(
 ) {
     // Avoid capturing unstable source in actions lambda
     val title = source?.name
-    val isLocalSource = source?.id == LocalSource.ID // desktop: LocalSource is only a stub until subproject 4
+    val isLocalSource = source?.id == LocalSource.ID
     val isConfigurableSource = source is ConfigurableSource
 
     var selectingDisplayMode by remember { mutableStateOf(false) }

@@ -84,7 +84,6 @@ fun BrowseSourceContent(
                 is LoadState.Error -> getErrorMessage(errorState)
                 else -> stringResource(MR.strings.no_results_found)
             },
-            // desktop: LocalSource is only a stub until subproject 4
             actions = if (source?.id == LocalSource.ID) {
                 listOf(
                     EmptyScreenAction(

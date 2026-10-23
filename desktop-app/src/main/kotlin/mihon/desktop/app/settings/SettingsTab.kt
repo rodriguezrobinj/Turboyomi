@@ -10,6 +10,7 @@ import cafe.adriel.voyager.navigator.tab.TabOptions
 import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.more.settings.screen.SettingsAppearanceScreen
 import eu.kanade.presentation.more.settings.screen.SettingsBrowseScreen
+import eu.kanade.presentation.more.settings.screen.SettingsDataScreen
 import eu.kanade.presentation.more.settings.screen.SettingsLibraryScreen
 import eu.kanade.presentation.more.settings.widget.TextPreferenceWidget
 import eu.kanade.presentation.util.Tab
@@ -20,6 +21,7 @@ import mihon.icons.materialsymbols.rounded.Explore
 import mihon.icons.materialsymbols.rounded.Image
 import mihon.icons.materialsymbols.rounded.Palette
 import mihon.icons.materialsymbols.rounded.Settings
+import mihon.icons.materialsymbols.rounded.Storage
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.components.material.Scaffold
 import tachiyomi.presentation.core.i18n.stringResource
@@ -45,6 +47,7 @@ data object SettingsTab : Tab {
             Triple(MR.strings.pref_category_appearance, MaterialSymbols.Rounded.Palette, SettingsAppearanceScreen),
             Triple(MR.strings.browse, MaterialSymbols.Rounded.Explore, SettingsBrowseScreen),
             Triple(MR.strings.pref_category_reader, MaterialSymbols.Rounded.Image, SettingsReaderScreen),
+            Triple(MR.strings.label_data_storage, MaterialSymbols.Rounded.Storage, SettingsDataScreen),
             Triple(MR.strings.pref_category_advanced, MaterialSymbols.Rounded.Code, AdvancedSettingsScreen),
         )
         Scaffold(topBar = {
