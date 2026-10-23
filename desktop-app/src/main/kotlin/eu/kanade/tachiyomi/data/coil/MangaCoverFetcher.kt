@@ -31,6 +31,7 @@ import tachiyomi.domain.manga.model.MangaCover
 import tachiyomi.domain.source.service.SourceManager
 import java.io.File
 import java.io.IOException
+import java.net.URI
 
 /**
  * A [Fetcher] that fetches cover image for [Manga] object.
@@ -70,7 +71,8 @@ class MangaCoverFetcher(
         // diskCacheKey is thumbnail_url
         if (url == null) error("No cover specified")
         return when (getResourceType(url)) {
-            Type.File -> fileLoader(File(url.substringAfter("file://")))
+            // desktop: a file: uri may be percent-encoded (spaces, accents, #); java.net.URI decodes it
+            Type.File -> fileLoader(if (url.startsWith("file:")) File(URI(url)) else File(url))
             Type.URI -> error("content:// covers only exist on Android") // desktop
             // Requests for the same cover at different sizes or through Manga and MangaCover would each download it
             Type.URL -> concurrentRequests.apply(diskCacheKey) { httpLoader() }
@@ -272,7 +274,7 @@ class MangaCoverFetcher(
         return when {
             cover.isNullOrEmpty() -> null
             cover.startsWith("http", true) || cover.startsWith("Custom-", true) -> Type.URL
-            cover.startsWith("/") || cover.startsWith("file://") -> Type.File
+            cover.startsWith("/") || cover.startsWith("file:") -> Type.File // desktop: java's file:/C:/ uris too
             cover.startsWith("content") -> Type.URI
             else -> null
         }

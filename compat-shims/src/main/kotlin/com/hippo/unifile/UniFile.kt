@@ -14,7 +14,10 @@ import java.io.OutputStream
 class UniFile private constructor(private val file: File) {
 
     val name: String? get() = file.name
-    val uri: Uri get() = Uri.fromFile(file)
+
+    // desktop: java's file: uri (percent-encoded, forward slashes) parses back to the same path; Uri.fromFile's
+    // string keeps Windows backslashes and doesn't
+    val uri: Uri get() = Uri.parse(file.toURI().toString())
     val filePath: String? get() = file.absolutePath
     val parentFile: UniFile? get() = file.parentFile?.let(::UniFile)
     val isDirectory: Boolean get() = file.isDirectory

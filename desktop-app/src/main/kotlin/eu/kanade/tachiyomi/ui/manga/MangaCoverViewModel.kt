@@ -20,6 +20,7 @@ import dev.zacsweers.metrox.viewmodel.ManualViewModelAssistedFactory
 import dev.zacsweers.metrox.viewmodel.ManualViewModelAssistedFactoryKey
 import eu.kanade.domain.manga.interactor.UpdateManga
 import eu.kanade.tachiyomi.data.cache.CoverCache
+import eu.kanade.tachiyomi.util.editCover
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -35,14 +36,17 @@ import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.manga.interactor.GetManga
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.i18n.MR
+import tachiyomi.source.local.image.LocalCoverManager
 import java.io.File
 
-// desktop: Mihon's version saves through MediaStore and shares through Intents; this one uses Windows files
+// desktop: Mihon's version saves through MediaStore and shares through Intents; this one uses Windows files, and a
+// local manga's cover goes to its folder (spec 4a §3 D)
 @AssistedInject
 class MangaCoverViewModel(
     @Assisted private val mangaId: Long,
     private val getManga: GetManga,
     private val coverCache: CoverCache,
+    private val localCoverManager: LocalCoverManager,
     private val updateManga: UpdateManga,
     private val context: Context,
 ) : ViewModel() {
@@ -78,8 +82,7 @@ class MangaCoverViewModel(
         val manga = state.value ?: return
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                file.inputStream().use { coverCache.setCustomCoverToCache(manga, it) }
-                updateManga.awaitUpdateCoverLastModified(mangaId)
+                file.inputStream().use { manga.editCover(localCoverManager, it, updateManga, coverCache) }
                 notify(MR.strings.cover_updated)
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e)

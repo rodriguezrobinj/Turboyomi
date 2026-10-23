@@ -35,4 +35,11 @@ class UniFileTest {
         dir.delete() shouldBe true
         dir.exists() shouldBe false
     }
+
+    @Test
+    fun `its uri string parses back to the same file, spaces and accents included`() {
+        val dir = UniFile.fromFile(createTempDirectory("Tomo #1 & 50% José").toFile())!!
+
+        UniFile.fromUri(null, android.net.Uri.parse(dir.uri.toString()))!!.filePath shouldBe dir.filePath
+    }
 }

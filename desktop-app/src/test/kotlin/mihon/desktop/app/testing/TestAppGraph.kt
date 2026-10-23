@@ -36,6 +36,7 @@ import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.domain.upcoming.service.UpcomingPreferences
 import tachiyomi.domain.updates.service.UpdatesPreferences
 import tachiyomi.source.local.LocalSource
+import tachiyomi.source.local.image.LocalCoverManager
 import kotlin.io.path.createTempDirectory
 
 /** The app graph with [TestSources.fake] as the only source, instead of the installed extensions. */
@@ -64,6 +65,7 @@ interface TestAppGraph : AppGraph {
     val migrationListViewModelFactory: MigrationListViewModel.Factory
     val getUpcomingManga: GetUpcomingManga
     val localSource: LocalSource
+    val localCoverManager: LocalCoverManager
     val migrateMangaViewModelFactory: MigrateMangaViewModel.Factory
     val upcomingPreferences: UpcomingPreferences
 

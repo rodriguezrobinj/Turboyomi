@@ -51,4 +51,24 @@ class DesktopImageLoaderTest {
         result.shouldBeInstanceOf<SuccessResult>()
         server.shutdown()
     }
+
+    @Test
+    fun `a local cover file with spaces, signs and accents in its path loads`(): Unit = runBlocking {
+        val folder = kotlin.io.path.createTempDirectory("Tomo #1 & 50% José").toFile()
+        val cover = java.io.File(folder, "cover.jpg").apply { writeBytes(png()) }
+
+        val result = DesktopImageLoader.create(graph).execute(
+            ImageRequest.Builder(PlatformContext.INSTANCE).data(
+                MangaCover(
+                    mangaId = 2,
+                    sourceId = 0,
+                    isMangaFavorite = true,
+                    url = cover.toURI().toString(),
+                    lastModified = null,
+                ),
+            ).build(),
+        )
+
+        result.shouldBeInstanceOf<SuccessResult>()
+    }
 }
