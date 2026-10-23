@@ -13,6 +13,12 @@ object FileDialogs {
         setFilenameFilter { _, name -> name.substringAfterLast('.').lowercase() in IMAGE_EXTENSIONS }
     }
 
+    /** Windows' dialog ignores FilenameFilter, so the "*.tachibk" name is what filters there; the filter covers others. */
+    fun openBackup(title: String): File? = show(title, FileDialog.LOAD) {
+        file = "*.tachibk"
+        setFilenameFilter { _, name -> name.endsWith(".tachibk", ignoreCase = true) }
+    }
+
     /** AWT's FileDialog can't pick folders on Windows, so this one is Swing's chooser in folders-only mode. */
     fun chooseDirectory(title: String): File? {
         val chooser = JFileChooser().apply {
