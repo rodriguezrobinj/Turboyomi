@@ -3,6 +3,7 @@ plugins {
     alias(mihonx.plugins.spotless)
     alias(libs.plugins.kotlin.compose.compiler)
     alias(libs.plugins.metro)
+    alias(libs.plugins.kotlin.serialization)
     application
 }
 
@@ -72,6 +73,7 @@ dependencies {
     implementation(projects.extensionLoader)
     implementation(projects.core.archive)
     implementation(projects.coreMetadata)
+    implementation(libs.bundles.serialization)
     implementation(libs.androidx.paging.common)
     implementation(libs.androidx.paging.compose)
     implementation(libs.bundles.markdown)

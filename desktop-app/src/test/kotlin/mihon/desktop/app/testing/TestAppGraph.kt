@@ -9,6 +9,8 @@ import dev.zacsweers.metro.SingleIn
 import dev.zacsweers.metro.createGraphFactory
 import eu.kanade.domain.chapter.interactor.SyncChaptersWithSource
 import eu.kanade.domain.manga.interactor.UpdateManga
+import eu.kanade.tachiyomi.data.download.DownloadCache
+import eu.kanade.tachiyomi.data.download.DownloadProvider
 import eu.kanade.tachiyomi.ui.browse.migration.manga.MigrateMangaViewModel
 import eu.kanade.tachiyomi.ui.reader.ReaderViewModel
 import mihon.app.di.AppGraph
@@ -67,6 +69,8 @@ interface TestAppGraph : AppGraph {
     val getUpcomingManga: GetUpcomingManga
     val localSource: LocalSource
     val localCoverManager: LocalCoverManager
+    val downloadProvider: DownloadProvider
+    val downloadCache: DownloadCache
     val migrateMangaViewModelFactory: MigrateMangaViewModel.Factory
     val upcomingPreferences: UpcomingPreferences
 
