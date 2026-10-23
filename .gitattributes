@@ -17,6 +17,13 @@
 *.gz binary
 *.zip binary
 *.7z binary
+# Archive samples for the archive reader and local source tests (spec 4a)
+*.rar binary
+*.tar binary
+*.cbz binary
+*.cbr binary
+*.cb7 binary
+*.epub binary
 *.ttf binary
 *.eot binary
 *.woff binary
