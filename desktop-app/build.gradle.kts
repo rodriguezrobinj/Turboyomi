@@ -71,6 +71,7 @@ dependencies {
     implementation(libs.coil.network.okhttp)
     implementation(projects.extensionLoader)
     implementation(projects.core.archive)
+    implementation(projects.coreMetadata)
     implementation(libs.androidx.paging.common)
     implementation(libs.androidx.paging.compose)
     implementation(libs.bundles.markdown)

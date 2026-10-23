@@ -60,12 +60,18 @@ object DiskUtil {
     }
 
     /**
+     * desktop: the free space Windows reports for the volume (spec 4b §2), instead of Android's StatFs. A variable so
+     * a test can play a full disk.
+     */
+    @Volatile
+    var usableSpace: (File) -> Long = File::getUsableSpace
+
+    /**
      * Gets the available space for the disk that a file path points to, in bytes.
      */
     fun getAvailableStorageSpace(file: File): Long {
         return try {
-            val stat = StatFs(file.absolutePath)
-            stat.availableBlocksLong * stat.blockSizeLong
+            usableSpace(file)
         } catch (_: Exception) {
             -1L
         }
@@ -75,12 +81,7 @@ object DiskUtil {
      * Gets the available space for the disk that a file path points to, in bytes.
      */
     fun getAvailableStorageSpace(f: UniFile): Long {
-        return try {
-            val stat = StatFs(f.uri.path)
-            stat.availableBlocksLong * stat.blockSizeLong
-        } catch (_: Exception) {
-            -1L
-        }
+        return f.filePath?.let { getAvailableStorageSpace(File(it)) } ?: -1L
     }
 
     /**
@@ -162,7 +163,10 @@ object DiskUtil {
                 sb.append('_')
             }
         }
-        return truncateToLength(sb.toString(), maxBytes)
+        val valid = truncateToLength(sb.toString(), maxBytes)
+        // desktop: Windows reserves these names, with or without an extension (spec 4b §2)
+        val reserved = WINDOWS_RESERVED_NAME.matchEntire(valid) ?: return valid
+        return reserved.groupValues[1] + "_" + reserved.groupValues[2]
     }
 
     /**
@@ -204,4 +208,6 @@ object DiskUtil {
     // To allow for writing to ext4 through a FUSE layer in the future, also subtract 15
     // reserved characters.
     const val MAX_FILE_NAME_BYTES = 240
+
+    private val WINDOWS_RESERVED_NAME = Regex("^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\\..*)?$", RegexOption.IGNORE_CASE)
 }

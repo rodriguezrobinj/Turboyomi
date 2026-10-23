@@ -8,7 +8,7 @@ sourceSets {
         kotlin {
             srcDir("src/desktop/kotlin")
             // Android-only (libarchive over mmap, SAF file descriptors), or with a desktop copy of the same relative
-            // path in src/desktop. ZipWriter comes back with downloads (subproject 4b).
+            // path in src/desktop.
             // Local val: a script-level one would drag the script object into the configuration cache.
             val androidOnly = setOf(
                 "mihon/core/archive/ArchiveInputStream.kt",
