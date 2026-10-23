@@ -62,7 +62,7 @@ class MigrationScreensTest {
         onNodeWithText(name).performClick()
         waitForText(manga.title)
         runOnIdle { AppEvents.send(Shortcut.SelectAll) }
-        // Without downloads (subproject 4) the bottom bar has no overflow: Migrate is its own icon button
+        // Without downloads (subproject 4b) the bottom bar has no overflow: Migrate is its own icon button
         waitUntil(timeoutMillis = 10_000) {
             onAllNodes(hasContentDescription(str(MR.strings.migrate))).fetchSemanticsNodes().isNotEmpty()
         }

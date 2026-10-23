@@ -1,4 +1,4 @@
-// Null implementation until subproject 4; replace with the Mihon port.
+// Null implementation until subproject 4b; replace with the Mihon port.
 package eu.kanade.domain.download.interactor
 
 import dev.zacsweers.metro.Inject

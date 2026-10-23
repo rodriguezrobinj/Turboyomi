@@ -147,7 +147,7 @@ data object LibraryTab : Tab {
                     onChangeCategoryClicked = viewModel::openChangeCategoryDialog,
                     onMarkAsReadClicked = { viewModel.markReadSelection(true) },
                     onMarkAsUnreadClicked = { viewModel.markReadSelection(false) },
-                    onDownloadClicked = null, // desktop: downloads arrive in subproject 4
+                    onDownloadClicked = null, // desktop: downloads arrive in subproject 4b
                     onDeleteClicked = viewModel::openDeleteMangaDialog,
                     onMigrateClicked = {
                         val selection = state.selection

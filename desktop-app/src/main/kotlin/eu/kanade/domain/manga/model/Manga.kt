@@ -17,7 +17,7 @@ val Manga.readingMode: Long
 // TODO: move these into the domain model
 val Manga.downloadedFilter: TriState
     get() {
-        // desktop: no "downloaded only" mode until downloads (subproject 4)
+        // desktop: no "downloaded only" mode until downloads (subproject 4b)
         return when (downloadedFilterRaw) {
             Manga.CHAPTER_SHOW_DOWNLOADED -> TriState.ENABLED_IS
             Manga.CHAPTER_SHOW_NOT_DOWNLOADED -> TriState.ENABLED_NOT
@@ -70,4 +70,4 @@ fun Manga.hasCustomCover(coverCache: CoverCache = Injekt.get<Context>().appGraph
     return coverCache.hasCustomCover(id)
 }
 
-// desktop: getComicInfo comes back with downloads (subproject 4)
+// desktop: getComicInfo comes back with downloads (subproject 4b)

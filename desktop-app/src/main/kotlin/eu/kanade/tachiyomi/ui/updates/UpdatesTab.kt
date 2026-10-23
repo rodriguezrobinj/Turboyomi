@@ -41,7 +41,7 @@ data object UpdatesTab : Tab {
             )
         }
 
-    // desktop: no onReselect, the download queue arrives in subproject 4
+    // desktop: no onReselect, the download queue arrives in subproject 4b
 
     @Composable
     override fun Content() {
@@ -59,10 +59,10 @@ data object UpdatesTab : Tab {
             onSelectAll = viewModel::toggleAllSelection,
             onInvertSelection = viewModel::invertSelection,
             onUpdateLibrary = viewModel::updateLibrary,
-            onDownloadChapter = null, // desktop: downloads arrive in subproject 4
+            onDownloadChapter = null, // desktop: downloads arrive in subproject 4b
             onMultiBookmarkClicked = viewModel::bookmarkUpdates,
             onMultiMarkAsReadClicked = viewModel::markUpdatesRead,
-            onMultiDeleteClicked = null, // desktop: downloads arrive in subproject 4
+            onMultiDeleteClicked = null, // desktop: downloads arrive in subproject 4b
             onUpdateSelected = viewModel::toggleSelection,
             onOpenChapter = {
                 // desktop: the reader is a screen, not an Activity
@@ -81,7 +81,7 @@ data object UpdatesTab : Tab {
                     viewModel = settingsViewModel,
                 )
             }
-            // desktop: no delete confirmation until downloads (subproject 4)
+            // desktop: no delete confirmation until downloads (subproject 4b)
             else -> {}
         }
 

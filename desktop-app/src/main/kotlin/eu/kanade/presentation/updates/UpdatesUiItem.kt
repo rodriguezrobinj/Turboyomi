@@ -86,7 +86,7 @@ internal fun LazyListScope.updatesUiItems(
     onUpdateSelected: (UpdatesItem, Boolean, Boolean) -> Unit,
     onClickCover: (UpdatesItem) -> Unit,
     onClickUpdate: (UpdatesItem) -> Unit,
-    onDownloadChapter: ((List<UpdatesItem>, ChapterDownloadAction) -> Unit)?, // desktop: null until subproject 4
+    onDownloadChapter: ((List<UpdatesItem>, ChapterDownloadAction) -> Unit)?, // desktop: null until subproject 4b
 ) {
     items(
         items = uiModels,
@@ -245,7 +245,7 @@ private fun UpdatesUiItem(
             }
         }
 
-        // desktop: no download indicator until downloads (subproject 4)
+        // desktop: no download indicator until downloads (subproject 4b)
         if (onDownloadChapter != null) {
             ChapterDownloadIndicator(
                 enabled = true,

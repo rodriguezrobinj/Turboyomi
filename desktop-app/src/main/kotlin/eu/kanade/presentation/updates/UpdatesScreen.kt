@@ -58,10 +58,10 @@ fun UpdateScreen(
     onInvertSelection: () -> Unit,
     onCalendarClicked: (() -> Unit)?,
     onUpdateLibrary: suspend () -> Boolean,
-    onDownloadChapter: ((List<UpdatesItem>, ChapterDownloadAction) -> Unit)?, // desktop: null until subproject 4
+    onDownloadChapter: ((List<UpdatesItem>, ChapterDownloadAction) -> Unit)?, // desktop: null until subproject 4b
     onMultiBookmarkClicked: (List<UpdatesItem>, bookmark: Boolean) -> Unit,
     onMultiMarkAsReadClicked: (List<UpdatesItem>, read: Boolean) -> Unit,
-    onMultiDeleteClicked: ((List<UpdatesItem>) -> Unit)?, // desktop: null until subproject 4
+    onMultiDeleteClicked: ((List<UpdatesItem>) -> Unit)?, // desktop: null until subproject 4b
     onUpdateSelected: (UpdatesItem, Boolean, Boolean) -> Unit,
     onOpenChapter: (UpdatesItem) -> Unit,
     onFilterClicked: () -> Unit,

@@ -114,7 +114,7 @@ class MangaScreen(
             chapterSwipeEndAction = viewModel.chapterSwipeEndAction,
             navigateUp = navigator::pop,
             onChapterClicked = { navigator.push(ReaderScreen(it.mangaId, it.id)) },
-            onDownloadChapter = null, // desktop: downloads arrive in subproject 4
+            onDownloadChapter = null, // desktop: downloads arrive in subproject 4b
             downloadProgressProvider = { 0 },
             onAddToLibraryClicked = {
                 if (successState.manga.favorite) {
@@ -143,7 +143,7 @@ class MangaScreen(
             onSearch = { query, global -> scope.launch { performSearch(navigator, query, global) } },
             onCoverClicked = viewModel::showCoverDialog,
             onShareClicked = null, // desktop: no Android share sheet
-            onDownloadActionClicked = null, // desktop: downloads arrive in subproject 4
+            onDownloadActionClicked = null, // desktop: downloads arrive in subproject 4b
             onEditCategoryClicked = viewModel::showChangeCategoryDialog.takeIf { successState.manga.favorite },
             onEditFetchIntervalClicked = viewModel::showSetFetchIntervalDialog.takeIf {
                 successState.manga.favorite

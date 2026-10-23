@@ -11,6 +11,7 @@ import okhttp3.mockwebserver.MockWebServer
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import tachiyomi.source.local.LocalSource
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.listDirectoryEntries
 
@@ -53,8 +54,8 @@ class DesktopExtensionManagerTest {
     }
 
     @Test
-    fun `source manager starts empty and stubs unknown ids`(): Unit = runBlocking {
-        graph.sourceManager.getAll() shouldBe emptyList()
+    fun `without extensions the source manager has only the local source, and stubs unknown ids`(): Unit = runBlocking {
+        graph.sourceManager.getAll().map { it.id } shouldBe listOf(LocalSource.ID)
         graph.sourceManager.getOrStub(42L).id shouldBe 42L
     }
 }

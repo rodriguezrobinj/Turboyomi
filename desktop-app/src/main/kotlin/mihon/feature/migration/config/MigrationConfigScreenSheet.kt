@@ -106,7 +106,7 @@ fun MigrationConfigScreenSheet(
                             )
                         }
                 }
-                // desktop: removing downloads arrives with downloads (subproject 4)
+                // desktop: removing downloads arrives with downloads (subproject 4b)
                 MigrationSheetDividerItem()
                 OutlinedTextField(
                     value = extraSearchQuery,

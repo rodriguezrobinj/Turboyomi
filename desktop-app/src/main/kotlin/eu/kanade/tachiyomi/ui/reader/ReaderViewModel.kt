@@ -180,7 +180,7 @@ class ReaderViewModel(
             .map(::ReaderChapter)
     }
 
-    // desktop: Mihon's chapter filters without the downloaded one (downloads arrive in subproject 4)
+    // desktop: Mihon's chapter filters without the downloaded one (downloads arrive in subproject 4b)
     private fun isFilteredOut(manga: Manga, chapter: Chapter): Boolean =
         (manga.unreadFilterRaw == Manga.CHAPTER_SHOW_READ && !chapter.read) ||
             (manga.unreadFilterRaw == Manga.CHAPTER_SHOW_UNREAD && chapter.read) ||

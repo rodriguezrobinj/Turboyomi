@@ -1,4 +1,4 @@
-// Null implementation until subproject 4; replace with the Mihon port.
+// Null implementation until subproject 4b; replace with the Mihon port.
 package eu.kanade.tachiyomi.data.download
 
 import dev.zacsweers.metro.AppScope
