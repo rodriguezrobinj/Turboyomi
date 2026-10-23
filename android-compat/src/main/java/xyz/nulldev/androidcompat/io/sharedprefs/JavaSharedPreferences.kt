@@ -44,6 +44,26 @@ class JavaSharedPreferences(
 ) : SharedPreferences {
     companion object {
         private val logger = KotlinLogging.logger {}
+
+        // desktop: where getAll() finds each key's type (spec 5a §3 D)
+        private const val TYPE_PREFIX = "__type."
+        private const val TYPE_STRING = "string"
+        private const val TYPE_INT = "int"
+        private const val TYPE_LONG = "long"
+        private const val TYPE_FLOAT = "float"
+        private const val TYPE_DOUBLE = "double"
+        private const val TYPE_BOOLEAN = "boolean"
+        private const val TYPE_SET = "set"
+
+        private fun typeOf(value: Any): String = when (value) {
+            is Set<*> -> TYPE_SET
+            is Int -> TYPE_INT
+            is Long -> TYPE_LONG
+            is Float -> TYPE_FLOAT
+            is Double -> TYPE_DOUBLE
+            is Boolean -> TYPE_BOOLEAN
+            else -> TYPE_STRING
+        }
     }
 
     sealed class Action {
@@ -80,8 +100,32 @@ class JavaSharedPreferences(
     // desktop: concurrent, every Preference.changes() collector registers from its own thread
     private val listeners = ConcurrentHashMap<SharedPreferences.OnSharedPreferenceChangeListener, (String) -> Unit>()
 
-    // TODO: 2021-05-29 Need to find a way to get this working with all pref types
-    override fun getAll(): MutableMap<String, *> = preferences.keys.associateWith { preferences.getStringOrNull(it) }.toMutableMap()
+    // desktop: Android's getAll() gives each value its type, which a backup keeps (spec 5a §3 D). Properties only
+    // stores text, so the type of each key is saved beside it, under TYPE_PREFIX
+    override fun getAll(): MutableMap<String, *> {
+        val keys = preferences.keys
+        val types = keys
+            .filter { it.startsWith(TYPE_PREFIX) }
+            .associate { it.removePrefix(TYPE_PREFIX) to preferences.getString(it, "") }
+        val setKeys = types.filterValues { it == TYPE_SET }.keys
+        val all = mutableMapOf<String, Any?>()
+        types.forEach { (key, type) ->
+            all[key] = when (type) {
+                TYPE_INT -> preferences.getInt(key, 0)
+                TYPE_LONG -> preferences.getLong(key, 0L)
+                TYPE_FLOAT -> preferences.getFloat(key, 0f)
+                TYPE_DOUBLE -> preferences.getDouble(key, 0.0)
+                TYPE_BOOLEAN -> preferences.getBoolean(key, false)
+                TYPE_SET -> getStringSet(key, null)
+                else -> preferences.getStringOrNull(key)
+            }
+        }
+        // ponytail: keys saved before the types were kept read as text, as they did; a set from then shows as its parts
+        keys
+            .filter { key -> !key.startsWith(TYPE_PREFIX) && key !in types && setKeys.none { key.startsWith("$it.") } }
+            .forEach { all[it] = preferences.getStringOrNull(it) }
+        return all
+    }
 
     override fun getString(
         key: String,
@@ -174,11 +218,14 @@ class JavaSharedPreferences(
                     }
                 }
 
+                // desktop: the type getAll() gives back
+                preferences.putString(TYPE_PREFIX + action.key, typeOf(action.value))
                 if (shouldNotify) notify(action.key)
             }
 
             is Action.Remove -> {
                 preferences.remove(action.key)
+                preferences.remove(TYPE_PREFIX + action.key) // desktop: and its type
                 /*
                  Set<String> are stored like
                  key.0 = value1
