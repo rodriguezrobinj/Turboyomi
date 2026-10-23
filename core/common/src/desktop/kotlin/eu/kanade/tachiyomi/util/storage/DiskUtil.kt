@@ -49,11 +49,11 @@ object DiskUtil {
 
     /**
      * Gets the total space for the disk that a file path points to, in bytes.
+     * desktop: the size Windows reports for the volume, instead of Android's StatFs.
      */
     fun getTotalStorageSpace(file: File): Long {
         return try {
-            val stat = StatFs(file.absolutePath)
-            stat.blockCountLong * stat.blockSizeLong
+            file.totalSpace
         } catch (_: Exception) {
             -1L
         }

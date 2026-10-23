@@ -37,4 +37,11 @@ class DiskUtilTest {
             DiskUtil.usableSpace = previous
         }
     }
+
+    @Test
+    fun `the total space is the volume's size`(@TempDir dir: Path) {
+        val file = dir.toFile()
+        DiskUtil.getTotalStorageSpace(file) shouldBe file.totalSpace
+        (DiskUtil.getTotalStorageSpace(file) > 0) shouldBe true
+    }
 }
