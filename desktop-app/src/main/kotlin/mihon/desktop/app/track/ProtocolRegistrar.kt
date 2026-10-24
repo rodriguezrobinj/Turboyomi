@@ -8,7 +8,7 @@ import java.io.File
 import java.lang.management.ManagementFactory
 
 /**
- * Registers mangareader:// and app.mangareader:// for this user (HKCU, no admin rights) so the browser can hand an
+ * Registers turboyomi:// and app.turboyomi:// for this user (HKCU, no admin rights) so the browser can hand an
  * OAuth redirect back to the app (spec 5b-2 §1). Written on every start, so it points at the app that ran last: the
  * exe once packaged, the JVM with its classpath during development.
  */
@@ -39,13 +39,13 @@ object ProtocolRegistrar {
             TrackLoginHandler.SCHEMES.forEach { scheme ->
                 val key = "$root\\$scheme"
                 Advapi32Util.registryCreateKey(WinReg.HKEY_CURRENT_USER, "$key\\shell\\open\\command")
-                Advapi32Util.registrySetStringValue(WinReg.HKEY_CURRENT_USER, key, "", "URL:MangaReader")
+                Advapi32Util.registrySetStringValue(WinReg.HKEY_CURRENT_USER, key, "", "URL:Turboyomi")
                 Advapi32Util.registrySetStringValue(WinReg.HKEY_CURRENT_USER, key, "URL Protocol", "")
                 Advapi32Util.registrySetStringValue(WinReg.HKEY_CURRENT_USER, "$key\\shell\\open\\command", "", command)
             }
             true
         } catch (e: Exception) {
-            logcat(LogPriority.ERROR, e) { "Couldn't register the mangareader:// protocol" }
+            logcat(LogPriority.ERROR, e) { "Couldn't register the turboyomi:// protocol" }
             false
         }.also { registered = it }
     }

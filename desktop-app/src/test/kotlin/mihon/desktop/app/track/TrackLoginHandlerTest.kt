@@ -82,7 +82,7 @@ class TrackLoginHandlerTest {
         }
         handler.authorizationUrl("anilist")
 
-        handler.handle("mangareader://anilist-auth#access_token=tok%2Ben+x&token_type=Bearer&expires_in=31536000")
+        handler.handle("turboyomi://anilist-auth#access_token=tok%2Ben+x&token_type=Bearer&expires_in=31536000")
 
         val aniList = graph.trackerManager.aniList!!
         aniList.isLoggedIn shouldBe true
@@ -101,7 +101,7 @@ class TrackLoginHandlerTest {
         val auth = handler.authorizationUrl("myanimelist")!!
         val challenge = auth.toHttpUrl().queryParameter("code_challenge")!!
 
-        handler.handle("mangareader://myanimelist-auth?code=c1&state=${stateOf(auth)}")
+        handler.handle("turboyomi://myanimelist-auth?code=c1&state=${stateOf(auth)}")
 
         val form = sent("myanimelist.net/v1/oauth2/token")
         form shouldContain "code=c1"
@@ -119,17 +119,17 @@ class TrackLoginHandlerTest {
         responses["GET api.bgm.tv/v0/me"] = { json("""{"username":"jose","nickname":"José"}""") }
         val auth = handler.authorizationUrl("bangumi")!!
 
-        handler.handle("mangareader://bangumi-auth?code=c2&state=${stateOf(auth)}")
+        handler.handle("turboyomi://bangumi-auth?code=c2&state=${stateOf(auth)}")
 
         val form = sent("bgm.tv/oauth/access_token")
         form shouldContain "client_secret=test-bangumi-secret"
-        form shouldContain "redirect_uri=mangareader%3A%2F%2Fbangumi-auth"
+        form shouldContain "redirect_uri=turboyomi%3A%2F%2Fbangumi-auth"
         graph.trackerManager.bangumi!!.isLoggedIn shouldBe true
         graph.trackerManager.bangumi!!.logout()
     }
 
     @Test
-    fun `Comick takes its own state and PKCE through app mangareader`(): Unit = runBlocking {
+    fun `Comick takes its own state and PKCE through app turboyomi`(): Unit = runBlocking {
         responses["POST comick.dev/api/auth/oauth2/token"] = {
             json(
                 """{"access_token":"a","expires_at":${System.currentTimeMillis() / 1000 + 3600},""" +
@@ -139,7 +139,7 @@ class TrackLoginHandlerTest {
         responses["GET api.comick.dev/integrations/v1/me"] = { json("""{"id":"u1","username":"jose"}""") }
         val auth = handler.authorizationUrl("comick")!!
 
-        handler.handle("app.mangareader://comick-auth?code=c3&state=${stateOf(auth)}")
+        handler.handle("app.turboyomi://comick-auth?code=c3&state=${stateOf(auth)}")
 
         graph.trackerManager.comick!!.isLoggedIn shouldBe true
         graph.trackerManager.comick!!.logout()
@@ -151,7 +151,7 @@ class TrackLoginHandlerTest {
         responses["GET api.hikka.io/user/me"] = { json("""{"reference":"u1","username":"jose"}""") }
         handler.authorizationUrl("hikka")
 
-        handler.handle("mangareader://hikka-auth?reference=ref-1")
+        handler.handle("turboyomi://hikka-auth?reference=ref-1")
 
         sent("api.hikka.io/auth/token") shouldContain "ref-1"
         graph.trackerManager.hikka!!.isLoggedIn shouldBe true
@@ -160,7 +160,7 @@ class TrackLoginHandlerTest {
 
     @Test
     fun `a redirect without a pending login is ignored with a notice to try again`(): Unit = runBlocking {
-        handler.handle("mangareader://anilist-auth#access_token=intruso")
+        handler.handle("turboyomi://anilist-auth#access_token=intruso")
 
         graph.trackerManager.aniList!!.isLoggedIn shouldBe false
         notices.single().isError shouldBe true
@@ -174,11 +174,11 @@ class TrackLoginHandlerTest {
         responses["GET api.bgm.tv/v0/me"] = { json("""{"username":"jose","nickname":null}""") }
         val auth = handler.authorizationUrl("bangumi")!!
 
-        handler.handle("mangareader://bangumi-auth?code=c&state=otro")
+        handler.handle("turboyomi://bangumi-auth?code=c&state=otro")
         graph.trackerManager.bangumi!!.isLoggedIn shouldBe false
         requests.none { it.first.endsWith("oauth/access_token") } shouldBe true
 
-        handler.handle("mangareader://bangumi-auth?code=c&state=${stateOf(auth)}")
+        handler.handle("turboyomi://bangumi-auth?code=c&state=${stateOf(auth)}")
         graph.trackerManager.bangumi!!.isLoggedIn shouldBe true
         graph.trackerManager.bangumi!!.logout()
     }
@@ -187,8 +187,8 @@ class TrackLoginHandlerTest {
     fun `a cancelled login warns and saves nothing, and the same redirect twice is handled once`(): Unit = runBlocking {
         val auth = handler.authorizationUrl("shikimori")!!
 
-        handler.handle("mangareader://shikimori-auth?error=access_denied&state=${stateOf(auth)}")
-        handler.handle("mangareader://shikimori-auth?error=access_denied&state=${stateOf(auth)}")
+        handler.handle("turboyomi://shikimori-auth?error=access_denied&state=${stateOf(auth)}")
+        handler.handle("turboyomi://shikimori-auth?error=access_denied&state=${stateOf(auth)}")
 
         graph.trackerManager.shikimori!!.isLoggedIn shouldBe false
         // The first warns with the service's error; the second finds no pending login and says so
@@ -204,7 +204,7 @@ class TrackLoginHandlerTest {
         handler.authorizationUrl("anilist")
         handler.authorizationUrl("hikka")
 
-        handler.handle("mangareader://anilist-auth#access_token=t")
+        handler.handle("turboyomi://anilist-auth#access_token=t")
 
         graph.trackerManager.aniList!!.isLoggedIn shouldBe true
         graph.pendingLogins.take("hikka", null) shouldBe PendingLogins.Take.Ok
@@ -222,7 +222,7 @@ class TrackLoginHandlerTest {
             { json("""{"data":{"currentUser":{"id":"7","nickname":"José"}}}""") }
         val auth = handler.authorizationUrl("shikimori")!!
 
-        handler.handle("mangareader://shikimori-auth?code=c4&state=${stateOf(auth)}")
+        handler.handle("turboyomi://shikimori-auth?code=c4&state=${stateOf(auth)}")
 
         sent("shikimori.io/oauth/token") shouldContain "client_secret=test-shikimori-secret"
         graph.trackerManager.shikimori!!.isLoggedIn shouldBe true
@@ -241,7 +241,7 @@ class TrackLoginHandlerTest {
         }
         val auth = handler.authorizationUrl("mangabaka")!!
 
-        handler.handle("mangareader://mangabaka-auth?code=c5&state=${stateOf(auth)}")
+        handler.handle("turboyomi://mangabaka-auth?code=c5&state=${stateOf(auth)}")
 
         sent("mangabaka.org/auth/oauth2/token") shouldContain "code_verifier="
         graph.trackerManager.mangaBaka!!.isLoggedIn shouldBe true

@@ -24,10 +24,10 @@ class SingleInstanceTest {
         val received = CompletableDeferred<List<String>>()
         val job = first.instance.listen(CoroutineScope(Dispatchers.IO)) { received.complete(it) }
 
-        SingleInstance.acquire(lock, listOf("mangareader://anilist-auth?code=1")) shouldBe
+        SingleInstance.acquire(lock, listOf("turboyomi://anilist-auth?code=1")) shouldBe
             SingleInstance.Result.Forwarded
 
-        withTimeout(5_000) { received.await() } shouldBe listOf("mangareader://anilist-auth?code=1")
+        withTimeout(5_000) { received.await() } shouldBe listOf("turboyomi://anilist-auth?code=1")
         job.cancel()
         first.instance.close()
     }
@@ -53,7 +53,7 @@ class SingleInstanceTest {
         // Any local process (or a web page) can reach a loopback port; it does not know the token
         val port = lock.resolveSibling(".lock.port").readText().substringBefore(':').toInt()
         Socket(InetAddress.getLoopbackAddress(), port).use { socket ->
-            socket.getOutputStream().bufferedWriter().use { it.appendLine("mangareader://anilist-auth?code=forged") }
+            socket.getOutputStream().bufferedWriter().use { it.appendLine("turboyomi://anilist-auth?code=forged") }
         }
         SingleInstance.acquire(lock, listOf("real")) shouldBe SingleInstance.Result.Forwarded
 

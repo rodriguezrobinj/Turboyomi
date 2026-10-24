@@ -288,7 +288,7 @@ class MangaBakaApi(
         private const val OAUTH_URL = "$BASE_URL/auth/oauth2"
         private const val SCOPES = "library.read library.write offline_access openid"
 
-        private const val REDIRECT_URI = "mangareader://mangabaka-auth"
+        private const val REDIRECT_URI = "turboyomi://mangabaka-auth"
 
         private const val APP_JSON = "application/json"
 

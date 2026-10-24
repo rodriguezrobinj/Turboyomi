@@ -22,7 +22,7 @@ class AppDirsTest {
 
     @Test
     fun `home override puts everything under one folder`() {
-        val dirs = AppDirs.fromEnvironment(mapOf("MANGAREADER_HOME" to "D:\\Portable"))
+        val dirs = AppDirs.fromEnvironment(mapOf("TURBOYOMI_HOME" to "D:\\Portable"))
         dirs.data shouldBe Path("D:\\Portable", "data")
         dirs.local shouldBe Path("D:\\Portable", "local")
     }
@@ -57,7 +57,7 @@ class AppDirsTest {
 
     @Test
     fun `with the home override the storage folder stays under the home folder`() {
-        val dirs = AppDirs.fromEnvironment(mapOf("MANGAREADER_HOME" to "D:\\Portable"))
+        val dirs = AppDirs.fromEnvironment(mapOf("TURBOYOMI_HOME" to "D:\\Portable"))
         dirs.storage shouldBe Path("D:\\Portable", "storage")
     }
 

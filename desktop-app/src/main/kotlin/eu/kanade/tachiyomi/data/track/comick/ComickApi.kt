@@ -271,7 +271,7 @@ class ComickApi(
     companion object {
         // desktop: our app's keys (spec 5b-2 §1)
         private val CLIENT_ID get() = TrackerKeys.comick?.clientId.orEmpty()
-        private const val REDIRECT_URI = "app.mangareader://comick-auth"
+        private const val REDIRECT_URI = "app.turboyomi://comick-auth"
 
         private const val LIBRARY_WRITE_SCOPE = "library:write"
         private const val SCOPES = "library:read $LIBRARY_WRITE_SCOPE offline_access"

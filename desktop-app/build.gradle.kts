@@ -97,7 +97,7 @@ dependencies {
 tasks.test {
     forkEvery = 1
     // Tests bring their own tracker keys (plan 5b-2, dev. 3)
-    systemProperty("mangareader.tracker-keys", "none")
+    systemProperty("turboyomi.tracker-keys", "none")
 }
 
 // The tracker keys the developer registered (spec 5b-2 §1), when the git-ignored file is there

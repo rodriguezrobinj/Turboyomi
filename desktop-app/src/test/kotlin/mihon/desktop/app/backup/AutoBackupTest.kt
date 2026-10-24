@@ -36,7 +36,7 @@ class AutoBackupTest {
     @Test
     fun `an automatic backup goes to the autobackup folder and only the last 4 stay`(): Unit = runBlocking {
         TestLibrary.libraryManga(graph, TestLibrary.category(graph))
-        val old = (1..5).map { "app.mangareader_2020-01-0${it}_00-00.tachibk" }
+        val old = (1..5).map { "app.turboyomi_2020-01-0${it}_00-00.tachibk" }
         old.forEach { File(autobackupDir(), it).writeText("viejo") }
 
         graph.backupJob.createAutomatic()

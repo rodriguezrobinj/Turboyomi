@@ -8,19 +8,19 @@ import org.junit.jupiter.api.Test
 class ProtocolRegistrarTest {
     @Test
     fun `the command quotes paths with spaces and accents and passes the url as %1`() {
-        ProtocolRegistrar.command("C:\\Users\\José Pérez\\MangaReader\\MangaReader.exe", emptyList()) shouldBe
-            "\"C:\\Users\\José Pérez\\MangaReader\\MangaReader.exe\" \"%1\""
+        ProtocolRegistrar.command("C:\\Users\\José Pérez\\Turboyomi\\Turboyomi.exe", emptyList()) shouldBe
+            "\"C:\\Users\\José Pérez\\Turboyomi\\Turboyomi.exe\" \"%1\""
         ProtocolRegistrar.command("C:\\jdk\\bin\\java.exe", listOf("-cp", "C:\\a b\\x.jar", "MainKt")) shouldBe
             "\"C:\\jdk\\bin\\java.exe\" -cp \"C:\\a b\\x.jar\" MainKt \"%1\""
     }
 
     @Test
     fun `both schemes are registered as url protocols under the given root`() {
-        val root = "Software\\MangaReaderTest-${System.nanoTime()}"
+        val root = "Software\\TurboyomiTest-${System.nanoTime()}"
         try {
             ProtocolRegistrar.register(kotlin.io.path.createTempFile("launch", ".args").toFile(), root) shouldBe true
 
-            listOf("mangareader", "app.mangareader").forEach { scheme ->
+            listOf("turboyomi", "app.turboyomi").forEach { scheme ->
                 val key = "$root\\$scheme"
                 Advapi32Util.registryValueExists(WinReg.HKEY_CURRENT_USER, key, "URL Protocol") shouldBe true
                 Advapi32Util.registryGetStringValue(WinReg.HKEY_CURRENT_USER, "$key\\shell\\open\\command", "")
@@ -28,7 +28,7 @@ class ProtocolRegistrarTest {
             }
         } finally {
             // JNA deletes one key at a time, children first
-            listOf("mangareader", "app.mangareader").forEach { scheme ->
+            listOf("turboyomi", "app.turboyomi").forEach { scheme ->
                 listOf("shell\\open\\command", "shell\\open", "shell", "").forEach { sub ->
                     val key = listOf(root, scheme, sub).filter { it.isNotEmpty() }.joinToString("\\")
                     runCatching { Advapi32Util.registryDeleteKey(WinReg.HKEY_CURRENT_USER, key) }
@@ -55,7 +55,7 @@ class ProtocolRegistrarTest {
         argFile.readText() shouldBe
             "-Dfile.encoding=UTF-8\n--add-opens=java.base/java.lang=ALL-UNNAMED\n-cp\n" +
             "\"C:/Users/José Pérez/a.jar;C:/b.jar\"\nmihon.desktop.app.MainKt\n"
-        ProtocolRegistrar.commandFor("C:\\Apps\\MangaReader.exe", argFile, emptyList(), "", "") shouldBe
-            "\"C:\\Apps\\MangaReader.exe\" \"%1\""
+        ProtocolRegistrar.commandFor("C:\\Apps\\Turboyomi.exe", argFile, emptyList(), "", "") shouldBe
+            "\"C:\\Apps\\Turboyomi.exe\" \"%1\""
     }
 }

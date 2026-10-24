@@ -30,7 +30,7 @@ class OAuthTrackersTest {
     }
 
     @Test
-    fun `the authorization urls carry our client id and the mangareader redirect`() {
+    fun `the authorization urls carry our client id and the turboyomi redirect`() {
         AnilistApi.authUrl().toString() shouldContain "client_id=test-anilist"
         MyAnimeListApi.authUrl(state = "s1").toString().let {
             it shouldStartWith "https://myanimelist.net/v1/oauth2/authorize"
@@ -38,7 +38,7 @@ class OAuthTrackersTest {
             it shouldContain "state=s1"
             it shouldContain "code_challenge="
         }
-        ComickApi.authUrl().toString() shouldContain "redirect_uri=app.mangareader%3A%2F%2Fcomick-auth"
+        ComickApi.authUrl().toString() shouldContain "redirect_uri=app.turboyomi%3A%2F%2Fcomick-auth"
     }
 
     @Test

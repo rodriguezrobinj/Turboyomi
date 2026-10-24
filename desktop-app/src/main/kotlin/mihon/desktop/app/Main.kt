@@ -60,6 +60,7 @@ import mihon.desktop.app.tray.Notice
 import mihon.desktop.app.tray.TrayNotifier
 import mihon.desktop.app.tray.closeAction
 import mihon.desktop.core.AppDirs
+import mihon.desktop.core.LegacyMigration
 import mihon.desktop.core.Platform
 import mihon.desktop.core.SingleInstance
 import mihon.desktop.core.jobs.JobScheduler
@@ -73,6 +74,8 @@ import java.awt.Toolkit
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
+    // The development build's data comes over before anything creates or opens it (spec 6a §3 A)
+    val migration = LegacyMigration.run()
     val dirs = AppDirs.fromEnvironment()
     Startup.configureLogging(dirs)
 
@@ -84,6 +87,11 @@ fun main(args: Array<String>) {
             StringDesc.Resource(MR.strings.desktop_instance_unreachable).localized(),
             dirs.logs,
         )
+    }
+    if (migration is LegacyMigration.Result.Failed) {
+        Startup.logcat(LogPriority.ERROR, migration.error) { "Couldn't bring MangaReader's data over" }
+        // A dialog: the window's snackbar isn't listening yet, and this start goes on with fresh data
+        Startup.warn(StringDesc.Resource(MR.strings.desktop_legacy_migration_failed).localized())
     }
     // OAuth redirects (spec 5b-2 §3 A): a second instance's, and this start's own, wait here until the graph exists
     val loginUrls = Channel<String>(Channel.UNLIMITED)

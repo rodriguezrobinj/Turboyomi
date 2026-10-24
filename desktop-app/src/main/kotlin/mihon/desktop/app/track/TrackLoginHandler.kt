@@ -25,7 +25,7 @@ import java.net.URLDecoder
 
 /**
  * Desktop counterpart of Mihon's TrackLoginActivity (spec 5b-2 §2): opens a login in the browser and finishes it when
- * the service's redirect comes back to the app as a mangareader:// (or app.mangareader:// for Comick) url.
+ * the service's redirect comes back to the app as a turboyomi:// (or app.turboyomi:// for Comick) url.
  */
 @Inject
 @SingleIn(AppScope::class)
@@ -136,7 +136,7 @@ class TrackLoginHandler(
     }
 
     companion object {
-        val SCHEMES = setOf("mangareader", "app.mangareader")
+        val SCHEMES = setOf("turboyomi", "app.turboyomi")
         val SERVICES = setOf("anilist", "myanimelist", "shikimori", "bangumi", "comick", "mangabaka", "hikka")
         private val STATE_CHECKED_HERE = setOf("myanimelist", "shikimori", "bangumi")
     }

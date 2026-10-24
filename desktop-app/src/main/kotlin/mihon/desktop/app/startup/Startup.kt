@@ -14,7 +14,7 @@ object Startup {
     fun configureLogging(dirs: AppDirs) {
         // The single-instance lock (in data/) and the log folder must exist before anything else
         dirs.createAll()
-        System.setProperty("mangareader.logs", dirs.logs.toString())
+        System.setProperty("turboyomi.logs", dirs.logs.toString())
         System.setProperty("logback.configurationFile", "logback-app.xml")
         logcat(LogPriority.INFO) {
             "Starting ${AppDirs.APP_NAME} ${DesktopBuildInfo.VERSION_NAME} (data: ${dirs.data})"
@@ -25,6 +25,11 @@ object Startup {
             logcat(LogPriority.ERROR, error) { "Uncaught exception in ${thread.name}" }
             AppMessages.show("Error: ${error.message ?: error::class.simpleName}")
         }
+    }
+
+    /** Something the user must know before the window opens; the start goes on once they close it. */
+    fun warn(message: String) {
+        JOptionPane.showMessageDialog(null, message, AppDirs.APP_NAME, JOptionPane.WARNING_MESSAGE)
     }
 
     /** The app can't start: says why and where the log is, then exits with 1. Never leaves a windowless process. */

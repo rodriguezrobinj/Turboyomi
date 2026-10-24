@@ -26,8 +26,8 @@ object DesktopBuildInfo {
     const val VERSION_CODE = 1
     const val VERSION_NAME = "0.1.0"
 
-    /** Provisional application id; names the default shared preferences file. */
-    const val APPLICATION_ID = "app.mangareader"
+    /** Names the default shared preferences file. */
+    const val APPLICATION_ID = "app.turboyomi"
 }
 
 // AndroidCompat's CustomContext has no package name; Mihon's app code and some extensions expect one

@@ -29,16 +29,19 @@ data class AppDirs(val data: Path, val local: Path, val storage: Path = data.res
 
     /**
      * Creates the default storage folder only while [chosen] (the storage_dir preference) is it: once the user moves the
-     * storage elsewhere, Documents isn't given an empty MangaReader folder on every start.
+     * storage elsewhere, Documents isn't given an empty Turboyomi folder on every start.
      */
     fun createStorageIfChosen(chosen: String) {
         if (runCatching { Path.of(URI(chosen)) }.getOrNull() == storage) storage.createDirectories()
     }
 
     companion object {
-        /** Provisional product name; the only place it is spelled out. */
-        const val APP_NAME = "MangaReader"
-        const val HOME_ENV = "MANGAREADER_HOME"
+        /** The product name; the only place it is spelled out. */
+        const val APP_NAME = "Turboyomi"
+        const val HOME_ENV = "TURBOYOMI_HOME"
+
+        /** The development build's name, whose data LegacyMigration brings over (spec 6a §3 A). */
+        const val LEGACY_APP_NAME = "MangaReader"
 
         /** [documents] is the user's Documents folder, which OneDrive may have moved (FileSystemView follows it). */
         fun fromEnvironment(

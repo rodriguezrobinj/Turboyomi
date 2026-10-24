@@ -9,12 +9,12 @@ import java.util.Properties
 object TrackerKeys {
     data class Keys(val clientId: String, val secret: String? = null)
 
-    /** Tests' keys; tests also set mangareader.tracker-keys=none so a developer's own file never leaks in. */
+    /** Tests' keys; tests also set turboyomi.tracker-keys=none so a developer's own file never leaks in. */
     @Volatile
     internal var override: Map<String, Keys>? = null
 
     private val loaded: Map<String, Keys> by lazy {
-        if (System.getProperty("mangareader.tracker-keys") == "none") return@lazy emptyMap()
+        if (System.getProperty("turboyomi.tracker-keys") == "none") return@lazy emptyMap()
         val properties = Properties()
         TrackerKeys::class.java.getResourceAsStream("/tracker-keys.properties")?.use { properties.load(it) }
         SERVICES.mapNotNull { service ->

@@ -219,7 +219,7 @@ class ShikimoriApi(
         private const val OAUTH_URL = "$BASE_URL/oauth/token"
         private const val LOGIN_URL = "$BASE_URL/oauth/authorize"
 
-        private const val REDIRECT_URL = "mangareader://shikimori-auth"
+        private const val REDIRECT_URL = "turboyomi://shikimori-auth"
 
         // desktop: our app's keys (spec 5b-2 §1)
         private val CLIENT_ID get() = TrackerKeys.shikimori?.clientId.orEmpty()
