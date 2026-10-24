@@ -10,6 +10,7 @@ import dev.zacsweers.metro.createGraphFactory
 import eu.kanade.domain.chapter.interactor.SyncChaptersWithSource
 import eu.kanade.domain.manga.interactor.UpdateManga
 import eu.kanade.tachiyomi.data.backup.BackupDecoder
+import eu.kanade.tachiyomi.data.backup.BackupFileValidator
 import eu.kanade.tachiyomi.data.backup.create.BackupCreator
 import eu.kanade.tachiyomi.data.download.DownloadProvider
 import eu.kanade.tachiyomi.data.download.DownloadStore
@@ -78,6 +79,7 @@ interface TestAppGraph : AppGraph {
     val upcomingPreferences: UpcomingPreferences
     val trackRepository: TrackRepository
     val backupDecoder: BackupDecoder
+    val backupFileValidator: BackupFileValidator
     val backupCreatorFactory: BackupCreator.Factory
 
     @DependencyGraph.Factory

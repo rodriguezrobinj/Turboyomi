@@ -24,6 +24,7 @@
 *.cbr binary
 *.cb7 binary
 *.epub binary
+*.tachibk binary
 *.ttf binary
 *.eot binary
 *.woff binary
