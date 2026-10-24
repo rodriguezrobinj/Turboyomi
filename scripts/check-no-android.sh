@@ -4,7 +4,7 @@
 # the BackHandler/BackPressDispatcher shims (presentation-core) and Compose's multiplatform navigationevent.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-bad=$(grep -rhoE '^import android(x)?\.[A-Za-z0-9_.]+' desktop-app/src/main desktop-app/src/stubs \
+bad=$(grep -rhoE '^import android(x)?\.[A-Za-z0-9_.]+' desktop-app/src/main \
     | sort -u \
     | grep -vE '^import android\.(content\.Context|widget\.Toast)$' \
     | grep -vE '^import androidx\.(compose|lifecycle|paging|preference|navigationevent|activity\.compose\.(BackHandler|BackPressDispatcher))' \

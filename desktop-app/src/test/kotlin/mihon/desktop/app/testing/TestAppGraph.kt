@@ -4,6 +4,7 @@ import android.content.Context
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.DependencyGraph
+import dev.zacsweers.metro.IntoSet
 import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
 import dev.zacsweers.metro.createGraphFactory
@@ -14,6 +15,7 @@ import eu.kanade.tachiyomi.data.backup.BackupFileValidator
 import eu.kanade.tachiyomi.data.backup.create.BackupCreator
 import eu.kanade.tachiyomi.data.download.DownloadProvider
 import eu.kanade.tachiyomi.data.download.DownloadStore
+import eu.kanade.tachiyomi.data.track.Tracker
 import eu.kanade.tachiyomi.ui.browse.migration.manga.MigrateMangaViewModel
 import eu.kanade.tachiyomi.ui.reader.ReaderViewModel
 import mihon.app.di.AppGraph
@@ -94,6 +96,14 @@ interface TestAppGraph : AppGraph {
 
 @BindingContainer
 object TestBindings {
+    @Provides
+    @IntoSet
+    fun fakeTracker(): Tracker = TestTrackers.fake
+
+    @Provides
+    @IntoSet
+    fun otherTracker(): Tracker = TestTrackers.other
+
     @Provides
     @SingleIn(AppScope::class)
     fun sourceManager(local: LocalSource): SourceManager =

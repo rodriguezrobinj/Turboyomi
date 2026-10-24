@@ -3,6 +3,11 @@ package mihon.app.di
 import dev.zacsweers.metrox.viewmodel.ViewModelGraph
 import eu.kanade.domain.base.BasePreferences
 import eu.kanade.domain.source.service.SourcePreferences
+import eu.kanade.domain.track.interactor.AddTracks
+import eu.kanade.domain.track.interactor.TrackChapter
+import eu.kanade.domain.track.service.DelayedTrackingJob
+import eu.kanade.domain.track.service.TrackPreferences
+import eu.kanade.domain.track.store.DelayedTrackingStore
 import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.tachiyomi.data.backup.BackupJob
 import eu.kanade.tachiyomi.data.backup.BackupNotifier
@@ -11,6 +16,7 @@ import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.data.download.DownloadCache
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.library.LibraryUpdateJob
+import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.extension.ExtensionManager
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
 import mihon.desktop.app.tray.TrayPreferences
@@ -24,6 +30,7 @@ import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.domain.manga.interactor.GetFavorites
 import tachiyomi.domain.storage.service.StorageManager
 import tachiyomi.domain.storage.service.StoragePreferences
+import tachiyomi.domain.track.interactor.UpsertTrack
 
 /**
  * Desktop counterpart of Mihon's AppGraph: the accessors ported code reaches through `context.appGraph`.
@@ -52,4 +59,11 @@ interface AppGraph : DesktopGraph, ViewModelGraph {
     val getFavorites: GetFavorites
     val backupJob: BackupJob
     val backupNotifier: BackupNotifier
+    val trackPreferences: TrackPreferences
+    val trackerManager: TrackerManager
+    val addTracks: AddTracks
+    val upsertTrack: UpsertTrack
+    val trackChapter: TrackChapter
+    val delayedTrackingStore: DelayedTrackingStore
+    val delayedTrackingJob: DelayedTrackingJob
 }

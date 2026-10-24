@@ -16,7 +16,7 @@ class SpanishStringsTest {
 
     @Test
     fun `every string the app uses has a Spanish translation`() {
-        val used = listOf(File("src/main/kotlin"), File("src/stubs/kotlin"))
+        val used = listOf(File("src/main/kotlin"))
             .flatMap { dir -> dir.walk().filter { it.extension == "kt" }.toList() }
             .flatMap { file -> Regex("""MR\.strings\.(\w+)""").findAll(file.readText()).map { it.groupValues[1] } }
             .toSet()

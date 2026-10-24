@@ -30,13 +30,6 @@ kotlin {
     }
 }
 
-sourceSets {
-    main {
-        // Null implementations of subsystems later subprojects port (downloads: 4, trackers: 5)
-        kotlin.srcDir("src/stubs/kotlin")
-    }
-}
-
 dependencies {
     implementation(projects.desktopCore)
     implementation(projects.core.metro)
