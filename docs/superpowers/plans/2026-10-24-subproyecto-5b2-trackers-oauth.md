@@ -706,7 +706,9 @@ class TrackLoginHandler(
             .split("&")
             .filter { it.isNotBlank() }
             .associate {
-                val parts = it.split("=", limit = 2).map { part -> URLDecoder.decode(part, Charsets.UTF_8) }
+                // Like Mihon's Uri.decode: percent-escapes only, a literal + stays a +
+                val parts = it.split("=", limit = 2)
+                    .map { part -> URLDecoder.decode(part.replace("+", "%2B"), Charsets.UTF_8) }
                 parts[0] to parts.getOrNull(1)
             }
 
@@ -996,18 +998,12 @@ object ProtocolRegistrar {
         }.also { registered = it }
     }
 
+    /** The executable always quoted, arguments quoted when they hold spaces, and the url as "%1". */
     fun command(executable: String, arguments: List<String>): String =
-        (listOf(executable) + arguments).joinToString(" ") { quote(it) } + " \"%1\""
+        (listOf("\"$executable\"") + arguments.map(::quote)).joinToString(" ") + " \"%1\""
 
     private fun quote(part: String) = if (part.any { it == ' ' || it == '\t' }) "\"$part\"" else part
 }
-```
-
-`command("C:\\jdk\\bin\\java.exe", …)` deja `C:\jdk\bin\java.exe` sin comillas porque no tiene espacios. El test espera comillas en el ejecutable siempre, así que `quote` se aplica al ejecutable sin condición:
-
-```kotlin
-    fun command(executable: String, arguments: List<String>): String =
-        (listOf("\"$executable\"") + arguments.map(::quote)).joinToString(" ") + " \"%1\""
 ```
 
 `LoginUrls.kt`:
