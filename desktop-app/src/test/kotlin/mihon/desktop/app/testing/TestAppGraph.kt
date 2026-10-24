@@ -107,7 +107,14 @@ object TestBindings {
     @Provides
     @SingleIn(AppScope::class)
     fun sourceManager(local: LocalSource): SourceManager =
-        FakeSourceManager(local, TestSources.fake, TestSources.http, TestSources.http2, TestSources.updatable)
+        FakeSourceManager(
+            local,
+            TestSources.fake,
+            TestSources.http,
+            TestSources.http2,
+            TestSources.updatable,
+            TestSources.komga,
+        )
 }
 
 private var started: TestAppGraph? = null

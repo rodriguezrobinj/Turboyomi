@@ -3,8 +3,11 @@ package eu.kanade.tachiyomi.data.track
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
+import eu.kanade.tachiyomi.data.track.kavita.Kavita
 import eu.kanade.tachiyomi.data.track.kitsu.Kitsu
+import eu.kanade.tachiyomi.data.track.komga.Komga
 import eu.kanade.tachiyomi.data.track.mangaupdates.MangaUpdates
+import eu.kanade.tachiyomi.data.track.suwayomi.Suwayomi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOf
@@ -15,9 +18,12 @@ class TrackerManager(extra: Set<Tracker>) {
     // desktop: the trackers without OAuth (spec 5b-1); 5b-2 adds the rest with Mihon's ids. [extra] is what tests add
 
     val kitsu = Kitsu(3L)
+    val komga = Komga(6L)
     val mangaUpdates = MangaUpdates(7L)
+    val kavita = Kavita(8L)
+    val suwayomi = Suwayomi(9L)
 
-    val trackers: List<Tracker> = listOf<Tracker>(kitsu, mangaUpdates) + extra
+    val trackers: List<Tracker> = listOf<Tracker>(kitsu, komga, mangaUpdates, kavita, suwayomi) + extra
 
     fun loggedInTrackers() = trackers.filter { it.isLoggedIn }
 

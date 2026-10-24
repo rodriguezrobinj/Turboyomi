@@ -117,4 +117,7 @@ object TestSources {
 
     /** A second online source, for downloads from two sources at once. */
     val http2 = FakeHttpSource(server, images, name = "Fake HTTP 2")
+
+    /** A source the Komga tracker accepts, with its own Komga-like server. */
+    val komga = eu.kanade.tachiyomi.extension.all.komga.Komga()
 }

@@ -96,7 +96,7 @@ dependencies {
 tasks.test { forkEvery = 1 }
 
 apollo {
-    // Mihon's Kitsu GraphQL service; AniList and Shikimori come with their trackers in 5b-2
+    // Mihon's Kitsu and Suwayomi GraphQL services; AniList and Shikimori come with their trackers in 5b-2
     service("kitsu") {
         packageName.set("mihon.graphql.kitsu")
         srcDir(file("src/main/graphql/mihon/graphql/kitsu"))
@@ -110,5 +110,10 @@ apollo {
             "kotlin.collections.Map<String, Any?>",
             "mihon.graphql.kitsu.adapter.KitsuMapAdapter",
         )
+    }
+
+    service("suwayomi") {
+        packageName.set("mihon.graphql.suwayomi")
+        srcDir(file("src/main/graphql/mihon/graphql/suwayomi"))
     }
 }
