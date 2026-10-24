@@ -1,6 +1,7 @@
 package eu.kanade.tachiyomi.data.backup
 
 import dev.zacsweers.metro.Inject
+import eu.kanade.tachiyomi.data.track.TrackerManager
 import kotlinx.coroutines.CancellationException
 import tachiyomi.domain.source.service.SourceManager
 import java.io.File
@@ -8,6 +9,7 @@ import java.io.File
 @Inject
 class BackupFileValidator(
     private val sourceManager: SourceManager,
+    private val trackerManager: TrackerManager,
     private val backupDecoder: BackupDecoder,
 ) {
 
@@ -17,9 +19,11 @@ class BackupFileValidator(
      * @return List of missing sources or missing trackers.
      */
     suspend fun validate(file: File): Results {
+        val trackerIds = mutableSetOf<Int>()
         val backup = try {
-            // desktop: the entries are still read, so a broken one fails here, before anything is restored
-            backupDecoder.decodeEntries(file).collect {}
+            backupDecoder.decodeEntries(file).collect { manga ->
+                manga.tracking.mapTo(trackerIds) { it.syncId }
+            }
             backupDecoder.decodeMetadata(file).backup
         } catch (e: CancellationException) {
             throw e
@@ -41,8 +45,15 @@ class BackupFileValidator(
             .distinct()
             .sorted()
 
-        // desktop: there are no trackers until subproject 5b, so none can be missing
-        return Results(missingSources, missingTrackers = emptyList())
+        // desktop: trackers not in TrackerManager yet (the OAuth ones until 5b-2) are left out, as Mihon leaves
+        // out unknown ids
+        val missingTrackers = trackerIds
+            .mapNotNull { trackerManager.get(it.toLong()) }
+            .filter { !it.isLoggedIn }
+            .map { it.name }
+            .sorted()
+
+        return Results(missingSources, missingTrackers)
     }
 
     data class Results(

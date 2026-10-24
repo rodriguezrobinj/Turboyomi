@@ -27,6 +27,8 @@ import eu.kanade.presentation.more.settings.widget.PrefsVerticalPadding
 import eu.kanade.presentation.more.settings.widget.SwitchPreferenceWidget
 import eu.kanade.presentation.more.settings.widget.TextPreferenceWidget
 import eu.kanade.presentation.more.settings.widget.TitleFontSize
+import eu.kanade.presentation.more.settings.widget.TrackingPreferenceWidget
+import eu.kanade.tachiyomi.data.track.RefreshResult
 import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.coroutines.launch
 import tachiyomi.core.common.i18n.stringResource
@@ -175,7 +177,32 @@ internal fun PreferenceItem(
                     },
                 )
             }
-            // desktop: no TrackerPreference until trackers (subproject 5)
+            is Preference.PreferenceItem.TrackerPreference -> {
+                val context = LocalContext.current
+                LaunchedEffect(item.tracker) {
+                    item.tracker.refreshResultFlow.collect {
+                        when (it) {
+                            RefreshResult.Success -> context.toast(
+                                context.stringResource(MR.strings.refresh_tracker_success, item.tracker.name),
+                            )
+
+                            is RefreshResult.Error -> context.toast(
+                                context.stringResource(MR.strings.refresh_tracker_error, item.tracker.name, it.msg),
+                            )
+                        }
+                    }
+                }
+                val isLoggedIn by item.tracker.let { tracker ->
+                    tracker.isLoggedInFlow.collectAsState(tracker.isLoggedIn)
+                }
+                val isRefreshing by item.tracker.isRefreshingFlow.collectAsState()
+                TrackingPreferenceWidget(
+                    tracker = item.tracker,
+                    isLoggedIn = isLoggedIn,
+                    isRefreshing = isRefreshing,
+                    onClick = { if (isLoggedIn) item.logout() else item.login() },
+                )
+            }
             is Preference.PreferenceItem.InfoPreference -> {
                 InfoWidget(text = item.title)
             }

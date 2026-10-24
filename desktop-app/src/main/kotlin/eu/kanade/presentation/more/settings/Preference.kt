@@ -3,6 +3,7 @@ package eu.kanade.presentation.more.settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.vector.ImageVector
+import eu.kanade.tachiyomi.data.track.Tracker
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.core.common.preference.Preference as PreferenceData
@@ -143,7 +144,20 @@ sealed class Preference {
             override val icon: ImageVector? = null
         }
 
-        // desktop: no TrackerPreference until trackers (subproject 5)
+        /**
+         * A [PreferenceItem] for individual tracker.
+         */
+        data class TrackerPreference(
+            val tracker: Tracker,
+            val login: () -> Unit,
+            val logout: () -> Unit,
+        ) : PreferenceItem<String, Unit>() {
+            override val title: String = ""
+            override val visible: Boolean = true
+            override val subtitle: String? = null
+            override val icon: ImageVector? = null
+            override val onValueChanged: suspend (value: String) -> Unit = {}
+        }
 
         data class InfoPreference(
             override val title: String,

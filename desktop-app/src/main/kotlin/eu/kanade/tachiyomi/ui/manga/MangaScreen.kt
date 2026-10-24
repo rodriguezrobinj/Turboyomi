@@ -31,6 +31,7 @@ import eu.kanade.presentation.manga.components.DeleteChaptersDialog
 import eu.kanade.presentation.manga.components.MangaCoverDialog
 import eu.kanade.presentation.manga.components.ScanlatorFilterDialog
 import eu.kanade.presentation.manga.components.SetIntervalDialog
+import eu.kanade.presentation.more.settings.screen.SettingsTrackingScreen
 import eu.kanade.presentation.util.AssistContentScreen
 import eu.kanade.presentation.util.Screen
 import eu.kanade.presentation.util.isTabletUi
@@ -40,6 +41,7 @@ import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.ui.browse.source.browse.BrowseSourceScreen
 import eu.kanade.tachiyomi.ui.browse.source.globalsearch.GlobalSearchScreen
 import eu.kanade.tachiyomi.ui.category.CategoryScreen
+import eu.kanade.tachiyomi.ui.manga.track.TrackInfoDialogHomeScreen
 import eu.kanade.tachiyomi.util.system.copyToClipboard
 import eu.kanade.tachiyomi.util.system.openInBrowser
 import eu.kanade.tachiyomi.util.system.toast
@@ -135,7 +137,14 @@ class MangaScreen(
                     viewModel.source,
                 )
             }.takeIf { isHttpSource },
-            onTrackingClicked = null, // desktop: trackers arrive in subproject 5
+            onTrackingClicked = {
+                if (!successState.hasLoggedInTrackers) {
+                    // desktop: Settings › Tracking directly, there's no SettingsScreen destination
+                    navigator.push(SettingsTrackingScreen)
+                } else {
+                    viewModel.showTrackDialog()
+                }
+            },
             onTagSearch = { scope.launch { performGenreSearch(navigator, it, viewModel.source!!) } },
             onFilterButtonClicked = viewModel::showSettingsDialog,
             onRefresh = viewModel::fetchAllFromSource,
@@ -264,7 +273,17 @@ class MangaScreen(
                         .takeIf { viewModel.isUpdateIntervalEnabled },
                 )
             }
-            // desktop: no TrackSheet dialog until subproject 5
+            MangaViewModel.Dialog.TrackSheet -> {
+                NavigatorAdaptiveSheet(
+                    screen = TrackInfoDialogHomeScreen(
+                        mangaId = successState.manga.id,
+                        mangaTitle = successState.manga.title,
+                        sourceId = successState.source.id,
+                    ),
+                    enableSwipeDismiss = { it.lastItem is TrackInfoDialogHomeScreen },
+                    onDismissRequest = onDismissRequest,
+                )
+            }
             else -> {}
         }
 

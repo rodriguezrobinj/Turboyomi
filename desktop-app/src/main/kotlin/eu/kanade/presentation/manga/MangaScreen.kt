@@ -97,7 +97,7 @@ fun MangaScreen(
     onAddToLibraryClicked: () -> Unit,
     onWebViewClicked: (() -> Unit)?,
     onWebViewLongClicked: (() -> Unit)?,
-    onTrackingClicked: (() -> Unit)?, // desktop: null until trackers (subproject 5)
+    onTrackingClicked: (() -> Unit)?,
 
     // For tags menu
     onTagSearch: (String) -> Unit,
@@ -230,7 +230,7 @@ private fun MangaScreenSmallImpl(
     onAddToLibraryClicked: () -> Unit,
     onWebViewClicked: (() -> Unit)?,
     onWebViewLongClicked: (() -> Unit)?,
-    onTrackingClicked: (() -> Unit)?, // desktop: null until trackers (subproject 5)
+    onTrackingClicked: (() -> Unit)?,
 
     // For tags menu
     onTagSearch: (String) -> Unit,
@@ -465,7 +465,7 @@ fun MangaScreenLargeImpl(
     onAddToLibraryClicked: () -> Unit,
     onWebViewClicked: (() -> Unit)?,
     onWebViewLongClicked: (() -> Unit)?,
-    onTrackingClicked: (() -> Unit)?, // desktop: null until trackers (subproject 5)
+    onTrackingClicked: (() -> Unit)?,
 
     // For tags menu
     onTagSearch: (String) -> Unit,

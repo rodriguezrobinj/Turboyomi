@@ -936,6 +936,9 @@
     <string name="desktop_downloads_finished">Descargas terminadas</string>
 
     <!-- Desktop: Mihon strings with no Spanish translation upstream yet; drop each one when Weblate adds it -->
+    <string name="refresh_tracker_profile">Actualizar perfil del rastreador</string>
+    <string name="refresh_tracker_success">Perfil de %s actualizado</string>
+    <string name="refresh_tracker_error">Error al actualizar %1$s: %2$s</string>
     <string name="action_web_view">WebView</string>
     <string name="content_warnings_info">Las extensiones instaladas que no se cargan siguen en la lista, sin sus fuentes; las que no has instalado se ocultan. Esto no impide que extensiones no oficiales o mal etiquetadas muestren contenido para adultos dentro de la app.</string>
     <string name="cutout_mode_avoid">Evitar</string>
