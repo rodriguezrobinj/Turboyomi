@@ -48,6 +48,8 @@ fun ApplicationScope.AppTray(graph: AppGraph, onOpen: () -> Unit, onExit: () -> 
         onDispose { TrayNotifier.sink = null }
     }
     val progress by graph.libraryUpdateJob.progress.collectAsState()
+    val incognito by remember { graph.basePreferences.incognitoMode.changes() }
+        .collectAsState(graph.basePreferences.incognitoMode.get())
     val tooltip = progress?.let {
         context.stringResource(
             MR.strings.desktop_update_progress,
@@ -69,6 +71,12 @@ fun ApplicationScope.AppTray(graph: AppGraph, onOpen: () -> Unit, onExit: () -> 
             Item(
                 context.stringResource(MR.strings.action_update_library),
                 onClick = { updateFromTray(graph.libraryUpdateJob, context) },
+            )
+            // desktop: incognito without opening the window (spec 5b-1 §1)
+            CheckboxItem(
+                context.stringResource(MR.strings.pref_incognito_mode),
+                checked = incognito,
+                onCheckedChange = { graph.basePreferences.incognitoMode.set(it) },
             )
             Separator()
             Item(context.stringResource(MR.strings.desktop_tray_exit), onClick = onExit)

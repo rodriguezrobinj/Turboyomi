@@ -16,6 +16,8 @@ import eu.kanade.domain.manga.interactor.SetMangaViewerFlags
 import eu.kanade.domain.manga.model.downloadedFilter
 import eu.kanade.domain.manga.model.readingMode
 import eu.kanade.domain.source.interactor.GetIncognitoState
+import eu.kanade.domain.track.interactor.TrackChapter
+import eu.kanade.domain.track.service.TrackPreferences
 import eu.kanade.tachiyomi.data.cache.ChapterCache
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.download.DownloadProvider
@@ -91,6 +93,8 @@ class ReaderViewModel(
     private val downloadProvider: DownloadProvider,
     private val downloadPreferences: DownloadPreferences,
     private val getNextChapters: GetNextChapters,
+    private val trackChapter: TrackChapter,
+    private val trackPreferences: TrackPreferences,
 ) : ViewModel() {
 
     @AssistedFactory
@@ -425,11 +429,24 @@ class ReaderViewModel(
     }
 
     /** Writes the progress of [readerChapter] on the app scope, so it's saved even when the reader is closing. */
+    // desktop: Mihon's, in the desktop reader's progress writes (spec 5b-1 §3 B, G)
+    private fun updateTrackChapterRead(readerChapter: ReaderChapter) {
+        if (incognitoMode) return
+        if (!trackPreferences.autoUpdateTrack.get()) return
+        val manga = manga ?: return
+
+        // Reading the last page and leaving right away is common, so it outlives the reader
+        appScope.launch {
+            trackChapter.await(context, manga.id, readerChapter.chapter.chapterNumber)
+        }
+    }
+
     private fun writeChapterProgress(readerChapter: ReaderChapter, onComplete: Boolean) {
         // Immediate and through the mutex, which is fair, so the writes land in the order they were made
         appScope.launch(Dispatchers.Main.immediate) {
             progressWrites.withLock {
                 if (onComplete) deleteChapterIfNeeded(readerChapter)
+                if (onComplete) updateTrackChapterRead(readerChapter)
                 if (onComplete) markDuplicatesRead(readerChapter)
                 val chapter = readerChapter.chapter
                 updateChapter.await(

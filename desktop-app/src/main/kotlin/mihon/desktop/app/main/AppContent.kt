@@ -86,10 +86,12 @@ fun AppContent(graph: AppGraph, crash: Throwable?, onRestart: () -> Unit) {
             }
             val downloadedOnly by remember { graph.basePreferences.downloadedOnly.changes() }
                 .collectAsState(graph.basePreferences.downloadedOnly.get())
+            val incognito by remember { graph.basePreferences.incognitoMode.changes() }
+                .collectAsState(graph.basePreferences.incognitoMode.get())
             val indexing by graph.downloadCache.isInitializing.collectAsState()
-            // desktop: Mihon's banners over the whole window (MainActivity), without incognito (subproject 5)
+            // desktop: Mihon's banners over the whole window (MainActivity)
             Column(Modifier.fillMaxSize()) {
-                AppStateBanners(downloadedOnlyMode = downloadedOnly, incognitoMode = false, indexing = indexing)
+                AppStateBanners(downloadedOnlyMode = downloadedOnly, incognitoMode = incognito, indexing = indexing)
                 Box(Modifier.weight(1f).fillMaxWidth()) {
                     // The tabs' navigator sits above the screens' navigator, so it stays composed while a screen covers
                     // HomeScreen; inside HomeScreen it lost every tab's state (pager page, scroll) on the way back.

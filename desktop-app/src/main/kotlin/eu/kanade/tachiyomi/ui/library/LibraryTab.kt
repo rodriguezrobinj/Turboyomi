@@ -140,6 +140,7 @@ data object LibraryTab : Tab {
                         scrollBehavior = scrollBehavior.takeIf { !state.showCategoryTabs },
                         onClickEditCategories = { navigator.push(CategoryScreen()) },
                         onClickDownloadedOnly = { context.appGraph.basePreferences.downloadedOnly.toggle() },
+                        onClickIncognito = { context.appGraph.basePreferences.incognitoMode.toggle() },
                     )
                     LibraryUpdateProgress(updateJob)
                 }
