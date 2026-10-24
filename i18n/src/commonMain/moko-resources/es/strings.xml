@@ -896,6 +896,10 @@
     <string name="pref_webtoon_vertical_navigator_on_left">Ubicar la interfaz de navegación en el margen izquierdo</string>
 
     <!-- Desktop -->
+    <string name="desktop_tracker_login_done">Sesión iniciada</string>
+    <string name="desktop_tracker_login_failed">No se pudo iniciar sesión</string>
+    <string name="desktop_tracker_login_expired">Ese inicio de sesión se abrió antes de cerrar la app; vuelve a empezarlo desde Ajustes › Seguimiento</string>
+    <string name="desktop_tracker_protocol_failed">El navegador no puede volver a la app, así que los servicios que inician sesión con él no funcionarán</string>
     <string name="desktop_instance_unreachable">Ya hay otra ventana de la app abierta, pero no responde. Ciérrala desde el Administrador de tareas e inténtalo de nuevo.</string>
     <string name="desktop_clear_image_cache">Borrar caché de imágenes</string>
     <string name="desktop_image_cache_cleared">Caché de imágenes borrada</string>
@@ -936,6 +940,7 @@
     <string name="desktop_downloads_finished">Descargas terminadas</string>
 
     <!-- Desktop: Mihon strings with no Spanish translation upstream yet; drop each one when Weblate adds it -->
+    <string name="considering">Considerando</string>
     <string name="refresh_tracker_profile">Actualizar perfil del rastreador</string>
     <string name="refresh_tracker_success">Perfil de %s actualizado</string>
     <string name="refresh_tracker_error">Error al actualizar %1$s: %2$s</string>

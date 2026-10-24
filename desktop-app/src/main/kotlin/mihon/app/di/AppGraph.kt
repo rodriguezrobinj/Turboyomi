@@ -19,6 +19,8 @@ import eu.kanade.tachiyomi.data.library.LibraryUpdateJob
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.extension.ExtensionManager
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
+import mihon.desktop.app.track.PendingLogins
+import mihon.desktop.app.track.TrackLoginHandler
 import mihon.desktop.app.tray.TrayPreferences
 import mihon.desktop.core.DesktopGraph
 import mihon.domain.extension.interactor.GetExtensionStoreCountAsFlow
@@ -66,4 +68,6 @@ interface AppGraph : DesktopGraph, ViewModelGraph {
     val trackChapter: TrackChapter
     val delayedTrackingStore: DelayedTrackingStore
     val delayedTrackingJob: DelayedTrackingJob
+    val trackLoginHandler: TrackLoginHandler
+    val pendingLogins: PendingLogins
 }
