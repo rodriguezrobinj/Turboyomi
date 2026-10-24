@@ -22,7 +22,7 @@ import java.util.concurrent.CountDownLatch
 import kotlin.concurrent.thread
 
 object DesktopBuildInfo {
-    // ponytail: hardcoded until packaging (subproject 5/6) generates it from the release tag
+    // ponytail: hardcoded until packaging generates it from the release tag
     const val VERSION_CODE = 1
     const val VERSION_NAME = "0.1.0"
 
