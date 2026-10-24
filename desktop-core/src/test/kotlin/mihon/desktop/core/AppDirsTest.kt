@@ -37,7 +37,7 @@ class AppDirsTest {
         val root = createTempDirectory("José Pérez")
         val dirs = AppDirs(root.resolve("data"), root.resolve("local"))
         dirs.createAll()
-        listOf(dirs.db, dirs.backups, dirs.settings, dirs.cache, dirs.extensions, dirs.logs).forEach {
+        listOf(dirs.db, dirs.settings, dirs.cache, dirs.extensions, dirs.logs).forEach {
             it.isDirectory() shouldBe
                 true
         }

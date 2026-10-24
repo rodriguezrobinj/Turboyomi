@@ -12,7 +12,6 @@ import kotlin.io.path.createDirectories
  */
 data class AppDirs(val data: Path, val local: Path, val storage: Path = data.resolveSibling("storage")) {
     val db: Path get() = data.resolve("db")
-    val backups: Path get() = data.resolve("backups")
     val settings: Path get() = data.resolve("settings")
     val lockFile: Path get() = data.resolve(".lock")
     val cache: Path get() = local.resolve("cache")
@@ -25,7 +24,7 @@ data class AppDirs(val data: Path, val local: Path, val storage: Path = data.res
     val cookies: Path get() = local.resolve("cookies.bin")
 
     fun createAll() {
-        listOf(data, db, backups, settings, local, cache, extensions, logs).forEach { it.createDirectories() }
+        listOf(data, db, settings, local, cache, extensions, logs).forEach { it.createDirectories() }
     }
 
     /**
