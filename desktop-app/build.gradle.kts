@@ -93,10 +93,19 @@ dependencies {
 }
 
 // Platform.start boots Koin and AndroidCompat's global config: once per JVM
-tasks.test { forkEvery = 1 }
+tasks.test {
+    forkEvery = 1
+    // Tests bring their own tracker keys (plan 5b-2, dev. 3)
+    systemProperty("mangareader.tracker-keys", "none")
+}
+
+// The tracker keys the developer registered (spec 5b-2 §1), when the git-ignored file is there
+tasks.processResources {
+    from(layout.projectDirectory.file("../tracker-keys.properties"))
+}
 
 apollo {
-    // Mihon's Kitsu and Suwayomi GraphQL services; AniList and Shikimori come with their trackers in 5b-2
+    // Mihon's GraphQL services for its trackers
     service("kitsu") {
         packageName.set("mihon.graphql.kitsu")
         srcDir(file("src/main/graphql/mihon/graphql/kitsu"))
@@ -110,6 +119,20 @@ apollo {
             "kotlin.collections.Map<String, Any?>",
             "mihon.graphql.kitsu.adapter.KitsuMapAdapter",
         )
+    }
+
+    service("anilist") {
+        packageName.set("mihon.graphql.anilist")
+        srcDir(file("src/main/graphql/mihon/graphql/anilist"))
+        // ISO 3166-1 alpha-2 country code
+        mapScalarToKotlinString("CountryCode")
+    }
+
+    service("shikimori") {
+        packageName.set("mihon.graphql.shikimori")
+        srcDir(file("src/main/graphql/mihon/graphql/shikimori"))
+        // An ISO 8601-encoded date
+        mapScalarToKotlinString("ISO8601Date")
     }
 
     service("suwayomi") {

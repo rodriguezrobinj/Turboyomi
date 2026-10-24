@@ -1,0 +1,246 @@
+package eu.kanade.tachiyomi.data.track.shikimori
+
+import com.apollographql.apollo.ApolloClient
+import com.apollographql.apollo.network.okHttpClient
+import eu.kanade.tachiyomi.data.database.models.Track
+import eu.kanade.tachiyomi.data.track.model.TrackSearch
+import eu.kanade.tachiyomi.data.track.shikimori.dto.SMLibraryIdResponse
+import eu.kanade.tachiyomi.data.track.shikimori.dto.SMOAuth
+import eu.kanade.tachiyomi.data.track.shikimori.dto.SMUser
+import eu.kanade.tachiyomi.network.DELETE
+import eu.kanade.tachiyomi.network.POST
+import eu.kanade.tachiyomi.network.PUT
+import eu.kanade.tachiyomi.network.awaitSuccess
+import eu.kanade.tachiyomi.network.dataOrElse
+import eu.kanade.tachiyomi.network.jsonMime
+import eu.kanade.tachiyomi.network.parseAs
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonObject
+import mihon.desktop.app.track.TrackerKeys
+import mihon.desktop.app.track.Uri
+import mihon.desktop.app.track.toUri
+import mihon.graphql.shikimori.ShikimoriGetCurrentUserQuery
+import mihon.graphql.shikimori.ShikimoriGetLibMangaQuery
+import mihon.graphql.shikimori.ShikimoriGetMangaDetailsQuery
+import mihon.graphql.shikimori.ShikimoriSearchMangaQuery
+import okhttp3.FormBody
+import okhttp3.OkHttpClient
+import okhttp3.RequestBody.Companion.toRequestBody
+import uy.kohesive.injekt.injectLazy
+import tachiyomi.domain.track.model.Track as DomainTrack
+
+class ShikimoriApi(
+    private val trackerId: Long,
+    private val client: OkHttpClient,
+    interceptor: ShikimoriInterceptor,
+) {
+
+    private val json: Json by injectLazy()
+
+    private val authClient = client.newBuilder().addInterceptor(interceptor).build()
+
+    private val graphQlClient by lazy {
+        ApolloClient.Builder()
+            .serverUrl("$API_URL/graphql")
+            .okHttpClient(authClient)
+            .dispatcher(Dispatchers.IO)
+            // required to log the error body in dataOrElse, which also properly closes it
+            .httpExposeErrorBody(true)
+            .build()
+    }
+
+    suspend fun addLibManga(track: Track, userId: String): Track {
+        return withContext(Dispatchers.IO) {
+            with(json) {
+                val payload = buildJsonObject {
+                    putJsonObject("user_rate") {
+                        put("user_id", userId)
+                        put("target_id", track.remote_id)
+                        put("target_type", "Manga")
+                        put("chapters", track.last_chapter_read.toInt())
+                        put("score", track.score.toInt())
+                        put("status", track.toShikimoriStatus())
+                    }
+                }
+                authClient.newCall(
+                    POST(
+                        "$API_URL/v2/user_rates",
+                        body = payload.toString().toRequestBody(jsonMime),
+                    ),
+                ).awaitSuccess()
+                    .parseAs<SMLibraryIdResponse>()
+                    .let {
+                        // save id of the entry for possible future delete request
+                        track.library_id = it.id
+                    }
+                track
+            }
+        }
+    }
+
+    suspend fun updateLibManga(track: Track): Track {
+        return withContext(Dispatchers.IO) {
+            val payload = buildJsonObject {
+                putJsonObject("user_rate") {
+                    put("chapters", track.last_chapter_read.toInt())
+                    put("score", track.score.toInt())
+                    put("status", track.toShikimoriStatus())
+                }
+            }
+
+            with(json) {
+                authClient.newCall(
+                    PUT(
+                        "$API_URL/v2/user_rates/${track.library_id}",
+                        body = payload.toString().toRequestBody(jsonMime),
+                    ),
+                )
+                    .awaitSuccess()
+                    .parseAs<SMLibraryIdResponse>()
+                    .let {
+                        track.library_id = it.id
+                    }
+                track
+            }
+        }
+    }
+
+    suspend fun deleteLibManga(track: DomainTrack) {
+        withContext(Dispatchers.IO) {
+            authClient
+                .newCall(DELETE("$API_URL/v2/user_rates/${track.libraryId}"))
+                .awaitSuccess().close()
+        }
+    }
+
+    suspend fun search(search: String): List<TrackSearch> {
+        return graphQlClient
+            .query(
+                ShikimoriSearchMangaQuery(search = search),
+            )
+            .execute()
+            .dataOrElse(
+                errorLog = "Shikimori: Search failed",
+                default = { emptyList() },
+            ) {
+                it.mangas.map { manga ->
+                    manga.toTrackSearch(trackerId)
+                }
+            }
+    }
+
+    suspend fun getMangaDetails(id: Int): TrackSearch? {
+        return graphQlClient
+            .query(
+                ShikimoriGetMangaDetailsQuery(query = "$id"),
+            )
+            .execute()
+            .dataOrElse(
+                errorLog = "Shikimori: Failed to get manga details",
+                default = { null },
+            ) {
+                it.mangas
+                    .firstOrNull()
+                    ?.toTrackSearch(trackerId)
+            }
+    }
+
+    suspend fun findLibManga(track: Track): Track? {
+        return graphQlClient
+            .query(
+                ShikimoriGetLibMangaQuery(
+                    remote_id = track.remote_id.toString(),
+                ),
+            )
+            .execute()
+            .dataOrElse(
+                errorLog = "Shikimori: Failed to find manga in library",
+                default = { null },
+            ) {
+                val mangaResult = it.mangas.firstOrNull()
+
+                // Shikimori has no user list query that allows query by ID, so we go via the "mangas" query & include
+                // userRate data which will be null if the title is not in the user's list.
+                // If it was removed on Shikimori and is still linked in the app, notify user via returning null here
+                // which throws an exception at the Shikimori.refresh call
+                if (mangaResult?.userRate == null) {
+                    null
+                } else {
+                    mangaResult.toTrack(trackerId)
+                }
+            }
+    }
+
+    suspend fun getCurrentUser(): SMUser {
+        return graphQlClient
+            .query(
+                ShikimoriGetCurrentUserQuery(),
+            )
+            .execute()
+            .dataOrElse(
+                errorLog = "Shikimori: Failed to get current user",
+                default = { null },
+            ) {
+                it.currentUser?.let { currentUser ->
+                    SMUser(id = currentUser.id, nickname = currentUser.nickname)
+                }
+            }
+            ?: throw Exception("Failed to get Shikimori user data")
+    }
+
+    suspend fun accessToken(code: String): SMOAuth {
+        return withContext(Dispatchers.IO) {
+            with(json) {
+                client.newCall(accessTokenRequest(code))
+                    .awaitSuccess()
+                    .parseAs()
+            }
+        }
+    }
+
+    private fun accessTokenRequest(code: String) = POST(
+        OAUTH_URL,
+        body = FormBody.Builder()
+            .add("grant_type", "authorization_code")
+            .add("client_id", CLIENT_ID)
+            .add("client_secret", CLIENT_SECRET)
+            .add("code", code)
+            .add("redirect_uri", REDIRECT_URL)
+            .build(),
+    )
+
+    companion object {
+        private const val BASE_URL = "https://shikimori.io"
+        private const val API_URL = "$BASE_URL/api"
+        private const val OAUTH_URL = "$BASE_URL/oauth/token"
+        private const val LOGIN_URL = "$BASE_URL/oauth/authorize"
+
+        private const val REDIRECT_URL = "mangareader://shikimori-auth"
+
+        // desktop: our app's keys (spec 5b-2 §1)
+        private val CLIENT_ID get() = TrackerKeys.shikimori?.clientId.orEmpty()
+        private val CLIENT_SECRET get() = TrackerKeys.shikimori?.secret.orEmpty()
+
+        fun authUrl(state: String): Uri = LOGIN_URL.toUri().buildUpon()
+            .appendQueryParameter("client_id", CLIENT_ID)
+            .appendQueryParameter("redirect_uri", REDIRECT_URL)
+            .appendQueryParameter("response_type", "code")
+            // desktop: checked by TrackLoginHandler (spec 5b-2 §3 B)
+            .appendQueryParameter("state", state)
+            .build()
+
+        fun refreshTokenRequest(token: String) = POST(
+            OAUTH_URL,
+            body = FormBody.Builder()
+                .add("grant_type", "refresh_token")
+                .add("client_id", CLIENT_ID)
+                .add("client_secret", CLIENT_SECRET)
+                .add("refresh_token", token)
+                .build(),
+        )
+    }
+}

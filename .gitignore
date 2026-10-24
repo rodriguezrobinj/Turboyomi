@@ -16,3 +16,6 @@ local.properties
 # macOS specific files
 .DS_Store
 app/google-services.json
+
+# Our own tracker client ids and secrets (spec 5b-2 §1)
+/tracker-keys.properties
