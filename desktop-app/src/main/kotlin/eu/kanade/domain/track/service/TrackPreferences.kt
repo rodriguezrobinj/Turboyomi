@@ -5,6 +5,7 @@ import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import eu.kanade.domain.track.model.AutoTrackState
 import eu.kanade.tachiyomi.data.track.Tracker
+import eu.kanade.tachiyomi.data.track.kitsu.Kitsu
 import mihon.desktop.app.track.SealedPreference
 import tachiyomi.core.common.preference.Preference
 import tachiyomi.core.common.preference.PreferenceStore
@@ -50,8 +51,7 @@ class TrackPreferences(
     fun trackToken(tracker: Tracker) =
         SealedPreference(preferenceStore.getString(Preference.privateKey("track_token_${tracker.id}"), ""))
 
-    // desktop: with Kitsu (task 3)
-    // val kitsuScoreType: Preference<String> = preferenceStore.getString("kitsu_score_type", Kitsu.RATING_ADVANCED)
+    val kitsuScoreType: Preference<String> = preferenceStore.getString("kitsu_score_type", Kitsu.RATING_ADVANCED)
 
     // desktop: the AniList and MangaBaka score types come with their trackers in 5b-2
 

@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose.compiler)
     alias(libs.plugins.metro)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.apollo)
     application
 }
 
@@ -31,6 +32,8 @@ kotlin {
 }
 
 dependencies {
+    implementation(libs.apollo)
+    implementation(libs.apollo.adapters)
     implementation(projects.desktopCore)
     implementation(projects.core.metro)
     implementation(projects.i18n)
@@ -91,3 +94,21 @@ dependencies {
 
 // Platform.start boots Koin and AndroidCompat's global config: once per JVM
 tasks.test { forkEvery = 1 }
+
+apollo {
+    // Mihon's Kitsu GraphQL service; AniList and Shikimori come with their trackers in 5b-2
+    service("kitsu") {
+        packageName.set("mihon.graphql.kitsu")
+        srcDir(file("src/main/graphql/mihon/graphql/kitsu"))
+        // A date, expressed as an ISO8601 string
+        mapScalarToKotlinString("Date")
+        // An ISO 8601-encoded datetime
+        mapScalar("ISO8601DateTime", "kotlin.time.Instant", "com.apollographql.adapter.core.KotlinInstantAdapter")
+        // A loose key-value map in GraphQL
+        mapScalar(
+            "Map",
+            "kotlin.collections.Map<String, Any?>",
+            "mihon.graphql.kitsu.adapter.KitsuMapAdapter",
+        )
+    }
+}
