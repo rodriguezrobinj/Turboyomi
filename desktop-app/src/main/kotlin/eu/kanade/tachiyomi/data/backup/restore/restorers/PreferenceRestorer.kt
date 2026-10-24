@@ -12,6 +12,7 @@ import eu.kanade.tachiyomi.data.backup.models.StringPreferenceValue
 import eu.kanade.tachiyomi.data.backup.models.StringSetPreferenceValue
 import eu.kanade.tachiyomi.source.sourcePreferences
 import logcat.LogPriority
+import mihon.desktop.app.track.Credentials
 import tachiyomi.core.common.preference.AndroidPreferenceStore
 import tachiyomi.core.common.preference.Preference
 import tachiyomi.core.common.preference.PreferenceStore
@@ -85,7 +86,16 @@ class PreferenceRestorer(
                     }
                     is StringPreferenceValue -> {
                         if (prefs[key] is String?) {
-                            preferenceStore.getString(key).set(value.value)
+                            // desktop: credentials are only ever stored sealed (spec 5b-1 §3 E)
+                            val restored = if (Credentials.isCredentialKey(
+                                    key,
+                                )
+                            ) {
+                                Credentials.seal(value.value)
+                            } else {
+                                value.value
+                            }
+                            preferenceStore.getString(key).set(restored)
                         }
                     }
                     is BooleanPreferenceValue -> {

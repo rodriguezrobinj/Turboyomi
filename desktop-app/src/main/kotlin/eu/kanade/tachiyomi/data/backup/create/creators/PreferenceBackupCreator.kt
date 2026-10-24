@@ -12,6 +12,7 @@ import eu.kanade.tachiyomi.data.backup.models.StringSetPreferenceValue
 import eu.kanade.tachiyomi.source.ConfigurableSource
 import eu.kanade.tachiyomi.source.preferenceKey
 import eu.kanade.tachiyomi.source.sourcePreferences
+import mihon.desktop.app.track.Credentials
 import tachiyomi.core.common.preference.Preference
 import tachiyomi.core.common.preference.PreferenceStore
 import tachiyomi.domain.source.service.SourceManager
@@ -49,7 +50,13 @@ class PreferenceBackupCreator(
                     is Int -> BackupPreference(key, IntPreferenceValue(value))
                     is Long -> BackupPreference(key, LongPreferenceValue(value))
                     is Float -> BackupPreference(key, FloatPreferenceValue(value))
-                    is String -> BackupPreference(key, StringPreferenceValue(value))
+                    // desktop: credentials are sealed for this machine, so a backup carries them in clear (spec 5b-1 §3 E)
+                    is String -> BackupPreference(
+                        key,
+                        StringPreferenceValue(
+                            if (Credentials.isCredentialKey(key)) Credentials.unseal(value) else value,
+                        ),
+                    )
                     is Boolean -> BackupPreference(key, BooleanPreferenceValue(value))
                     is Set<*> -> (value as? Set<String>)?.let {
                         BackupPreference(key, StringSetPreferenceValue(it))
