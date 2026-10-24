@@ -6,12 +6,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.Notification
 import androidx.compose.ui.window.Tray
@@ -19,8 +14,6 @@ import androidx.compose.ui.window.rememberTrayState
 import eu.kanade.tachiyomi.data.library.LibraryUpdateJob
 import mihon.app.di.AppGraph
 import mihon.desktop.core.AppDirs
-import mihon.icons.materialsymbols.MaterialSymbols
-import mihon.icons.materialsymbols.rounded.CollectionsBookmark
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.i18n.MR
 
@@ -58,9 +51,8 @@ fun ApplicationScope.AppTray(graph: AppGraph, onOpen: () -> Unit, onExit: () -> 
             it.current.firstOrNull().orEmpty(),
         )
     } ?: AppDirs.APP_NAME
-    val vector = rememberVectorPainter(MaterialSymbols.Rounded.CollectionsBookmark)
-    // ponytail: a tinted symbol until the app has its own icon (packaging), plan 3a deviation 2
-    val icon = remember(vector) { TintedPainter(vector, TRAY_TINT) }
+    // desktop: the app's own icon (spec 6a §2)
+    val icon = painterResource("turboyomi.svg")
     Tray(
         icon = icon,
         state = state,
@@ -90,16 +82,5 @@ fun updateFromTray(job: LibraryUpdateJob, context: Context) {
         TrayNotifier.send(
             Notice(AppDirs.APP_NAME, context.stringResource(MR.strings.update_already_running), opensUpdates = false),
         )
-    }
-}
-
-private val TRAY_TINT = Color(0xFF3B82F6)
-
-/** Draws [inner] in one color, so a black symbol shows on light and dark taskbars. */
-private class TintedPainter(private val inner: Painter, private val tint: Color) : Painter() {
-    override val intrinsicSize: Size get() = inner.intrinsicSize
-
-    override fun DrawScope.onDraw() {
-        with(inner) { draw(size, colorFilter = ColorFilter.tint(tint)) }
     }
 }

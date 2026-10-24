@@ -141,3 +141,14 @@ apollo {
         srcDir(file("src/main/graphql/mihon/graphql/suwayomi"))
     }
 }
+
+// The exe's and the MSI's icon, from the app's SVG (spec 6a §2)
+val iconIco by tasks.registering(JavaExec::class) {
+    val svg = layout.projectDirectory.file("src/main/resources/turboyomi.svg")
+    val ico = layout.buildDirectory.file("packaging/turboyomi.ico")
+    inputs.file(svg)
+    outputs.file(ico)
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass = "mihon.desktop.app.packaging.IconRenderer"
+    args(svg.asFile.path, ico.get().asFile.path)
+}

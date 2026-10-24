@@ -21,15 +21,6 @@ import java.net.CookiePolicy
 import java.util.concurrent.CountDownLatch
 import kotlin.concurrent.thread
 
-object DesktopBuildInfo {
-    // ponytail: hardcoded until packaging generates it from the release tag
-    const val VERSION_CODE = 1
-    const val VERSION_NAME = "0.1.0"
-
-    /** Names the default shared preferences file. */
-    const val APPLICATION_ID = "app.turboyomi"
-}
-
 // AndroidCompat's CustomContext has no package name; Mihon's app code and some extensions expect one
 private class DesktopApplication : Application() {
     override fun getPackageName(): String = DesktopBuildInfo.APPLICATION_ID

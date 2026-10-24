@@ -16,6 +16,7 @@ import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.LocalWindowExceptionHandlerFactory
@@ -206,6 +207,8 @@ fun main(args: Array<String>) {
                     }
                 },
                 title = AppDirs.APP_NAME,
+                // desktop: the app's own icon (spec 6a §2)
+                icon = painterResource("turboyomi.svg"),
                 onPreviewKeyEvent = { event -> handleShortcut(event, beforeFocusedComponent = true) },
                 onKeyEvent = { event -> handleShortcut(event, beforeFocusedComponent = false) },
             ) {
