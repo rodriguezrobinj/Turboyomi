@@ -50,6 +50,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mihon.app.di.appGraph
+import mihon.desktop.app.track.ProtocolRegistrar
+import mihon.desktop.app.track.TrackLoginHandler
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.automirroredrounded.Help
 import mihon.icons.materialsymbols.rounded.Close
@@ -60,6 +62,21 @@ import tachiyomi.presentation.core.components.material.padding
 import tachiyomi.presentation.core.i18n.stringResource
 
 object SettingsTrackingScreen : SearchableSettings {
+
+    // desktop: one of Mihon's OAuth trackers: the browser opens the login, the redirect finishes it
+    private fun oauth(
+        tracker: Tracker,
+        service: String,
+        loginHandler: TrackLoginHandler,
+        context: Context,
+        showDialog: (Any) -> Unit,
+    ) = Preference.PreferenceItem.TrackerPreference(
+        tracker = tracker,
+        login = {
+            loginHandler.authorizationUrl(service)?.let { context.openInBrowser(it, forceDefaultBrowser = true) }
+        },
+        logout = { showDialog(LogoutDialog(tracker)) },
+    )
 
     @ReadOnlyComposable
     @Composable
@@ -81,6 +98,7 @@ object SettingsTrackingScreen : SearchableSettings {
         val context = LocalContext.current
         val trackPreferences = remember { context.appGraph.trackPreferences }
         val trackerManager = remember { context.appGraph.trackerManager }
+        val loginHandler = remember { context.appGraph.trackLoginHandler }
         val sourceManager = remember { context.appGraph.sourceManager }
 
         var dialog by remember { mutableStateOf<Any?>(null) }
@@ -131,8 +149,12 @@ object SettingsTrackingScreen : SearchableSettings {
             ),
             Preference.PreferenceGroup(
                 title = stringResource(MR.strings.services),
-                // desktop: the OAuth trackers arrive in 5b-2
-                preferenceItems = listOf(
+                // desktop: Mihon's order; the OAuth trackers only with their keys, signing in through
+                // TrackLoginHandler (spec 5b-2 §1, §3 A)
+                preferenceItems = listOfNotNull(
+                    trackerManager.mangaBaka?.let { oauth(it, "mangabaka", loginHandler, context) { dialog = it } },
+                    trackerManager.myAnimeList?.let { oauth(it, "myanimelist", loginHandler, context) { dialog = it } },
+                    trackerManager.aniList?.let { oauth(it, "anilist", loginHandler, context) { dialog = it } },
                     Preference.PreferenceItem.TrackerPreference(
                         tracker = trackerManager.kitsu,
                         login = { dialog = LoginDialog(trackerManager.kitsu, MR.strings.email) },
@@ -143,7 +165,14 @@ object SettingsTrackingScreen : SearchableSettings {
                         login = { dialog = LoginDialog(trackerManager.mangaUpdates, MR.strings.username) },
                         logout = { dialog = LogoutDialog(trackerManager.mangaUpdates) },
                     ),
+                    trackerManager.shikimori?.let { oauth(it, "shikimori", loginHandler, context) { dialog = it } },
+                    trackerManager.bangumi?.let { oauth(it, "bangumi", loginHandler, context) { dialog = it } },
+                    trackerManager.hikka?.let { oauth(it, "hikka", loginHandler, context) { dialog = it } },
+                    trackerManager.comick?.let { oauth(it, "comick", loginHandler, context) { dialog = it } },
                     Preference.PreferenceItem.InfoPreference(stringResource(MR.strings.tracking_info)),
+                    // desktop: the OAuth trackers need the browser to come back to the app (spec 5b-2 §4)
+                    Preference.PreferenceItem.InfoPreference(stringResource(MR.strings.desktop_tracker_protocol_failed))
+                        .takeIf { ProtocolRegistrar.registered == false },
                 ),
             ),
             Preference.PreferenceGroup(

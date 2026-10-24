@@ -33,6 +33,7 @@ kotlin {
 
 dependencies {
     implementation(libs.apollo)
+    implementation(libs.jna.platform)
     implementation(libs.apollo.adapters)
     implementation(projects.desktopCore)
     implementation(projects.core.metro)

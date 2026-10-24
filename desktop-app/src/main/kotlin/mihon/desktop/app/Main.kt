@@ -32,6 +32,7 @@ import dev.zacsweers.metro.createGraphFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import logcat.LogPriority
@@ -51,6 +52,8 @@ import mihon.desktop.app.startup.SavedWindow
 import mihon.desktop.app.startup.Startup
 import mihon.desktop.app.startup.WindowStateStore
 import mihon.desktop.app.startup.placeOnScreens
+import mihon.desktop.app.track.LoginUrls
+import mihon.desktop.app.track.ProtocolRegistrar
 import mihon.desktop.app.tray.AppTray
 import mihon.desktop.app.tray.CloseAction
 import mihon.desktop.app.tray.Notice
@@ -82,9 +85,15 @@ fun main(args: Array<String>) {
             dirs.logs,
         )
     }
+    // OAuth redirects (spec 5b-2 §3 A): a second instance's, and this start's own, wait here until the graph exists
+    val loginUrls = Channel<String>(Channel.UNLIMITED)
+    LoginUrls.route(args.toList()) { loginUrls.trySend(it) }
     // A second launch forwards its arguments here; accept() blocks, so it runs on IO, never on the UI thread
     val bringToFront = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
-    instance.listen(CoroutineScope(SupervisorJob() + Dispatchers.IO)) { bringToFront.tryEmit(Unit) }
+    instance.listen(CoroutineScope(SupervisorJob() + Dispatchers.IO)) { forwarded ->
+        LoginUrls.route(forwarded) { loginUrls.trySend(it) }
+        bringToFront.tryEmit(Unit)
+    }
 
     val graph = try {
         Platform.start(dirs) { context, appDirs, debug ->
@@ -100,6 +109,10 @@ fun main(args: Array<String>) {
     // Loads the installed extensions (their sources feed SourceManager) and the store listings at startup
     graph.mihonExtensionManager
     graph.startStorage()
+    ProtocolRegistrar.register()
+    CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+        for (url in loginUrls) graph.trackLoginHandler.handle(url)
+    }
     // Mihon clears the chapter cache on launch when asked to (MainActivity)
     if (graph.libraryPreferences.autoClearChapterCache.get()) {
         CoroutineScope(Dispatchers.IO).launch { graph.chapterCache.clear() }
