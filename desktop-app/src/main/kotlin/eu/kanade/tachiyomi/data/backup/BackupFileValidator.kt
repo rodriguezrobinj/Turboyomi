@@ -45,8 +45,8 @@ class BackupFileValidator(
             .distinct()
             .sorted()
 
-        // desktop: trackers not in TrackerManager yet (the OAuth ones until 5b-2) are left out, as Mihon leaves
-        // out unknown ids
+        // desktop: trackers not in TrackerManager (an OAuth one without its key, spec 5b-2 §1) are left out, as Mihon
+        // leaves out unknown ids
         val missingTrackers = trackerIds
             .mapNotNull { trackerManager.get(it.toLong()) }
             .filter { !it.isLoggedIn }
