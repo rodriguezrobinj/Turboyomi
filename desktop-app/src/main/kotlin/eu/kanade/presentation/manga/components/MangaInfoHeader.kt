@@ -255,7 +255,7 @@ fun ExpandableMangaDescription(
     notes: String,
     onTagSearch: (String) -> Unit,
     onCopyTagToClipboard: (tag: String) -> Unit,
-    onEditNotes: (() -> Unit)?, // desktop: null until notes (subproject 5)
+    onEditNotes: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
@@ -616,7 +616,7 @@ private fun MangaSummary(
     description: String,
     notes: String,
     expanded: Boolean,
-    onEditNotesClicked: (() -> Unit)?, // desktop: null until notes (subproject 5)
+    onEditNotesClicked: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current

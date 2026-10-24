@@ -36,7 +36,7 @@ fun MangaToolbar(
     onClickEditCategory: (() -> Unit)?,
     onClickRefresh: () -> Unit,
     onClickMigrate: (() -> Unit)?,
-    onClickEditNotes: (() -> Unit)?, // desktop: null until notes (subproject 5)
+    onClickEditNotes: (() -> Unit)?,
 
     // For action mode
     actionModeCounter: Int,
