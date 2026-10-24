@@ -109,7 +109,7 @@ fun main(args: Array<String>) {
     // Loads the installed extensions (their sources feed SourceManager) and the store listings at startup
     graph.mihonExtensionManager
     graph.startStorage()
-    ProtocolRegistrar.register()
+    ProtocolRegistrar.register(dirs.local.resolve("protocol-launch.args").toFile())
     CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
         for (url in loginUrls) graph.trackLoginHandler.handle(url)
     }

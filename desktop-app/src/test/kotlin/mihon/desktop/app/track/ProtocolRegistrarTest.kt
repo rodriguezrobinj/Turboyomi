@@ -18,7 +18,7 @@ class ProtocolRegistrarTest {
     fun `both schemes are registered as url protocols under the given root`() {
         val root = "Software\\MangaReaderTest-${System.nanoTime()}"
         try {
-            ProtocolRegistrar.register(root) shouldBe true
+            ProtocolRegistrar.register(kotlin.io.path.createTempFile("launch", ".args").toFile(), root) shouldBe true
 
             listOf("mangareader", "app.mangareader").forEach { scheme ->
                 val key = "$root\\$scheme"
@@ -36,5 +36,26 @@ class ProtocolRegistrarTest {
             }
             Advapi32Util.registryDeleteKey(WinReg.HKEY_CURRENT_USER, root)
         }
+    }
+
+    @Test
+    fun `during development the JVM runs from an argument file, the packaged exe runs as it is`() {
+        val argFile = kotlin.io.path.createTempDirectory("Protocolo José").resolve("launch.args").toFile()
+
+        val dev = ProtocolRegistrar.commandFor(
+            executable = "C:\\Program Files\\Java\\jdk-23\\bin\\java.exe",
+            argFile = argFile,
+            jvmArgs = listOf("-Dfile.encoding=UTF-8", "--add-opens=java.base/java.lang=ALL-UNNAMED"),
+            classpath = "C:\\Users\\José Pérez\\a.jar;C:\\b.jar",
+            mainClass = "mihon.desktop.app.MainKt",
+        )
+
+        dev shouldBe "\"C:\\Program Files\\Java\\jdk-23\\bin\\java.exe\" \"@${argFile.path}\" \"%1\""
+        // Argument files take backslashes as escapes inside quotes, so paths go with forward slashes
+        argFile.readText() shouldBe
+            "-Dfile.encoding=UTF-8\n--add-opens=java.base/java.lang=ALL-UNNAMED\n-cp\n" +
+            "\"C:/Users/José Pérez/a.jar;C:/b.jar\"\nmihon.desktop.app.MainKt\n"
+        ProtocolRegistrar.commandFor("C:\\Apps\\MangaReader.exe", argFile, emptyList(), "", "") shouldBe
+            "\"C:\\Apps\\MangaReader.exe\" \"%1\""
     }
 }
