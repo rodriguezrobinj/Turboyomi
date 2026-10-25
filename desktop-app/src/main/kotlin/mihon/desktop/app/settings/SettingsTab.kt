@@ -1,6 +1,5 @@
 package mihon.desktop.app.settings
 
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -28,6 +27,7 @@ import mihon.icons.materialsymbols.rounded.Settings
 import mihon.icons.materialsymbols.rounded.Storage
 import mihon.icons.materialsymbols.rounded.Sync
 import tachiyomi.i18n.MR
+import tachiyomi.presentation.core.components.FastScrollLazyColumn
 import tachiyomi.presentation.core.components.material.Scaffold
 import tachiyomi.presentation.core.i18n.stringResource
 
@@ -61,7 +61,7 @@ data object SettingsTab : Tab {
         Scaffold(topBar = {
             AppBar(title = stringResource(MR.strings.label_settings), scrollBehavior = it)
         }) { padding ->
-            LazyColumn(contentPadding = padding) {
+            FastScrollLazyColumn(contentPadding = padding) {
                 items(entries) { (title, icon, screen) ->
                     TextPreferenceWidget(
                         title = stringResource(title),

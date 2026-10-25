@@ -43,6 +43,7 @@ import tachiyomi.presentation.core.components.material.Scaffold
 import tachiyomi.presentation.core.components.material.padding
 import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.screens.EmptyScreen
+import tachiyomi.presentation.core.util.keyboardScrollable
 import mihon.icons.materialsymbols.rounded.Download as DownloadIcon
 
 /** Rail › Downloads (spec 4b §3 B): the queue, grouped by source, with drag to reorder. */
@@ -118,7 +119,11 @@ data object DownloadsTab : Tab {
                 val target = queue.indexOfFirst { it.chapter.id == to.key }
                 if (target >= 0) viewModel.move(moved, target)
             }
-            LazyColumn(state = listState, contentPadding = contentPadding) {
+            LazyColumn(
+                modifier = Modifier.keyboardScrollable(listState),
+                state = listState,
+                contentPadding = contentPadding,
+            ) {
                 groups.forEach { (source, downloads) ->
                     item(key = "source-${source.id}") {
                         Text(

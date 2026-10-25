@@ -1,7 +1,6 @@
 package eu.kanade.presentation.browse
 
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.ui.Modifier
@@ -16,6 +15,7 @@ import eu.kanade.tachiyomi.ui.browse.source.globalsearch.SearchViewModel
 import eu.kanade.tachiyomi.ui.browse.source.globalsearch.SourceFilter
 import eu.kanade.tachiyomi.util.system.LocaleHelper
 import tachiyomi.domain.manga.model.Manga
+import tachiyomi.presentation.core.components.FastScrollLazyColumn
 import tachiyomi.presentation.core.components.material.Scaffold
 
 @Composable
@@ -70,7 +70,7 @@ internal fun GlobalSearchContent(
     onLongClickItem: (Manga) -> Unit,
     fromSourceId: Long? = null,
 ) {
-    LazyColumn(
+    FastScrollLazyColumn(
         contentPadding = contentPadding,
     ) {
         items.forEach { (source, result) ->

@@ -78,6 +78,7 @@ import tachiyomi.presentation.core.components.VerticalFastScroller
 import tachiyomi.presentation.core.components.material.PullRefresh
 import tachiyomi.presentation.core.components.material.Scaffold
 import tachiyomi.presentation.core.i18n.stringResource
+import tachiyomi.presentation.core.util.keyboardScrollable
 import tachiyomi.presentation.core.util.shouldExpandFAB
 import tachiyomi.source.local.isLocal
 import kotlin.time.Instant
@@ -362,7 +363,7 @@ private fun MangaScreenSmallImpl(
                 endContentPadding = contentPadding.calculateEndPadding(layoutDirection),
             ) {
                 LazyColumn(
-                    modifier = Modifier.fillMaxHeight(),
+                    modifier = Modifier.fillMaxHeight().keyboardScrollable(chapterListState),
                     state = chapterListState,
                     contentPadding = PaddingValues(
                         start = contentPadding.calculateStartPadding(layoutDirection),
@@ -639,7 +640,7 @@ fun MangaScreenLargeImpl(
                         topContentPadding = contentPadding.calculateTopPadding(),
                     ) {
                         LazyColumn(
-                            modifier = Modifier.fillMaxHeight(),
+                            modifier = Modifier.fillMaxHeight().keyboardScrollable(chapterListState),
                             state = chapterListState,
                             contentPadding = PaddingValues(
                                 top = contentPadding.calculateTopPadding(),
