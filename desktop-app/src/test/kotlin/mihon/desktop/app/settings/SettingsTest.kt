@@ -59,7 +59,8 @@ class SettingsTest {
 
         onNodeWithText(str(MR.strings.label_settings)).performClick()
         onNodeWithText(str(MR.strings.pref_category_appearance)).performClick()
-        waitForText(str(MR.strings.pref_app_theme))
+        // The theme group's title: "App theme" titles a custom preference, which isn't drawn (in Spanish the two match)
+        waitForText(str(MR.strings.pref_category_theme))
         // A settings screen has its up arrow, which goes back to the list
         onNodeWithContentDescription(str(MR.strings.action_bar_up_description)).performClick()
         // Advanced sits near the end of a lazy list: on a smaller or denser screen it's composed only once scrolled to
