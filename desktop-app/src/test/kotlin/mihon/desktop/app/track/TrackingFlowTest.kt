@@ -86,7 +86,13 @@ class TrackingFlowTest {
     @Test
     fun `a signed-in tracker's password isn't in the settings files`(): Unit = runBlocking {
         fake.login("josé", "clave secreta José")
-        val files = { graph.appDirs.data.toFile().walk().filter { it.isFile }.map { it.readText() }.toList() }
+        // A settings save writes a temp file and renames it: one listed a moment ago may be gone when read
+        val files = {
+            graph.appDirs.data.toFile().walk().filter {
+                it.isFile
+            }.mapNotNull { runCatching { it.readText() }.getOrNull() }
+                .toList()
+        }
         val marker = "flush-${System.nanoTime()}"
         graph.preferenceStore.getString("desktop_test_flush", "").set(marker)
         withTimeout(10.seconds) { while (files().none { marker in it }) delay(100) }

@@ -29,8 +29,9 @@ import kotlin.time.Duration.Companion.hours
 
 @OptIn(ExperimentalTestApi::class)
 class SettingsTest {
+    // GitHub's runners compose the first screens far slower than a desktop
     private fun androidx.compose.ui.test.ComposeUiTest.waitForText(text: String) =
-        waitUntil(timeoutMillis = 10_000) { onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty() }
+        waitUntil(timeoutMillis = 30_000) { onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty() }
 
     @Test
     fun `allowing 18+ content in the browse settings is saved where the extension loader reads it`() =
@@ -62,7 +63,7 @@ class SettingsTest {
         // A settings screen has its up arrow, which goes back to the list
         onNodeWithContentDescription(str(MR.strings.action_bar_up_description)).performClick()
         // Advanced sits near the end of a lazy list: on a smaller or denser screen it's composed only once scrolled to
-        waitUntil(timeoutMillis = 10_000) { onAllNodes(hasScrollToNodeAction()).fetchSemanticsNodes().isNotEmpty() }
+        waitUntil(timeoutMillis = 30_000) { onAllNodes(hasScrollToNodeAction()).fetchSemanticsNodes().isNotEmpty() }
         onNode(hasScrollToNodeAction()).performScrollToNode(hasText(str(MR.strings.pref_category_advanced)))
         onNodeWithText(str(MR.strings.pref_category_advanced)).performClick()
         waitForText(str(MR.strings.desktop_open_logs_folder))

@@ -29,7 +29,12 @@ jobs:
         with:
           tracker-keys: ${{ secrets.TRACKER_KEYS }}
       - run: bash scripts/check-licenses.sh
-      - run: ./gradlew spotlessCheck test
+      - run: ./gradlew spotlessCheck test --continue
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-reports
+          path: "**/build/reports/tests/test/"
       - run: bash scripts/check-no-android.sh
       - uses: actions/cache@v4
         with:

@@ -22,7 +22,12 @@ jobs:
       - uses: ./.github/actions/setup-turboyomi
         with:
           tracker-keys: ${{ secrets.TRACKER_KEYS }}
-      - run: ./gradlew spotlessCheck test
+      - run: ./gradlew spotlessCheck test --continue
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-reports
+          path: "**/build/reports/tests/test/"
       - run: ./gradlew :desktop-app:packageMsi :desktop-app:packageZip
       - name: Sign
         # Skipped until there's a certificate (spec 6b §1)
