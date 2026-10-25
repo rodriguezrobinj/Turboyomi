@@ -35,7 +35,6 @@ class ReaderInputTest {
         key(Key.MoveEnd, ReadingMode.VERTICAL) shouldBe ReaderAction.LastPage
         key(Key.N, ReadingMode.LEFT_TO_RIGHT) shouldBe ReaderAction.NextChapter
         key(Key.P, ReadingMode.LEFT_TO_RIGHT) shouldBe ReaderAction.PreviousChapter
-        key(Key.F11, ReadingMode.LEFT_TO_RIGHT) shouldBe ReaderAction.ToggleFullscreen
     }
 
     @Test

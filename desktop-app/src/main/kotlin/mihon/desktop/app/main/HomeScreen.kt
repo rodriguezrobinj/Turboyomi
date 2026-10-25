@@ -1,6 +1,7 @@
 package mihon.desktop.app.main
 
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -27,7 +28,13 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import mihon.app.di.appGraph
 import mihon.desktop.app.download.DownloadsTab
+import mihon.desktop.app.platform.LocalWindowControls
 import mihon.desktop.app.settings.SettingsTab
+import mihon.icons.materialsymbols.MaterialSymbols
+import mihon.icons.materialsymbols.rounded.Fullscreen
+import mihon.icons.materialsymbols.rounded.FullscreenExit
+import tachiyomi.i18n.MR
+import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.util.collectAsState
 
 /**
@@ -87,6 +94,22 @@ object HomeScreen : Screen() {
                             ) { options.icon?.let { Icon(it, contentDescription = options.title) } }
                         },
                         label = { Text(options.title) },
+                    )
+                }
+                LocalWindowControls.current?.let { window ->
+                    Spacer(Modifier.weight(1f))
+                    NavigationRailItem(
+                        selected = false,
+                        onClick = window::toggleFullscreen,
+                        icon = {
+                            Icon(
+                                with(MaterialSymbols.Rounded) {
+                                    if (window.isFullscreen) FullscreenExit else Fullscreen
+                                },
+                                contentDescription = null,
+                            )
+                        },
+                        label = { Text(stringResource(MR.strings.pref_fullscreen)) },
                     )
                 }
             }

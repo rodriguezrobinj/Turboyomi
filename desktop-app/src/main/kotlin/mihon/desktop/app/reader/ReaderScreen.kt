@@ -73,17 +73,14 @@ class ReaderScreen(private val mangaId: Long, private val chapterId: Long) : Scr
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val window = LocalWindowControls.current
         val viewModel = assistedMetroViewModel<ReaderViewModel, ReaderViewModel.Factory> { create(mangaId, chapterId) }
 
-        // Esc: out of fullscreen first, then out of the reader
-        BackHandler { if (window?.isFullscreen == true) window.exitFullscreen() else navigator.pop() }
+        BackHandler { navigator.pop() }
         DisposableEffect(viewModel) {
             val flush: suspend () -> Unit = { viewModel.flush() }
             ExitHooks.add(flush)
             onDispose {
                 ExitHooks.remove(flush)
-                window?.exitFullscreen()
                 viewModel.saveHistory()
             }
         }
@@ -121,7 +118,6 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
 
     fun perform(action: ReaderAction) {
         when (action) {
-            ReaderAction.ToggleFullscreen -> window?.toggleFullscreen()
             ReaderAction.ToggleMenu -> viewModel.showMenus(!state.menuVisible)
             ReaderAction.NextChapter -> scope.launch { viewModel.loadNextChapter() }
             ReaderAction.PreviousChapter -> scope.launch { viewModel.loadPreviousChapter() }
@@ -171,10 +167,12 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
             else -> key(chapters.currChapter, mode) {
                 if (mode.type == ReadingMode.ViewerType.Webtoon) {
                     val sidePadding by preferences.webtoonSidePadding.collectAsState()
+                    val scrollStep by preferences.webtoonScrollStep.collectAsState()
                     WebtoonViewer(
                         chapters = chapters,
                         gap = mode == ReadingMode.CONTINUOUS_VERTICAL,
                         sidePaddingPercent = sidePadding,
+                        scrollStepPercent = scrollStep,
                         cache = cache,
                         onPageSelected = viewModel::onPageSelected,
                         onReachedEnd = { scope.launch { viewModel.loadNextChapter(from = chapters.currChapter) } },
@@ -234,6 +232,8 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
             onNextChapter = { scope.launch { viewModel.loadNextChapter() } },
             onPageIndexChange = { index -> scope.launch { controller?.goToPage(index) } },
             onOpenSettings = { showSettings = true },
+            isFullscreen = window?.isFullscreen,
+            onToggleFullscreen = { window?.toggleFullscreen() },
         )
         if (showSettings) {
             ReaderQuickSettings(

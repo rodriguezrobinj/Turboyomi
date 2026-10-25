@@ -110,6 +110,9 @@ class ReaderPreferences(
     // desktop: pages loaded ahead of the one being read (spec 2a §4: 4 by default, configurable)
     val preloadPages: Preference<Int> = preferenceStore.getInt("pref_reader_preload_pages", 4)
 
+    // desktop: how far ↑ and ↓ scroll the webtoon, in percent of the window's height
+    val webtoonScrollStep: Preference<Int> = preferenceStore.getInt("pref_webtoon_scroll_step", 15)
+
     val webtoonDisableZoomOut: Preference<Boolean> = preferenceStore.getBoolean("webtoon_disable_zoom_out", false)
 
     // endregion

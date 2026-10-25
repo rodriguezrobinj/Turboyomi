@@ -12,7 +12,6 @@ enum class ReaderAction {
     LastPage,
     NextChapter,
     PreviousChapter,
-    ToggleFullscreen,
     ToggleMenu,
 }
 
@@ -36,7 +35,6 @@ fun readerActionFor(key: Key, shift: Boolean, ctrl: Boolean, alt: Boolean, mode:
         Key.MoveEnd -> ReaderAction.LastPage
         Key.N -> ReaderAction.NextChapter
         Key.P -> ReaderAction.PreviousChapter
-        Key.F11 -> ReaderAction.ToggleFullscreen
         else -> null
     }
 }

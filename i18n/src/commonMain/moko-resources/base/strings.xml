@@ -1154,6 +1154,7 @@
     <string name="desktop_cef_clear_site_cookies">Clear this site\'s cookies</string>
     <string name="desktop_dual_page_shift">Shift by one page</string>
     <string name="desktop_reader_preload_pages">Pages loaded ahead</string>
+    <string name="desktop_webtoon_scroll_step">Arrow key scroll (webtoon)</string>
     <string name="desktop_image_copied">Image copied</string>
     <string name="desktop_update_progress">Updating %1$d/%2$d · %3$s</string>
     <string name="desktop_and_more">and %1$d more</string>

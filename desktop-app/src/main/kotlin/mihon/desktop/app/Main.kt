@@ -234,6 +234,8 @@ fun main(args: Array<String>) {
                 onKeyEvent = { event -> handleShortcut(event, beforeFocusedComponent = false, scrollScope) },
             ) {
                 window.minimumSize = Dimension(MIN_WIDTH, MIN_HEIGHT)
+                windowControls.window = window
+                LaunchedEffect(Unit) { AppEvents.fullscreen.collect { windowControls.toggleFullscreen() } }
                 LaunchedEffect(Unit) {
                     bringToFront.collect {
                         windowVisible = true
