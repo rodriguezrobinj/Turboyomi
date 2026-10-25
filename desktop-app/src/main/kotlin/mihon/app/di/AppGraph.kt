@@ -60,6 +60,9 @@ interface AppGraph : DesktopGraph, ViewModelGraph {
     val backupPreferences: BackupPreferences
     val getFavorites: GetFavorites
     val backupJob: BackupJob
+
+    // desktop: the app's own updates (spec 6b §2)
+    val appUpdater: mihon.desktop.app.update.AppUpdater
     val backupNotifier: BackupNotifier
     val trackPreferences: TrackPreferences
     val trackerManager: TrackerManager

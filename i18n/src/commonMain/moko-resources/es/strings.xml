@@ -900,6 +900,9 @@
     <string name="desktop_tracker_login_failed">No se pudo iniciar sesión</string>
     <string name="desktop_tracker_login_expired">Ese inicio de sesión se abrió antes de cerrar la app; vuelve a empezarlo desde Ajustes › Seguimiento</string>
     <string name="desktop_legacy_migration_failed">No se pudieron traer los datos de MangaReader; cierra las otras copias de la app y vuelve a abrirla</string>
+    <string name="desktop_update_corrupt">La descarga está dañada; inténtalo de nuevo</string>
+    <string name="desktop_update_check_auto">Buscar actualizaciones automáticamente</string>
+    <string name="desktop_update_downloading">Descargando %1$s…</string>
     <string name="desktop_tracker_protocol_failed">El navegador no puede volver a la app, así que los servicios que inician sesión con él no funcionarán</string>
     <string name="desktop_instance_unreachable">Ya hay otra ventana de la app abierta, pero no responde. Ciérrala desde el Administrador de tareas e inténtalo de nuevo.</string>
     <string name="desktop_clear_image_cache">Borrar caché de imágenes</string>

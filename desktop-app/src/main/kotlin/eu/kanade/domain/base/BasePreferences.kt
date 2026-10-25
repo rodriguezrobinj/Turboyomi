@@ -41,4 +41,12 @@ class BasePreferences(
         Preference.appStateKey("skipped_app_update"),
         "",
     )
+
+    // desktop: Settings › About's switch and the daily check's last run (spec 6b §2)
+    val autoCheckAppUpdates: Preference<Boolean> = preferenceStore.getBoolean("pref_auto_check_app_updates", true)
+
+    val lastAppUpdateCheck: Preference<Long> = preferenceStore.getLong(
+        Preference.appStateKey("last_app_update_check"),
+        0L,
+    )
 }
