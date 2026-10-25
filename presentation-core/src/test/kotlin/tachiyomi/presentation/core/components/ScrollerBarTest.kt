@@ -9,6 +9,9 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalDensity
@@ -23,6 +26,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 
@@ -122,6 +126,54 @@ class ScrollerBarTest {
         waitForIdle()
 
         onNodeWithTag(THUMB_TAG).getBoundsInRoot().top shouldBe 64.dp
+    }
+
+    @Test
+    fun `a padded grid's thumb sits centered between the last card and the edge`() = runComposeUiTest {
+        setContent {
+            FastScrollLazyVerticalGrid(
+                columns = GridCells.Fixed(3),
+                modifier = Modifier.size(300.dp, 400.dp),
+                contentPadding = PaddingValues(8.dp),
+            ) {
+                items(300) { Box(Modifier.height(50.dp).testTag("card$it")) }
+            }
+        }
+        waitForIdle()
+
+        val last = onNodeWithTag("card2").getBoundsInRoot()
+        val thumb = onNodeWithTag(THUMB_TAG).getBoundsInRoot()
+        (thumb.left - last.right) shouldBe (300.dp - thumb.right)
+    }
+
+    @Test
+    fun `the thumb is as long as the visible share of the list`() = runComposeUiTest {
+        var rows by mutableIntStateOf(20)
+        setContent {
+            FastScrollLazyColumn(Modifier.size(200.dp, 400.dp)) {
+                items(rows) { Box(Modifier.fillMaxWidth().height(50.dp)) }
+            }
+        }
+        waitForIdle()
+        // 8 of 20 rows fit
+        onNodeWithTag(THUMB_TAG).getBoundsInRoot().height shouldBe 160.dp
+
+        rows = 1000
+        waitForIdle()
+        onNodeWithTag(THUMB_TAG).getBoundsInRoot().height shouldBe 48.dp
+    }
+
+    @Test
+    fun `a grid's thumb is as long as the visible share of its rows`() = runComposeUiTest {
+        setContent {
+            FastScrollLazyVerticalGrid(columns = GridCells.Fixed(3), modifier = Modifier.size(300.dp, 400.dp)) {
+                // 20 rows of 50 dp, 8 fit
+                items(60) { Box(Modifier.height(50.dp)) }
+            }
+        }
+        waitForIdle()
+
+        onNodeWithTag(THUMB_TAG).getBoundsInRoot().height shouldBe 160.dp
     }
 
     @Test
