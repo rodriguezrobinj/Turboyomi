@@ -38,17 +38,18 @@ class UniFile private constructor(private val file: File) {
 
     fun subFile(displayName: String): UniFile = UniFile(File(file, displayName))
 
+    // Checked again after a failed create: another thread may have made it between the first check and ours
     fun createDirectory(displayName: String?): UniFile? {
         val dir = File(file, displayName ?: return null)
-        return if (dir.isDirectory || dir.mkdirs()) UniFile(dir) else null
+        return if (dir.isDirectory || dir.mkdirs() || dir.isDirectory) UniFile(dir) else null
     }
 
     fun createFile(displayName: String?): UniFile? {
         val child = File(file, displayName ?: return null)
-        return if (child.isFile || child.createNewFile()) UniFile(child) else null
+        return if (child.isFile || child.createNewFile() || child.isFile) UniFile(child) else null
     }
 
-    fun ensureDir(): Boolean = file.isDirectory || file.mkdirs()
+    fun ensureDir(): Boolean = file.isDirectory || file.mkdirs() || file.isDirectory
 
     fun ensureFile(): Boolean =
         file.isFile || (file.parentFile?.let { it.isDirectory || it.mkdirs() } != false && file.createNewFile())

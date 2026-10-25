@@ -3,6 +3,8 @@ package com.hippo.unifile
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import org.junit.jupiter.api.Test
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
 import kotlin.io.path.createTempDirectory
 
 class UniFileTest {
@@ -18,6 +20,33 @@ class UniFileTest {
         file.length() shouldBe 3L
         file.openInputStream().use { it.readBytes() } shouldBe byteArrayOf(1, 2, 3)
         root.findFile("missing") shouldBe null
+    }
+
+    @Test
+    fun `two threads creating the same directory or file both get it`() {
+        val root = UniFile.fromFile(createTempDirectory("uni").toFile())!!
+        val pool = Executors.newFixedThreadPool(8)
+        try {
+            repeat(200) { i ->
+                val start = CountDownLatch(1)
+                val dirs = (1..8).map {
+                    pool.submit<UniFile?> {
+                        start.await()
+                        root.createDirectory("d$i")
+                    }
+                }
+                val files = (1..8).map {
+                    pool.submit<UniFile?> {
+                        start.await()
+                        root.createFile("f$i")
+                    }
+                }
+                start.countDown()
+                (dirs + files).forEach { it.get() shouldNotBe null }
+            }
+        } finally {
+            pool.shutdown()
+        }
     }
 
     @Test

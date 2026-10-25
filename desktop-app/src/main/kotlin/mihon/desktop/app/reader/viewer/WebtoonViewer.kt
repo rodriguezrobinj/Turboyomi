@@ -1,6 +1,8 @@
 package mihon.desktop.app.reader.viewer
 
-import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -41,6 +43,7 @@ import mihon.desktop.app.reader.ReaderAction
 import mihon.desktop.app.reader.Spread
 import mihon.desktop.app.reader.image.DecodedPageCache
 import mihon.desktop.app.reader.tapActionFor
+import kotlin.math.sign
 import kotlin.time.Duration.Companion.seconds
 
 const val WEBTOON_TAG = "webtoon"
@@ -173,13 +176,34 @@ private class WebtoonController(
         val backward = action == ReaderAction.PreviousPage || action == ReaderAction.ScrollUp
         if (backward && !state.canScrollBackward) return onPastStart()
         when (action) {
-            ReaderAction.NextPage -> state.animateScrollBy(viewport * 0.9f)
-            ReaderAction.PreviousPage -> state.animateScrollBy(-viewport * 0.9f)
-            ReaderAction.ScrollDown -> state.animateScrollBy(viewport * 0.15f)
-            ReaderAction.ScrollUp -> state.animateScrollBy(-viewport * 0.15f)
+            ReaderAction.NextPage -> glideBy(viewport * 0.9f)
+            ReaderAction.PreviousPage -> glideBy(-viewport * 0.9f)
+            ReaderAction.ScrollDown -> glideBy(viewport * 0.15f)
+            ReaderAction.ScrollUp -> glideBy(-viewport * 0.15f)
             ReaderAction.FirstPage -> state.scrollToItem(1)
             ReaderAction.LastPage -> scrollToLastPage()
             else -> Unit
+        }
+    }
+
+    // One animation for every key press: a press while it runs moves its target and keeps its speed, so a held key
+    // glides instead of starting again from rest on each repeat. A press the other way starts from rest.
+    private val glide = Animatable(0f)
+    private var glideTarget = 0f
+
+    private suspend fun glideBy(delta: Float) {
+        if (!glide.isRunning || sign(delta) != sign(glideTarget - glide.value)) {
+            glide.snapTo(0f)
+            glideTarget = 0f
+        }
+        glideTarget += delta
+        val velocity = glide.velocity
+        state.scroll {
+            var scrolled = glide.value
+            glide.animateTo(glideTarget, GlideSpec, initialVelocity = velocity) {
+                scrollBy(value - scrolled)
+                scrolled = value
+            }
         }
     }
 
@@ -209,3 +233,6 @@ private class WebtoonController(
 }
 
 private const val LAST_PAGE_TRIES = 5
+
+// Critically damped: follows a held key without overshooting the page
+private val GlideSpec = spring<Float>(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
