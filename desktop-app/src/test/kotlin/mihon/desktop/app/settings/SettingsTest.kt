@@ -61,7 +61,9 @@ class SettingsTest {
         waitForText(str(MR.strings.pref_app_theme))
         // A settings screen has its up arrow, which goes back to the list
         onNodeWithContentDescription(str(MR.strings.action_bar_up_description)).performClick()
-        waitForText(str(MR.strings.pref_category_advanced))
+        // Advanced sits near the end of a lazy list: on a smaller or denser screen it's composed only once scrolled to
+        waitUntil(timeoutMillis = 10_000) { onAllNodes(hasScrollToNodeAction()).fetchSemanticsNodes().isNotEmpty() }
+        onNode(hasScrollToNodeAction()).performScrollToNode(hasText(str(MR.strings.pref_category_advanced)))
         onNodeWithText(str(MR.strings.pref_category_advanced)).performClick()
         waitForText(str(MR.strings.desktop_open_logs_folder))
     }
