@@ -125,7 +125,7 @@ class ScrollerBarTest {
     }
 
     @Test
-    fun `a padded grid's cards sit as far from the thumb as from the start edge`() = runComposeUiTest {
+    fun `a padded grid's thumb sits centered between the last card and the edge`() = runComposeUiTest {
         setContent {
             FastScrollLazyVerticalGrid(
                 columns = GridCells.Fixed(3),
@@ -137,10 +137,9 @@ class ScrollerBarTest {
         }
         waitForIdle()
 
-        val first = onNodeWithTag("card0").getBoundsInRoot()
         val last = onNodeWithTag("card2").getBoundsInRoot()
         val thumb = onNodeWithTag(THUMB_TAG).getBoundsInRoot()
-        (thumb.left - last.right) shouldBe first.left
+        (thumb.left - last.right) shouldBe (300.dp - thumb.right)
     }
 
     @Test
