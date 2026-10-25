@@ -160,6 +160,24 @@ class AppUpdaterTest {
     }
 
     @Test
+    fun `the daily check during a download leaves the download alone`(): Unit = runBlocking {
+        server.enqueue(MockResponse().setBody(Buffer().write(msiBytes)).throttleBody(10_000, 1, TimeUnit.SECONDS))
+        updater.update(release())
+        waitFor { updater.state.value is UpdateState.Downloading }
+        server.enqueue(
+            MockResponse().setBody(
+                """{"tag_name":"v9.0.0","body":"b","html_url":"p","assets":[""" +
+                    """{"name":"Turboyomi-9.0.0.msi","browser_download_url":"m"},""" +
+                    """{"name":"SHA256SUMS","browser_download_url":"s"}]}""",
+            ),
+        )
+
+        updater.check(manual = false)
+
+        updater.state.value.shouldBeInstanceOf<UpdateState.Downloading>()
+    }
+
+    @Test
     fun `outside the installed app, updating opens the release page`(): Unit = runBlocking {
         updater.install = FakeInstaller(installed = false)
 

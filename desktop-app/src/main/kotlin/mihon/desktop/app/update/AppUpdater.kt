@@ -18,6 +18,7 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import mihon.desktop.app.platform.AppMessages
@@ -77,7 +78,16 @@ class AppUpdater(
             return
         }
         if (release != null && AppVersion.isNewer(release.version, DesktopBuildInfo.VERSION_NAME)) {
-            _state.value = UpdateState.Available(release)
+            // A download or an install already under way keeps its dialog
+            _state.update {
+                if (it is UpdateState.Downloading ||
+                    it == UpdateState.Installing
+                ) {
+                    it
+                } else {
+                    UpdateState.Available(release)
+                }
+            }
             return
         }
         if (release == null) logcat(LogPriority.WARN) { "The latest release has no MSI or SHA256SUMS" }

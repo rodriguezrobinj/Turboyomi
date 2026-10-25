@@ -20,8 +20,11 @@ class AppReleasesTest {
     fun stop() = server.shutdown()
 
     private fun release(vararg assets: String) =
-        """{"tag_name":"v0.2.0","body":"## Novedades\n- algo","html_url":"https://github.com/r/t/releases/tag/v0.2.0",""" +
-            """"assets":[${assets.joinToString { """{"name":"$it","browser_download_url":"https://dl/$it","size":1}""" }}],""" +
+        """{"tag_name":"v0.2.0","body":"## Novedades\n- algo",""" +
+            """"html_url":"https://github.com/r/t/releases/tag/v0.2.0",""" +
+            """"assets":[${assets.joinToString {
+                """{"name":"$it","browser_download_url":"https://dl/$it","size":1}"""
+            }}],""" +
             """"draft":false}"""
 
     @Test
