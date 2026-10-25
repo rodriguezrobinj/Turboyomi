@@ -125,6 +125,25 @@ class ScrollerBarTest {
     }
 
     @Test
+    fun `a padded grid's cards sit as far from the thumb as from the start edge`() = runComposeUiTest {
+        setContent {
+            FastScrollLazyVerticalGrid(
+                columns = GridCells.Fixed(3),
+                modifier = Modifier.size(300.dp, 400.dp),
+                contentPadding = PaddingValues(8.dp),
+            ) {
+                items(300) { Box(Modifier.height(50.dp).testTag("card$it")) }
+            }
+        }
+        waitForIdle()
+
+        val first = onNodeWithTag("card0").getBoundsInRoot()
+        val last = onNodeWithTag("card2").getBoundsInRoot()
+        val thumb = onNodeWithTag(THUMB_TAG).getBoundsInRoot()
+        (thumb.left - last.right) shouldBe first.left
+    }
+
+    @Test
     fun `a scrollbar column works inside an alert dialog`() = runComposeUiTest {
         setContent {
             AlertDialog(

@@ -253,7 +253,11 @@ fun VerticalGridFastScroller(
     )
 
     SubcomposeLayout(modifier = modifier) { constraints ->
-        val gutter = ScrollerGutter.roundToPx()
+        // The grid's end padding already keeps the cards off the thumb: reserve only what it lacks,
+        // so the gap from the last card to the thumb matches the one at the start edge
+        val gutter = (ScrollerGutter - contentPadding.calculateEndPadding(layoutDirection))
+            .coerceAtLeast(ThumbClearance)
+            .roundToPx()
         val contentConstraints = constraints.withoutGutter(gutter)
         val contentPlaceable = subcompose("content", content).map { it.measure(contentConstraints) }
         val contentHeight = contentPlaceable.fastMaxBy { it.height }?.height ?: 0
@@ -387,6 +391,9 @@ object Scroller {
 private val ThumbLength = 48.dp
 private val ScrollerGutter = 18.dp
 private val ThumbThickness = 6.dp
+
+/** From the thumb's start edge to the end of the gutter: the least the content must leave free. */
+private val ThumbClearance = (ScrollerGutter + ThumbThickness) / 2
 private val ThumbThicknessHover = 10.dp
 private val ThumbShape = RoundedCornerShape(50)
 private const val RESTING_THUMB_ALPHA = 0.5f
