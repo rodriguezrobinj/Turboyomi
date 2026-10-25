@@ -11,6 +11,7 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
 import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -100,7 +101,13 @@ class BrowserSessionTest {
         }
 
     @Test
-    fun `a link that opens a new window loads it in the same browser`(): Unit = shown("/emergente") { session, frame ->
+    fun `a link that opens a new window loads it in the same browser`() {
+        // A real mouse click: GitHub's runners don't deliver Robot input to a native window reliably
+        assumeTrue(System.getenv("CI") == null, "Needs real input, which CI runners don't give")
+        newWindowLink()
+    }
+
+    private fun newWindowLink(): Unit = shown("/emergente") { session, frame ->
         withTimeout(30.seconds) { session.title.first { it == "Emergente" } }
 
         // A real click, as the user's: the page's button covers the whole window
