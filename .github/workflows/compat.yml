@@ -21,11 +21,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 21
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: ./.github/actions/setup-turboyomi
+      # The harness runs on the packaged runtime, so a JDK module it lacks shows up here (spec 6a §3 C)
+      - run: ./gradlew :desktop-app:appImage
       - uses: actions/cache@v4
         with:
           path: build/cef
@@ -33,7 +31,9 @@ jobs:
       - name: Run harness
         env:
           COMPAT_REPO_URL: ${{ vars.COMPAT_REPO_URL }}
-        run: ./gradlew :compat-harness:run --args="--repo $COMPAT_REPO_URL --limit 100 --threshold 0.8 --out $GITHUB_WORKSPACE/compat-report.md --cef $GITHUB_WORKSPACE/build/cef"
+        run: |
+          java="$GITHUB_WORKSPACE/desktop-app/build/packaging/image/Turboyomi/runtime/bin/java.exe"
+          ./gradlew :compat-harness:run "-PharnessJava=$java" --args="--repo $COMPAT_REPO_URL --limit 100 --threshold 0.8 --out $GITHUB_WORKSPACE/compat-report.md --cef $GITHUB_WORKSPACE/build/cef"
       - name: Publish report
         if: always()
         run: cat compat-report.md >> "$GITHUB_STEP_SUMMARY"

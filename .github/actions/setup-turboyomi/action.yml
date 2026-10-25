@@ -1,0 +1,29 @@
+name: setup-turboyomi
+description: JDK 23, Gradle, WiX 3.14 and the tracker keys, as the packaging tasks expect them (spec 6b §2)
+inputs:
+  tracker-keys:
+    description: The tracker-keys.properties contents; empty builds without the OAuth trackers
+    required: false
+    default: ""
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: 23
+    - uses: gradle/actions/setup-gradle@v4
+    - name: WiX 3.14
+      shell: bash
+      # packageMsi looks for WiX here (spec 6a); the binaries zip needs no admin rights or .NET 3.5
+      run: |
+        dir="$(cygpath "$LOCALAPPDATA")/Programs/WiX314/bin"
+        mkdir -p "$dir"
+        curl -sSL -o "$RUNNER_TEMP/wix.zip" https://github.com/wixtoolset/wix3/releases/download/wix3141rtm/wix314-binaries.zip
+        unzip -q -o "$RUNNER_TEMP/wix.zip" -d "$dir"
+    - name: Tracker keys
+      if: inputs.tracker-keys != ''
+      shell: bash
+      env:
+        KEYS: ${{ inputs.tracker-keys }}
+      run: printf '%s\n' "$KEYS" > tracker-keys.properties
