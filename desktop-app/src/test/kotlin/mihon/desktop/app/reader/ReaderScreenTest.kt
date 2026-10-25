@@ -87,24 +87,17 @@ class ReaderScreenTest {
     }
 
     @Test
-    fun `F11 toggles fullscreen, Esc leaves it first and then closes the reader`() = runComposeUiTest {
+    fun `Esc closes the reader and the app stays in fullscreen`() = runComposeUiTest {
         val controls = WindowControls(WindowState())
         openReader(controls)
-
-        onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.F11) }
-        waitForIdle()
-        controls.isFullscreen shouldBe true
+        runOnIdle { controls.toggleFullscreen() }
 
         // Esc reaches the reader as Compose's back event, which ConnectWindowBack forwards
-        runOnIdle { AppEvents.send(Shortcut.Back) }
-        waitForIdle()
-        controls.isFullscreen shouldBe false
-        onNodeWithTag(READER_TAG).assertExists()
-
         runOnIdle { AppEvents.send(Shortcut.Back) }
         waitUntil(timeoutMillis = 10_000) {
             onAllNodes(hasText("pantalla anterior")).fetchSemanticsNodes().isNotEmpty()
         }
+        controls.isFullscreen shouldBe true
     }
 
     @Test

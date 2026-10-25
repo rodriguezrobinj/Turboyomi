@@ -73,17 +73,14 @@ class ReaderScreen(private val mangaId: Long, private val chapterId: Long) : Scr
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val window = LocalWindowControls.current
         val viewModel = assistedMetroViewModel<ReaderViewModel, ReaderViewModel.Factory> { create(mangaId, chapterId) }
 
-        // Esc: out of fullscreen first, then out of the reader
-        BackHandler { if (window?.isFullscreen == true) window.exitFullscreen() else navigator.pop() }
+        BackHandler { navigator.pop() }
         DisposableEffect(viewModel) {
             val flush: suspend () -> Unit = { viewModel.flush() }
             ExitHooks.add(flush)
             onDispose {
                 ExitHooks.remove(flush)
-                window?.exitFullscreen()
                 viewModel.saveHistory()
             }
         }
@@ -121,7 +118,6 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
 
     fun perform(action: ReaderAction) {
         when (action) {
-            ReaderAction.ToggleFullscreen -> window?.toggleFullscreen()
             ReaderAction.ToggleMenu -> viewModel.showMenus(!state.menuVisible)
             ReaderAction.NextChapter -> scope.launch { viewModel.loadNextChapter() }
             ReaderAction.PreviousChapter -> scope.launch { viewModel.loadPreviousChapter() }

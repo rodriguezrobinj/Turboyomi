@@ -12,6 +12,7 @@ class ShortcutsTest {
         shortcutFor(Key.DirectionLeft, ctrl = false, alt = true, shift = false) shouldBe Shortcut.Back
         shortcutFor(Key.F, ctrl = true, alt = false, shift = false) shouldBe Shortcut.GlobalSearch
         shortcutFor(Key.F5, ctrl = false, alt = false, shift = false) shouldBe Shortcut.Refresh
+        shortcutFor(Key.F11, ctrl = false, alt = false, shift = false) shouldBe Shortcut.Fullscreen
         shortcutFor(Key.Comma, ctrl = true, alt = false, shift = false) shouldBe Shortcut.Settings
     }
 

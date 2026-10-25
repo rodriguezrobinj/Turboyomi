@@ -24,6 +24,10 @@ object AppEvents {
     private val _categoryStep = MutableSharedFlow<Int>(extraBufferCapacity = 1)
     val categoryStep: SharedFlow<Int> = _categoryStep
 
+    /** Collected by the window in Main, which owns the fullscreen. */
+    private val _fullscreen = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val fullscreen: SharedFlow<Unit> = _fullscreen
+
     private val _updatesRequests = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val updatesRequests: SharedFlow<Unit> = _updatesRequests
 
@@ -44,5 +48,6 @@ object AppEvents {
         Shortcut.SelectAll -> _selectAll.tryEmit(Unit)
         Shortcut.NextCategory -> _categoryStep.tryEmit(1)
         Shortcut.PreviousCategory -> _categoryStep.tryEmit(-1)
+        Shortcut.Fullscreen -> _fullscreen.tryEmit(Unit)
     }
 }
