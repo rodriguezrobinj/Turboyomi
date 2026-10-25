@@ -50,6 +50,7 @@ import mihon.desktop.app.platform.WindowControls
 import mihon.desktop.app.startup.MIN_HEIGHT
 import mihon.desktop.app.startup.MIN_WIDTH
 import mihon.desktop.app.startup.SavedWindow
+import mihon.desktop.app.startup.Smoke
 import mihon.desktop.app.startup.Startup
 import mihon.desktop.app.startup.WindowStateStore
 import mihon.desktop.app.startup.placeOnScreens
@@ -72,9 +73,16 @@ import java.awt.Dimension
 import java.awt.GraphicsEnvironment
 import java.awt.Rectangle
 import java.awt.Toolkit
+import kotlin.io.path.createTempDirectory
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
+    // Packaging's check (spec 6a §2): fresh data, no window, before the migration and the single-instance lock
+    if ("--smoke" in args) {
+        val ok = Smoke.run(createTempDirectory("turboyomi-smoke"))
+        println(if (ok) "OK" else "FAILED")
+        exitProcess(if (ok) 0 else 1)
+    }
     // The development build's data comes over before anything creates or opens it (spec 6a §3 A)
     val migration = LegacyMigration.run()
     val dirs = AppDirs.fromEnvironment()
