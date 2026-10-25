@@ -36,6 +36,8 @@ class AutoBackupTest {
     @Test
     fun `an automatic backup goes to the autobackup folder and only the last 4 stay`(): Unit = runBlocking {
         TestLibrary.libraryManga(graph, TestLibrary.category(graph))
+        // Another test of this class may have run first in this JVM and left its own automatic backup
+        autobackupDir().listFiles().orEmpty().filter { it.name.endsWith(".tachibk") }.forEach { it.delete() }
         val old = (1..5).map { "app.turboyomi_2020-01-0${it}_00-00.tachibk" }
         old.forEach { File(autobackupDir(), it).writeText("viejo") }
 
