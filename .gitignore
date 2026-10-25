@@ -19,3 +19,6 @@ app/google-services.json
 
 # Our own tracker client ids and secrets (spec 5b-2 §1)
 /tracker-keys.properties
+
+# A real backup with the developer's own library: kept out of the public repo (plan 6b)
+/desktop-app/src/test/resources/backup/suwayomi.tachibk

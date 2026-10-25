@@ -8,10 +8,14 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import mihon.desktop.app.testing.TestAppGraph
 import mihon.desktop.app.testing.startTestApp
+import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Test
 import java.io.File
 
-/** The real thing: a backup another app of the ecosystem wrote, Suwayomi, in Mihon's format (spec 5a §5). */
+/**
+ * The real thing: a backup another app of the ecosystem wrote, Suwayomi, in Mihon's format (spec 5a §5). It's the
+ * developer's own library, so it stays out of git (.gitignore) and the test is skipped where the file isn't there.
+ */
 class MihonCompatibilityTest {
     private val graph: TestAppGraph = startTestApp()
     private val fixture = File("src/test/resources/backup/suwayomi.tachibk")
@@ -19,7 +23,7 @@ class MihonCompatibilityTest {
     @Test
     fun `a real backup from Suwayomi restores its library, categories, read chapters and history`(): Unit =
         runBlocking {
-            check(fixture.isFile) { "The fixture $fixture is missing (plan 5a, task 7)" }
+            assumeTrue(fixture.isFile, "The private fixture $fixture isn't on this machine")
             graph.backupFileValidator.validate(fixture)
             val entries = graph.backupDecoder.decodeEntries(fixture).toList()
             val metadata = graph.backupDecoder.decodeMetadata(fixture).backup
