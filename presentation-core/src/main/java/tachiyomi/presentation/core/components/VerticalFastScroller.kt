@@ -379,12 +379,11 @@ object Scroller {
 }
 
 private val ThumbLength = 48.dp
-private val TrackWidth = 14.dp
+private val TrackWidth = 18.dp
 private val ThumbThickness = 6.dp
 private val ThumbThicknessHover = 10.dp
 private val ThumbShape = RoundedCornerShape(50)
 private const val RESTING_THUMB_ALPHA = 0.5f
-private const val TRACK_ALPHA = 0.08f
 private val TrackRepeatDelay = 400.milliseconds
 private val TrackRepeatInterval = 120.milliseconds
 
@@ -429,7 +428,6 @@ private fun ScrollerBar(
             .width(TrackWidth)
             .testTag(TRACK_TAG)
             .hoverable(hoverSource)
-            .background(thumbColor.copy(alpha = TRACK_ALPHA * alpha))
             .pointerInput(thumbHeightPx) {
                 detectTapGestures(
                     onPress = { press ->
@@ -459,7 +457,7 @@ private fun ScrollerBar(
     ) {
         Box(
             Modifier
-                .align(Alignment.TopEnd)
+                .align(Alignment.TopCenter)
                 .offset { IntOffset(0, thumbOffsetY.roundToInt()) }
                 .testTag(THUMB_TAG)
                 .draggable(
