@@ -21,6 +21,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          # The app image's version comes from the last v* tag (spec 6a §2)
+          fetch-depth: 0
       - uses: ./.github/actions/setup-turboyomi
       # The harness runs on the packaged runtime, so a JDK module it lacks shows up here (spec 6a §3 C)
       - run: ./gradlew :desktop-app:appImage
