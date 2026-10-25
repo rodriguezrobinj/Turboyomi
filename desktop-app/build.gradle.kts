@@ -244,12 +244,12 @@ val packageZip by tasks.registering(Zip::class) {
 }
 
 // The per-user MSI (spec 6a §3 B). Needs WiX 3.14: on PATH, where its installer or the WIX variable put it, or its
-// binaries zip unpacked into %LOCALAPPDATA%\Programs\WiX314\bin
-val wixBin = providers.environmentVariable("LOCALAPPDATA").map { "$it\Programs\WiX314\bin" }
-    .zip(providers.environmentVariable("WIX").orElse("")) { local, wix -> listOf(local, "$wix\bin") }
+// binaries zip unpacked into %LOCALAPPDATA%/Programs/WiX314/bin
+val wixBin = providers.environmentVariable("LOCALAPPDATA").map { "$it/Programs/WiX314/bin" }
+    .zip(providers.environmentVariable("WIX").orElse("")) { local, wix -> listOf(local, "$wix/bin") }
     .zip(providers.environmentVariable("PATH")) { dirs, path ->
-        (dirs + "C:\Program Files (x86)\WiX Toolset v3.14\bin" + path.split(";"))
-            .firstOrNull { File(it, "candle.exe").isFile }.orEmpty()
+        (dirs + "C:/Program Files (x86)/WiX Toolset v3.14/bin" + path.split(";"))
+            .map(::File).firstOrNull { it.resolve("candle.exe").isFile }?.path.orEmpty()
     }
 
 val packageMsi by tasks.registering(Exec::class) {
@@ -265,7 +265,7 @@ val packageMsi by tasks.registering(Exec::class) {
     doFirst {
         check(wix.get().isNotEmpty()) {
             "WiX 3.14 isn't installed: winget install WiXToolset.WiXToolset, or unpack wix314-binaries.zip from " +
-                "https://github.com/wixtoolset/wix3/releases into %LOCALAPPDATA%\Programs\WiX314\bin"
+                "https://github.com/wixtoolset/wix3/releases into %LOCALAPPDATA%/Programs/WiX314/bin"
         }
         out.get().asFile.listFiles()!!.filter { it.extension == "msi" }.forEach { it.delete() }
         environment("PATH", "${wix.get()};${System.getenv("PATH")}")
@@ -273,6 +273,8 @@ val packageMsi by tasks.registering(Exec::class) {
         commandLine(
             args.get() + listOf(
                 "--type", "msi", "--win-per-user-install", "--win-menu", "--win-shortcut",
+                // Relative to %LOCALAPPDATA%: jpackage's default, %LOCALAPPDATA%\Turboyomi, is the app's own local data
+                "--install-dir", "Programs\\Turboyomi", "--win-menu-group", "Turboyomi",
                 // Fixed, so a newer MSI replaces the installed one (spec 6a §3 B)
                 "--win-upgrade-uuid", "7C3E9A52-41D8-4B6F-A0E2-9D5B3C8F1A64",
                 "--resource-dir", resources.asFile.path,

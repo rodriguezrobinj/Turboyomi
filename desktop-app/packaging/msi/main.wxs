@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- desktop: jpackage 23's main.wxs, plus turboyomi:// and app.turboyomi:// (spec 6a §3 B). jpackage takes it from
+     packaging/msi through resource-dir; regenerate it from a jpackage run with temp if the JDK changes -->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+
+  <?ifdef JpIsSystemWide ?>
+    <?define JpInstallScope="perMachine"?>
+  <?else?>
+    <?define JpInstallScope="perUser"?>
+  <?endif?>
+
+  <?define JpProductLanguage=1033 ?>
+  <?define JpInstallerVersion=200 ?>
+  <?define JpCompressedMsi=yes ?>
+
+  <?include $(var.JpConfigDir)/overrides.wxi ?>
+
+  <?ifdef JpAllowUpgrades ?>
+    <?define JpUpgradeVersionOnlyDetectUpgrade="no"?>
+  <?else?>
+    <?define JpUpgradeVersionOnlyDetectUpgrade="yes"?>
+  <?endif?>
+  <?ifdef JpAllowDowngrades ?>
+    <?define JpUpgradeVersionOnlyDetectDowngrade="no"?>
+  <?else?>
+    <?define JpUpgradeVersionOnlyDetectDowngrade="yes"?>
+  <?endif?>
+
+  <Product
+    Id="$(var.JpProductCode)"
+    Name="$(var.JpAppName)"
+    Language="$(var.JpProductLanguage)"
+    Version="$(var.JpAppVersion)"
+    Manufacturer="$(var.JpAppVendor)"
+    UpgradeCode="$(var.JpProductUpgradeCode)">
+
+    <Package
+      Description="$(var.JpAppDescription)"
+      Manufacturer="$(var.JpAppVendor)"
+      InstallerVersion="$(var.JpInstallerVersion)"
+      Compressed="$(var.JpCompressedMsi)"
+      InstallScope="$(var.JpInstallScope)" Platform="x64"
+    />
+
+    <Media Id="1" Cabinet="Data.cab" EmbedCab="yes" />
+
+    <Upgrade Id="$(var.JpProductUpgradeCode)">
+      <UpgradeVersion
+        OnlyDetect="$(var.JpUpgradeVersionOnlyDetectUpgrade)"
+        Property="JP_UPGRADABLE_FOUND"
+        Maximum="$(var.JpAppVersion)"
+        MigrateFeatures="yes"
+        IncludeMaximum="$(var.JpUpgradeVersionOnlyDetectUpgrade)" />
+      <UpgradeVersion
+        OnlyDetect="$(var.JpUpgradeVersionOnlyDetectDowngrade)"
+        Property="JP_DOWNGRADABLE_FOUND"
+        Minimum="$(var.JpAppVersion)"
+        MigrateFeatures="yes"
+        IncludeMinimum="$(var.JpUpgradeVersionOnlyDetectDowngrade)" />
+    </Upgrade>
+
+    <?ifndef JpAllowUpgrades ?>
+    <CustomAction Id="JpDisallowUpgrade" Error="!(loc.DisallowUpgradeErrorMessage)" />
+    <?endif?>
+    <?ifndef JpAllowDowngrades ?>
+    <CustomAction Id="JpDisallowDowngrade" Error="!(loc.DowngradeErrorMessage)" />
+    <?endif?>
+
+    <Binary Id="JpCaDll" SourceFile="wixhelper.dll"/>
+
+    <CustomAction Id="JpFindRelatedProducts" BinaryKey="JpCaDll" DllEntry="FindRelatedProductsEx" />
+
+    <!-- Standard required root -->
+    <Directory Id="TARGETDIR" Name="SourceDir"/>
+
+    <Feature Id="DefaultFeature" Title="!(loc.MainFeatureTitle)" Level="1">
+      <ComponentGroupRef Id="Shortcuts"/>
+      <ComponentGroupRef Id="Files"/>
+      <ComponentGroupRef Id="FileAssociations"/>
+      <ComponentRef Id="TurboyomiProtocol"/>
+    </Feature>
+
+    <!-- desktop: the OAuth redirects' protocols, written for this user and removed on uninstall (spec 6a §3 B). The app
+         writes the same keys on every start (spec 5b-2) -->
+    <DirectoryRef Id="TARGETDIR">
+      <Component Id="TurboyomiProtocol" Guid="5F0C2D4E-8B1A-4C7E-9E3D-6A2B1F0C7D11">
+        <RegistryKey Root="HKCU" Key="Software\Classes\turboyomi">
+          <RegistryValue Type="string" Value="URL:Turboyomi" KeyPath="yes"/>
+          <RegistryValue Name="URL Protocol" Type="string" Value=""/>
+          <RegistryKey Key="shell\open\command">
+            <RegistryValue Type="string" Value="&quot;[INSTALLDIR]Turboyomi.exe&quot; &quot;%1&quot;"/>
+          </RegistryKey>
+        </RegistryKey>
+        <RegistryKey Root="HKCU" Key="Software\Classes\app.turboyomi">
+          <RegistryValue Type="string" Value="URL:Turboyomi"/>
+          <RegistryValue Name="URL Protocol" Type="string" Value=""/>
+          <RegistryKey Key="shell\open\command">
+            <RegistryValue Type="string" Value="&quot;[INSTALLDIR]Turboyomi.exe&quot; &quot;%1&quot;"/>
+          </RegistryKey>
+        </RegistryKey>
+        <!-- %LOCALAPPDATA%\Programs, which install-dir adds and jpackage leaves out of RemoveFile (ICE64 then fails the
+             build); removed only when empty. The id is jpackage's hash of the path: light fails if it changes -->
+        <RemoveFolder Id="TurboyomiRemovePrograms" Directory="dir3b50371ef2d03bb0b1971278ecbab3a3" On="uninstall"/>
+      </Component>
+    </DirectoryRef>
+
+    <CustomAction Id="JpSetARPINSTALLLOCATION" Property="ARPINSTALLLOCATION" Value="[INSTALLDIR]" />
+    <CustomAction Id="JpSetARPCOMMENTS" Property="ARPCOMMENTS" Value="$(var.JpAppDescription)" />
+    <CustomAction Id="JpSetARPCONTACT" Property="ARPCONTACT" Value="$(var.JpAppVendor)" />
+    <CustomAction Id="JpSetARPSIZE" Property="ARPSIZE" Value="$(var.JpAppSizeKb)" />
+
+    <?ifdef JpHelpURL ?>
+      <CustomAction Id="JpSetARPHELPLINK" Property="ARPHELPLINK" Value="$(var.JpHelpURL)" />
+    <?endif?>
+
+    <?ifdef JpAboutURL ?>
+      <CustomAction Id="JpSetARPURLINFOABOUT" Property="ARPURLINFOABOUT" Value="$(var.JpAboutURL)" />
+    <?endif?>
+
+    <?ifdef JpUpdateURL ?>
+      <CustomAction Id="JpSetARPURLUPDATEINFO" Property="ARPURLUPDATEINFO" Value="$(var.JpUpdateURL)" />
+    <?endif?>
+
+    <?ifdef JpIcon ?>
+    <Property Id="ARPPRODUCTICON" Value="JpARPPRODUCTICON"/>
+    <Icon Id="JpARPPRODUCTICON" SourceFile="$(var.JpIcon)"/>
+    <?endif?>
+
+    <UIRef Id="JpUI"/>
+
+    <InstallExecuteSequence>
+      <Custom Action="JpSetARPINSTALLLOCATION" After="CostFinalize">Not Installed</Custom>
+      <Custom Action="JpSetARPCOMMENTS" After="CostFinalize">Not Installed</Custom>
+      <Custom Action="JpSetARPCONTACT" After="CostFinalize">Not Installed</Custom>
+      <Custom Action="JpSetARPSIZE" After="CostFinalize">Not Installed</Custom>
+      <?ifdef JpHelpURL ?>
+        <Custom Action="JpSetARPHELPLINK" After="CostFinalize">Not Installed</Custom>
+      <?endif?>
+      <?ifdef JpAboutURL ?>
+        <Custom Action="JpSetARPURLINFOABOUT" After="CostFinalize">Not Installed</Custom>
+      <?endif?>
+      <?ifdef JpUpdateURL ?>
+        <Custom Action="JpSetARPURLUPDATEINFO" After="CostFinalize">Not Installed</Custom>
+      <?endif?>
+
+      <?ifndef JpAllowUpgrades ?>
+      <Custom Action="JpDisallowUpgrade" After="JpFindRelatedProducts">JP_UPGRADABLE_FOUND</Custom>
+      <?endif?>
+      <?ifndef JpAllowDowngrades ?>
+      <Custom Action="JpDisallowDowngrade" After="JpFindRelatedProducts">JP_DOWNGRADABLE_FOUND</Custom>
+      <?endif?>
+      <RemoveExistingProducts Before="CostInitialize"/>
+      <Custom Action="JpFindRelatedProducts" After="FindRelatedProducts"/>
+    </InstallExecuteSequence>
+
+    <InstallUISequence>
+      <Custom Action="JpFindRelatedProducts" After="FindRelatedProducts"/>
+    </InstallUISequence>
+
+  </Product>
+</Wix>
