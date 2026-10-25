@@ -109,8 +109,6 @@ fun VerticalFastScroller(
                 thumbTopPadding -
                 thumbBottomPadding -
                 listState.layoutInfo.afterContentPadding
-            val thumbHeightPx = with(LocalDensity.current) { ThumbLength.toPx() }
-            val trackHeightPx = heightPx - thumbHeightPx
             val scrollHeightPx = contentHeight.toFloat() -
                 listState.layoutInfo.beforeContentPadding -
                 listState.layoutInfo.afterContentPadding -
@@ -143,6 +141,10 @@ fun VerticalFastScroller(
 
             if (maxRemainingSections < 0.5) return@subcompose
 
+            val totalSections = layoutInfo.totalItemsCount.toFloat()
+            val thumbHeightPx = thumbLengthPx(heightPx, (totalSections - maxRemainingSections) / totalSections)
+            val trackHeightPx = heightPx - thumbHeightPx
+
             // When thumb dragged
             LaunchedEffect(thumbOffsetY) {
                 if (layoutInfo.totalItemsCount == 0 || !isThumbDragged) return@LaunchedEffect
@@ -172,6 +174,7 @@ fun VerticalFastScroller(
             val pageScope = rememberCoroutineScope()
             ScrollerBar(
                 thumbOffsetY = thumbOffsetY,
+                thumbHeightPx = thumbHeightPx,
                 scrollInProgress = stableScrollInProgress,
                 thumbAllowed = thumbAllowed,
                 thumbColor = thumbColor,
@@ -281,11 +284,13 @@ fun VerticalGridFastScroller(
                 thumbTopPadding -
                 thumbBottomPadding -
                 state.layoutInfo.afterContentPadding
-            val thumbHeightPx = with(LocalDensity.current) { ThumbLength.toPx() }
-            val trackHeightPx = heightPx - thumbHeightPx
 
             val columnCount = remember(columns) { slotSizesSums(contentConstraints).size.coerceAtLeast(1) }
-            val scrollRange = remember(columns) { computeGridScrollRange(state = state, columnCount = columnCount) }
+            val scrollRange = remember(columns, layoutInfo.totalItemsCount) {
+                computeGridScrollRange(state = state, columnCount = columnCount)
+            }
+            val thumbHeightPx = thumbLengthPx(heightPx, heightPx / scrollRange.coerceAtLeast(1))
+            val trackHeightPx = heightPx - thumbHeightPx
 
             // When thumb dragged
             LaunchedEffect(thumbOffsetY) {
@@ -321,6 +326,7 @@ fun VerticalGridFastScroller(
             val pageScope = rememberCoroutineScope()
             ScrollerBar(
                 thumbOffsetY = thumbOffsetY,
+                thumbHeightPx = thumbHeightPx,
                 scrollInProgress = state.isScrollInProgress,
                 thumbAllowed = thumbAllowed,
                 thumbColor = thumbColor,
@@ -378,6 +384,12 @@ private fun computeGridScrollRange(state: LazyGridState, columnCount: Int): Int 
 
 private class MutableData<T>(var value: T)
 
+/** As long as the visible share of the content, so a short list gets a long thumb; never shorter than [ThumbMinLength]. */
+private fun Density.thumbLengthPx(heightPx: Float, visibleFraction: Float): Float {
+    val track = heightPx.coerceAtLeast(0f)
+    return (track * visibleFraction).coerceIn(min(ThumbMinLength.toPx(), track), track)
+}
+
 /** The strip the scroller owns at the end: the content is measured without it, so rows never reach the thumb. */
 private fun Constraints.withoutGutter(gutter: Int) = copy(
     minWidth = (minWidth - gutter).coerceAtLeast(0),
@@ -388,7 +400,7 @@ object Scroller {
     const val STICKY_HEADER_KEY_PREFIX = "sticky:"
 }
 
-private val ThumbLength = 48.dp
+private val ThumbMinLength = 48.dp
 private val ScrollerGutter = 18.dp
 private val ThumbThickness = 6.dp
 private val ThumbThicknessHover = 10.dp
@@ -409,11 +421,12 @@ internal fun thumbAlpha(allowed: Boolean, active: Boolean): Float = when {
 /**
  * The track and thumb both scrollers draw (spec 7 §3 D): always there when the content does not fit, wider under the
  * pointer, a thumb to drag, and a press on the track that pages towards the pointer, repeating while held.
- * [thumbOffsetY] is the thumb's top in the scroller's own pixels.
+ * [thumbOffsetY] is the thumb's top and [thumbHeightPx] its length, both in the scroller's own pixels.
  */
 @Composable
 private fun ScrollerBar(
     thumbOffsetY: Float,
+    thumbHeightPx: Float,
     scrollInProgress: Boolean,
     thumbAllowed: () -> Boolean,
     thumbColor: Color,
@@ -426,8 +439,8 @@ private fun ScrollerBar(
     val dragged by dragInteractionSource.collectIsDraggedAsState()
     val alpha by animateFloatAsState(thumbAlpha(thumbAllowed(), hovered || dragged || scrollInProgress))
     val thickness by animateDpAsState(if (hovered || dragged) ThumbThicknessHover else ThumbThickness)
-    val thumbHeightPx = with(LocalDensity.current) { ThumbLength.toPx() }
     val currentOffset by rememberUpdatedState(thumbOffsetY)
+    val currentThumbHeight by rememberUpdatedState(thumbHeightPx)
     val currentTrackPress by rememberUpdatedState(onTrackPress)
 
     Box(
@@ -436,13 +449,13 @@ private fun ScrollerBar(
             .width(ScrollerGutter)
             .testTag(TRACK_TAG)
             .hoverable(hoverSource)
-            .pointerInput(thumbHeightPx) {
+            .pointerInput(Unit) {
                 detectTapGestures(
                     onPress = { press ->
                         // null while the pointer is on the thumb, which has its own drag
                         fun towardsEnd(): Boolean? = when {
                             press.y < currentOffset -> false
-                            press.y > currentOffset + thumbHeightPx -> true
+                            press.y > currentOffset + currentThumbHeight -> true
                             else -> null
                         }
                         val first = towardsEnd() ?: return@detectTapGestures
@@ -473,7 +486,7 @@ private fun ScrollerBar(
                     orientation = Orientation.Vertical,
                     state = rememberDraggableState(onDrag),
                 )
-                .height(ThumbLength)
+                .height(with(LocalDensity.current) { thumbHeightPx.toDp() })
                 .width(thickness)
                 .alpha(alpha)
                 .background(color = thumbColor, shape = ThumbShape),
