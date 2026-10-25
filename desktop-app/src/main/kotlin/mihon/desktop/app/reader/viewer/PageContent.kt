@@ -41,7 +41,7 @@ import mihon.desktop.app.reader.ImageScale
 import mihon.desktop.app.reader.image.DecodedPage
 import mihon.desktop.app.reader.image.DecodedPageCache
 import mihon.desktop.app.reader.image.PageDecoder
-import mihon.desktop.app.reader.image.PageKey
+import mihon.desktop.app.reader.image.pageKey
 import net.engawapg.lib.zoomable.MouseWheelZoom
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
@@ -72,7 +72,7 @@ fun PageContent(
     val status by page.statusFlow.collectAsStateWithLifecycle()
     LaunchedEffect(page) { page.chapter.pageLoader?.loadPage(page) }
 
-    val key = PageKey(page.chapter.chapter.id, page.index)
+    val key = page.pageKey
     val decoded by produceState<Result<DecodedPage>?>(cache.get(key)?.let(Result.Companion::success), status) {
         if (value?.isSuccess == true || status != Page.State.Ready) return@produceState
         val stream = page.stream ?: return@produceState
