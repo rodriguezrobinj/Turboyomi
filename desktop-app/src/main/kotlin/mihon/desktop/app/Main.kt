@@ -71,6 +71,7 @@ import mihon.desktop.core.jobs.JobScheduler
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.i18n.MR
+import tachiyomi.presentation.core.util.handleScrollKey
 import java.awt.Dimension
 import java.awt.GraphicsEnvironment
 import java.awt.Rectangle
@@ -171,6 +172,8 @@ fun main(args: Array<String>) {
         )
         val windowControls = remember { WindowControls(windowState) }
         val exitScope = rememberCoroutineScope()
+        // The scroll keys' animations run here (spec 7 §3 C)
+        val scrollScope = rememberCoroutineScope()
         var closing by remember { mutableStateOf(false) }
         var windowVisible by remember { mutableStateOf(true) }
         // Exit from the close button (no tray) or the tray's Exit: the reader's last write first, and the update stops
@@ -227,8 +230,8 @@ fun main(args: Array<String>) {
                 title = AppDirs.APP_NAME,
                 // desktop: the app's own icon (spec 6a §2)
                 icon = painterResource("turboyomi.svg"),
-                onPreviewKeyEvent = { event -> handleShortcut(event, beforeFocusedComponent = true) },
-                onKeyEvent = { event -> handleShortcut(event, beforeFocusedComponent = false) },
+                onPreviewKeyEvent = { event -> handleShortcut(event, beforeFocusedComponent = true, scrollScope) },
+                onKeyEvent = { event -> handleShortcut(event, beforeFocusedComponent = false, scrollScope) },
             ) {
                 window.minimumSize = Dimension(MIN_WIDTH, MIN_HEIGHT)
                 LaunchedEffect(Unit) {
@@ -265,11 +268,16 @@ fun main(args: Array<String>) {
     exitProcess(0)
 }
 
-private fun handleShortcut(event: KeyEvent, beforeFocusedComponent: Boolean): Boolean =
-    event.type == KeyEventType.KeyDown &&
-        shortcutFor(event.key, event.isCtrlPressed, event.isAltPressed, event.isShiftPressed)
-            ?.takeIf { it.beforeFocusedComponent == beforeFocusedComponent }
-            ?.let(AppEvents::send) == true
+private fun handleShortcut(event: KeyEvent, beforeFocusedComponent: Boolean, scrollScope: CoroutineScope): Boolean {
+    if (event.type == KeyEventType.KeyDown) {
+        val shortcut = shortcutFor(event.key, event.isCtrlPressed, event.isAltPressed, event.isShiftPressed)
+        if (shortcut != null && shortcut.beforeFocusedComponent == beforeFocusedComponent && AppEvents.send(shortcut)) {
+            return true
+        }
+    }
+    // After the focused component: a text field keeps its own Home, End, arrows and Space (spec 7 §3 C)
+    return !beforeFocusedComponent && handleScrollKey(event, scrollScope)
+}
 
 // Never the fullscreen bounds: the window opens normal next time
 private fun WindowControls.toSaved() = SavedWindow(

@@ -8,16 +8,15 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
-import tachiyomi.presentation.core.util.drawVerticalScrollbar
+import tachiyomi.presentation.core.util.keyboardScrollable
 
 /**
- * LazyColumn with scrollbar.
+ * LazyColumn with the draggable scroller. Desktop: the touch-only scrollbar Mihon draws here is gone, the scroller
+ * is [FastScrollLazyColumn]'s.
  */
 @Composable
 fun ScrollbarLazyColumn(
@@ -30,28 +29,16 @@ fun ScrollbarLazyColumn(
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
     userScrollEnabled: Boolean = true,
     content: LazyListScope.() -> Unit,
-) {
-    val direction = LocalLayoutDirection.current
-    val density = LocalDensity.current
-    val positionOffset = remember(contentPadding) {
-        with(density) { contentPadding.calculateEndPadding(direction).toPx() }
-    }
-    LazyColumn(
-        modifier = modifier
-            .drawVerticalScrollbar(
-                state = state,
-                reverseScrolling = reverseLayout,
-                positionOffsetPx = positionOffset,
-            ),
-        state = state,
-        contentPadding = contentPadding,
-        reverseLayout = reverseLayout,
-        verticalArrangement = verticalArrangement,
-        horizontalAlignment = horizontalAlignment,
-        userScrollEnabled = userScrollEnabled,
-        content = content,
-    )
-}
+) = FastScrollLazyColumn(
+    modifier = modifier,
+    state = state,
+    contentPadding = contentPadding,
+    reverseLayout = reverseLayout,
+    verticalArrangement = verticalArrangement,
+    horizontalAlignment = horizontalAlignment,
+    userScrollEnabled = userScrollEnabled,
+    content = content,
+)
 
 /**
  * LazyColumn with fast scroller.
@@ -75,6 +62,7 @@ fun FastScrollLazyColumn(
         endContentPadding = contentPadding.calculateEndPadding(LocalLayoutDirection.current),
     ) {
         LazyColumn(
+            modifier = Modifier.keyboardScrollable(state),
             state = state,
             contentPadding = contentPadding,
             reverseLayout = reverseLayout,
