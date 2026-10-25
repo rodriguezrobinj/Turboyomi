@@ -22,6 +22,7 @@ import mihon.icons.materialsymbols.rounded.CollectionsBookmark
 import mihon.icons.materialsymbols.rounded.Download
 import mihon.icons.materialsymbols.rounded.Explore
 import mihon.icons.materialsymbols.rounded.Image
+import mihon.icons.materialsymbols.rounded.Info
 import mihon.icons.materialsymbols.rounded.Palette
 import mihon.icons.materialsymbols.rounded.Settings
 import mihon.icons.materialsymbols.rounded.Storage
@@ -55,6 +56,7 @@ data object SettingsTab : Tab {
             Triple(MR.strings.pref_category_tracking, MaterialSymbols.Rounded.Sync, SettingsTrackingScreen),
             Triple(MR.strings.label_data_storage, MaterialSymbols.Rounded.Storage, SettingsDataScreen),
             Triple(MR.strings.pref_category_advanced, MaterialSymbols.Rounded.Code, AdvancedSettingsScreen),
+            Triple(MR.strings.pref_category_about, MaterialSymbols.Rounded.Info, AboutScreen),
         )
         Scaffold(topBar = {
             AppBar(title = stringResource(MR.strings.label_settings), scrollBehavior = it)

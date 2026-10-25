@@ -35,6 +35,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import mihon.desktop.app.browser.EmbeddedBrowserWindow
@@ -61,6 +62,7 @@ import mihon.desktop.app.tray.CloseAction
 import mihon.desktop.app.tray.Notice
 import mihon.desktop.app.tray.TrayNotifier
 import mihon.desktop.app.tray.closeAction
+import mihon.desktop.app.update.UpdateState
 import mihon.desktop.core.AppDirs
 import mihon.desktop.core.LegacyMigration
 import mihon.desktop.core.Platform
@@ -142,6 +144,7 @@ fun main(args: Array<String>) {
             graph.libraryUpdateJob.periodicJob(),
             graph.backupJob.periodicJob(),
             graph.delayedTrackingJob.periodicJob(),
+            graph.appUpdater.periodicJob(),
         ),
     ).start(CoroutineScope(SupervisorJob() + Dispatchers.Default))
     val windowStore = WindowStateStore(graph.preferenceStore)
@@ -182,6 +185,11 @@ fun main(args: Array<String>) {
                     exitApplication()
                 }
             }
+        }
+        // desktop: the update's msiexec waits for this process to end (spec 6b §3 B)
+        LaunchedEffect(Unit) {
+            graph.appUpdater.state.first { it == UpdateState.Installing }
+            exit()
         }
         var crash by remember { mutableStateOf<Throwable?>(null) }
         var restarts by remember { mutableIntStateOf(0) }
@@ -253,6 +261,8 @@ fun main(args: Array<String>) {
             AppTray(graph, onOpen = { bringToFront.tryEmit(Unit) }, onExit = exit)
         }
     }
+    // A stray non-daemon thread mustn't keep the process, which an update's msiexec waits for (spec 6b §3 B)
+    exitProcess(0)
 }
 
 private fun handleShortcut(event: KeyEvent, beforeFocusedComponent: Boolean): Boolean =

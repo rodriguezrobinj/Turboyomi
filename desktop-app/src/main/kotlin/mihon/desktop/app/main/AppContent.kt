@@ -36,6 +36,7 @@ import kotlinx.coroutines.launch
 import mihon.app.di.AppGraph
 import mihon.desktop.app.browser.EmbeddedBrowserConsent
 import mihon.desktop.app.platform.AppMessages
+import mihon.desktop.app.update.UpdateDialog
 import mihon.desktop.core.cef.CefRuntime
 
 /** What every screen needs around it: context, view model factory and root store, theme. Tests reuse it. */
@@ -84,6 +85,14 @@ fun AppContent(graph: AppGraph, crash: Throwable?, onRestart: () -> Unit) {
                     if (result == SnackbarResult.ActionPerformed) it.onAction?.invoke()
                 }
             }
+            // desktop: the app's own updates (spec 6b §3 B), over whatever screen is open
+            val update by graph.appUpdater.state.collectAsState()
+            UpdateDialog(
+                update,
+                onUpdate = graph.appUpdater::update,
+                onCancel = graph.appUpdater::cancel,
+                onDismiss = graph.appUpdater::dismiss,
+            )
             val downloadedOnly by remember { graph.basePreferences.downloadedOnly.changes() }
                 .collectAsState(graph.basePreferences.downloadedOnly.get())
             val incognito by remember { graph.basePreferences.incognitoMode.changes() }
