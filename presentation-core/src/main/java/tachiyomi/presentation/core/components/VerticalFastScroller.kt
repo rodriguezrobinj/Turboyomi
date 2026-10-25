@@ -1,18 +1,23 @@
 package tachiyomi.presentation.core.components
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -28,12 +33,17 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -44,17 +54,16 @@ import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastLastOrNull
 import androidx.compose.ui.util.fastMaxBy
-import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.sample
+import kotlinx.coroutines.launch
 import tachiyomi.presentation.core.components.Scroller.STICKY_HEADER_KEY_PREFIX
+import tachiyomi.presentation.core.util.PAGE_FRACTION
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
-import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Draws vertical fast scroller to a lazy list
@@ -87,12 +96,6 @@ fun VerticalFastScroller(
 
             val dragInteractionSource = remember { MutableInteractionSource() }
             val isThumbDragged by dragInteractionSource.collectIsDraggedAsState()
-            val scrolled = remember {
-                MutableSharedFlow<Unit>(
-                    extraBufferCapacity = 1,
-                    onBufferOverflow = BufferOverflow.DROP_OLDEST,
-                )
-            }
 
             // listState.isScrollInProgress occasionally flickers
             val scrollStateTracker = remember { MutableData(listState.isScrollInProgress) }
@@ -146,7 +149,6 @@ fun VerticalFastScroller(
                 if (thumbProportion <= 0.001f) {
                     estimateConfidence.value = -1f
                     listState.scrollToItem(index = 0, scrollOffset = 0)
-                    scrolled.tryEmit(Unit)
                     return@LaunchedEffect
                 }
                 val scrollRemainingSections = (1f - thumbProportion) * maxRemainingSections
@@ -158,68 +160,29 @@ fun VerticalFastScroller(
                 val scrollItemIndex = scrollSectionIndex.coerceIn(0, layoutInfo.totalItemsCount - 1)
                 val scrollItemOffset = scrollSectionOffset + (scrollSectionIndex - scrollItemIndex) * bottomItem.size
                 listState.scrollToItem(index = scrollItemIndex, scrollOffset = scrollItemOffset)
-                scrolled.tryEmit(Unit)
             }
 
             // When list scrolled
             if (layoutInfo.totalItemsCount != 0 && !isThumbDragged) {
                 val proportion = 1f - remainingSections / maxRemainingSections
                 thumbOffsetY = trackHeightPx * proportion + thumbTopPadding
-                if (stableScrollInProgress) scrolled.tryEmit(Unit)
             }
 
-            // Thumb alpha
-            val alpha = remember { Animatable(0f) }
-            val isThumbVisible = alpha.value > 0f
-            LaunchedEffect(scrolled, alpha) {
-                scrolled
-                    .sample(0.1.seconds)
-                    .collectLatest {
-                        if (thumbAllowed()) {
-                            alpha.snapTo(1f)
-                            delay(ScrollBarVisibilityDuration)
-                            alpha.animateTo(0f, animationSpec = ImmediateFadeOutAnimationSpec)
-                        } else {
-                            alpha.animateTo(0f, animationSpec = ImmediateFadeOutAnimationSpec)
-                        }
-                    }
-            }
-
-            Box(
-                modifier = Modifier
-                    .offset { IntOffset(0, thumbOffsetY.roundToInt()) }
-                    .then(
-                        // Recompose opts
-                        if (isThumbVisible && !listState.isScrollInProgress) {
-                            Modifier.draggable(
-                                interactionSource = dragInteractionSource,
-                                orientation = Orientation.Vertical,
-                                state = rememberDraggableState { delta ->
-                                    val newOffsetY = thumbOffsetY + delta
-                                    thumbOffsetY = newOffsetY.coerceIn(
-                                        thumbTopPadding,
-                                        thumbTopPadding + trackHeightPx,
-                                    )
-                                },
-                            )
-                        } else {
-                            Modifier
-                        },
-                    )
-                    .then(
-                        // Exclude thumb from gesture area only when needed
-                        if (isThumbVisible && !isThumbDragged && !listState.isScrollInProgress) {
-                            Modifier // desktop: no system gestures to exclude
-                        } else {
-                            Modifier
-                        },
-                    )
-                    .height(ThumbLength)
-                    .padding(horizontal = 8.dp)
-                    .padding(end = endContentPadding)
-                    .width(ThumbThickness)
-                    .alpha(alpha.value)
-                    .background(color = thumbColor, shape = ThumbShape),
+            val pageScope = rememberCoroutineScope()
+            ScrollerBar(
+                thumbOffsetY = thumbOffsetY,
+                scrollInProgress = stableScrollInProgress,
+                thumbAllowed = thumbAllowed,
+                thumbColor = thumbColor,
+                endContentPadding = endContentPadding,
+                dragInteractionSource = dragInteractionSource,
+                onDrag = { delta ->
+                    thumbOffsetY = (thumbOffsetY + delta).coerceIn(thumbTopPadding, thumbTopPadding + trackHeightPx)
+                },
+                onTrackPress = { towardsEnd ->
+                    val page = PAGE_FRACTION * contentHeight
+                    pageScope.launch { listState.animateScrollBy(if (towardsEnd) page else -page) }
+                },
             )
         }.map { it.measure(scrollerConstraints) }
         val scrollerWidth = scrollerPlaceable.fastMaxBy { it.width }?.width ?: 0
@@ -307,12 +270,6 @@ fun VerticalGridFastScroller(
 
             val dragInteractionSource = remember { MutableInteractionSource() }
             val isThumbDragged by dragInteractionSource.collectIsDraggedAsState()
-            val scrolled = remember {
-                MutableSharedFlow<Unit>(
-                    extraBufferCapacity = 1,
-                    onBufferOverflow = BufferOverflow.DROP_OLDEST,
-                )
-            }
 
             val thumbBottomPadding = with(LocalDensity.current) { bottomContentPadding.toPx() }
             val heightPx = contentHeight.toFloat() -
@@ -341,7 +298,6 @@ fun VerticalGridFastScroller(
                 val rowOffset = scrollAmt - rowNumber * avgSizePerRow
 
                 state.scrollToItem(index = columnCount * rowNumber, scrollOffset = rowOffset.roundToInt())
-                scrolled.tryEmit(Unit)
             }
 
             // When list scrolled
@@ -355,60 +311,23 @@ fun VerticalGridFastScroller(
                 val extraScrollRange = (scrollRange.toFloat() - heightPx).coerceAtLeast(1f)
                 val proportion = (scrollOffset.toFloat() / extraScrollRange).coerceAtMost(1f)
                 thumbOffsetY = trackHeightPx * proportion + thumbTopPadding
-                scrolled.tryEmit(Unit)
             }
 
-            // Thumb alpha
-            val alpha = remember { Animatable(0f) }
-            val isThumbVisible = alpha.value > 0f
-            LaunchedEffect(scrolled, alpha) {
-                scrolled
-                    .sample(0.1.seconds)
-                    .collectLatest {
-                        if (thumbAllowed()) {
-                            alpha.snapTo(1f)
-                            delay(ScrollBarVisibilityDuration)
-                            alpha.animateTo(0f, animationSpec = ImmediateFadeOutAnimationSpec)
-                        } else {
-                            alpha.animateTo(0f, animationSpec = ImmediateFadeOutAnimationSpec)
-                        }
-                    }
-            }
-
-            Box(
-                modifier = Modifier
-                    .offset { IntOffset(0, thumbOffsetY.roundToInt()) }
-                    .then(
-                        // Recompose opts
-                        if (isThumbVisible && !state.isScrollInProgress) {
-                            Modifier.draggable(
-                                interactionSource = dragInteractionSource,
-                                orientation = Orientation.Vertical,
-                                state = rememberDraggableState { delta ->
-                                    val newOffsetY = thumbOffsetY + delta
-                                    thumbOffsetY = newOffsetY.coerceIn(
-                                        thumbTopPadding,
-                                        thumbTopPadding + trackHeightPx,
-                                    )
-                                },
-                            )
-                        } else {
-                            Modifier
-                        },
-                    )
-                    .then(
-                        // Exclude thumb from gesture area only when needed
-                        if (isThumbVisible && !isThumbDragged && !state.isScrollInProgress) {
-                            Modifier // desktop: no system gestures to exclude
-                        } else {
-                            Modifier
-                        },
-                    )
-                    .height(ThumbLength)
-                    .padding(end = endContentPadding)
-                    .width(ThumbThickness)
-                    .alpha(alpha.value)
-                    .background(color = thumbColor, shape = ThumbShape),
+            val pageScope = rememberCoroutineScope()
+            ScrollerBar(
+                thumbOffsetY = thumbOffsetY,
+                scrollInProgress = state.isScrollInProgress,
+                thumbAllowed = thumbAllowed,
+                thumbColor = thumbColor,
+                endContentPadding = endContentPadding,
+                dragInteractionSource = dragInteractionSource,
+                onDrag = { delta ->
+                    thumbOffsetY = (thumbOffsetY + delta).coerceIn(thumbTopPadding, thumbTopPadding + trackHeightPx)
+                },
+                onTrackPress = { towardsEnd ->
+                    val page = PAGE_FRACTION * contentHeight
+                    pageScope.launch { state.animateScrollBy(if (towardsEnd) page else -page) }
+                },
             )
         }.map { it.measure(scrollerConstraints) }
         val scrollerWidth = scrollerPlaceable.fastMaxBy { it.width }?.width ?: 0
@@ -460,12 +379,101 @@ object Scroller {
 }
 
 private val ThumbLength = 48.dp
-private val ThumbThickness = 12.dp
-private val ThumbShape = RoundedCornerShape(ThumbThickness / 2)
-private val ScrollBarVisibilityDuration = 2.seconds
-private val ImmediateFadeOutAnimationSpec = tween<Float>(
-    durationMillis = 250, // desktop: Android's default fade duration
-)
+private val TrackWidth = 14.dp
+private val ThumbThickness = 6.dp
+private val ThumbThicknessHover = 10.dp
+private val ThumbShape = RoundedCornerShape(50)
+private const val RESTING_THUMB_ALPHA = 0.5f
+private const val TRACK_ALPHA = 0.08f
+private val TrackRepeatDelay = 400.milliseconds
+private val TrackRepeatInterval = 120.milliseconds
+
+internal const val THUMB_TAG = "scroller-thumb"
+internal const val TRACK_TAG = "scroller-track"
+
+internal fun thumbAlpha(allowed: Boolean, active: Boolean): Float = when {
+    !allowed -> 0f
+    active -> 1f
+    else -> RESTING_THUMB_ALPHA
+}
+
+/**
+ * The track and thumb both scrollers draw (spec 7 §3 D): always there when the content does not fit, wider under the
+ * pointer, a thumb to drag, and a press on the track that pages towards the pointer, repeating while held.
+ * [thumbOffsetY] is the thumb's top in the scroller's own pixels.
+ */
+@Composable
+private fun ScrollerBar(
+    thumbOffsetY: Float,
+    scrollInProgress: Boolean,
+    thumbAllowed: () -> Boolean,
+    thumbColor: Color,
+    endContentPadding: Dp,
+    dragInteractionSource: MutableInteractionSource,
+    onDrag: (Float) -> Unit,
+    onTrackPress: (towardsEnd: Boolean) -> Unit,
+) {
+    val hoverSource = remember { MutableInteractionSource() }
+    val hovered by hoverSource.collectIsHoveredAsState()
+    val dragged by dragInteractionSource.collectIsDraggedAsState()
+    val alpha by animateFloatAsState(thumbAlpha(thumbAllowed(), hovered || dragged || scrollInProgress))
+    val thickness by animateDpAsState(if (hovered || dragged) ThumbThicknessHover else ThumbThickness)
+    val thumbHeightPx = with(LocalDensity.current) { ThumbLength.toPx() }
+    val currentOffset by rememberUpdatedState(thumbOffsetY)
+    val currentTrackPress by rememberUpdatedState(onTrackPress)
+
+    Box(
+        Modifier
+            .fillMaxHeight()
+            .padding(end = endContentPadding)
+            .width(TrackWidth)
+            .testTag(TRACK_TAG)
+            .hoverable(hoverSource)
+            .background(thumbColor.copy(alpha = TRACK_ALPHA * alpha))
+            .pointerInput(thumbHeightPx) {
+                detectTapGestures(
+                    onPress = { press ->
+                        // null while the pointer is on the thumb, which has its own drag
+                        fun towardsEnd(): Boolean? = when {
+                            press.y < currentOffset -> false
+                            press.y > currentOffset + thumbHeightPx -> true
+                            else -> null
+                        }
+                        val first = towardsEnd() ?: return@detectTapGestures
+                        currentTrackPress(first)
+                        coroutineScope {
+                            val repeat = launch {
+                                delay(TrackRepeatDelay)
+                                // Stops when the thumb reaches the pointer
+                                while (towardsEnd() == first) {
+                                    currentTrackPress(first)
+                                    delay(TrackRepeatInterval)
+                                }
+                            }
+                            tryAwaitRelease()
+                            repeat.cancel()
+                        }
+                    },
+                )
+            },
+    ) {
+        Box(
+            Modifier
+                .align(Alignment.TopEnd)
+                .offset { IntOffset(0, thumbOffsetY.roundToInt()) }
+                .testTag(THUMB_TAG)
+                .draggable(
+                    interactionSource = dragInteractionSource,
+                    orientation = Orientation.Vertical,
+                    state = rememberDraggableState(onDrag),
+                )
+                .height(ThumbLength)
+                .width(thickness)
+                .alpha(alpha)
+                .background(color = thumbColor, shape = ThumbShape),
+        )
+    }
+}
 
 private val LazyListItemInfo.top: Int
     get() = offset
