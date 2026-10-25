@@ -16,6 +16,7 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.pressKey
@@ -104,6 +105,23 @@ class ReaderScreenTest {
         waitUntil(timeoutMillis = 10_000) {
             onAllNodes(hasText("pantalla anterior")).fetchSemanticsNodes().isNotEmpty()
         }
+    }
+
+    @Test
+    fun `the fullscreen button in the bottom bar turns fullscreen on and off`() = runComposeUiTest {
+        val controls = WindowControls(WindowState())
+        openReader(controls)
+        waitForTag("page 1 ready")
+        onNodeWithTag(READER_TAG).performMouseInput { click(center) }
+        waitUntil(timeoutMillis = 5_000) { onAllNodesWithTag(FULLSCREEN_TAG).fetchSemanticsNodes().isNotEmpty() }
+
+        onNodeWithTag(FULLSCREEN_TAG).performClick()
+        waitForIdle()
+        controls.isFullscreen shouldBe true
+
+        onNodeWithTag(FULLSCREEN_TAG).performClick()
+        waitForIdle()
+        controls.isFullscreen shouldBe false
     }
 
     @Test

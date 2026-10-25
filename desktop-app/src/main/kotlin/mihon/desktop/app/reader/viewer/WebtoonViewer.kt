@@ -59,6 +59,7 @@ fun WebtoonViewer(
     chapters: ViewerChapters,
     gap: Boolean,
     sidePaddingPercent: Int,
+    scrollStepPercent: Int,
     cache: DecodedPageCache,
     onPageSelected: (ReaderPage) -> Unit,
     onReachedEnd: () -> Unit,
@@ -98,10 +99,12 @@ fun WebtoonViewer(
     }
     val latestOnReachedEnd by rememberUpdatedState(onReachedEnd)
     val latestOnReachedStart by rememberUpdatedState(onReachedStart)
+    val latestScrollStep by rememberUpdatedState(scrollStepPercent)
     val controller = remember(state) {
         WebtoonController(
             state = state,
             items = { latestItems },
+            scrollStep = { latestScrollStep / 100f },
             isSized = { it in sizes },
             onPastEnd = { latestOnReachedEnd() },
             onPastStart = { latestOnReachedStart() },
@@ -165,6 +168,7 @@ fun WebtoonViewer(
 private class WebtoonController(
     private val state: LazyListState,
     private val items: () -> List<ViewerItem>,
+    private val scrollStep: () -> Float,
     private val isSized: (pageIndex: Int) -> Boolean,
     private val onPastEnd: () -> Unit,
     private val onPastStart: () -> Unit,
@@ -178,8 +182,8 @@ private class WebtoonController(
         when (action) {
             ReaderAction.NextPage -> glideBy(viewport * 0.9f)
             ReaderAction.PreviousPage -> glideBy(-viewport * 0.9f)
-            ReaderAction.ScrollDown -> glideBy(viewport * 0.15f)
-            ReaderAction.ScrollUp -> glideBy(-viewport * 0.15f)
+            ReaderAction.ScrollDown -> glideBy(viewport * scrollStep())
+            ReaderAction.ScrollUp -> glideBy(-viewport * scrollStep())
             ReaderAction.FirstPage -> state.scrollToItem(1)
             ReaderAction.LastPage -> scrollToLastPage()
             else -> Unit

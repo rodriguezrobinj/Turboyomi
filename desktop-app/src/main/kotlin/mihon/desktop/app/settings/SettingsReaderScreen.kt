@@ -53,6 +53,12 @@ object SettingsReaderScreen : SearchableSettings {
                 valueRange = ReaderPreferences.WEBTOON_PADDING_MIN..ReaderPreferences.WEBTOON_PADDING_MAX,
             ),
             Preference.PreferenceItem.SliderPreference(
+                preference = preferences.webtoonScrollStep,
+                title = stringResource(MR.strings.desktop_webtoon_scroll_step),
+                valueText = { "$it %" },
+                valueRange = 5..100,
+            ),
+            Preference.PreferenceItem.SliderPreference(
                 preference = preferences.preloadPages,
                 title = stringResource(MR.strings.desktop_reader_preload_pages),
                 valueRange = 1..10,

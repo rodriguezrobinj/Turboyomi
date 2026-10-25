@@ -49,12 +49,14 @@ class WebtoonAndDualTest {
         mode: ReadingMode,
         dual: ReaderPreferences.DualPageView,
         chapterIndex: Int = 0,
+        scrollStep: Int = 15,
     ): List<Chapter> {
         val graph = startTestApp()
         TestSources.http.pageCount = 6
         val (manga, chapters) = runBlocking { TestLibrary.httpManga(graph) }
         graph.readerPreferences.defaultReadingMode.set(mode.flagValue)
         graph.readerPreferences.dualPageView.set(dual)
+        graph.readerPreferences.webtoonScrollStep.set(scrollStep)
         setContent {
             AppProviders(graph) {
                 CompositionLocalProvider(LocalWindowControls provides WindowControls(WindowState())) {
@@ -156,6 +158,21 @@ class WebtoonAndDualTest {
         val density = onNodeWithTag(WEBTOON_TAG).fetchSemanticsNode().layoutInfo.density.density
         val scrolled = (before - onNodeWithTag("page 1 ready").fetchSemanticsNode().positionInRoot.y) / density
         (scrolled / viewport.value) shouldBe (0.6f plusOrMinus 0.05f)
+    }
+
+    @Test
+    fun `the down arrow scrolls by the configured share of the window`() = runComposeUiTest {
+        open(ReadingMode.WEBTOON, ReaderPreferences.DualPageView.NEVER, scrollStep = 50)
+        waitForTag("page 1 ready")
+        val viewport = onNodeWithTag(WEBTOON_TAG).getBoundsInRoot().height
+        val before = onNodeWithTag("page 1 ready").fetchSemanticsNode().positionInRoot.y
+
+        onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.DirectionDown) }
+        waitForIdle()
+
+        val density = onNodeWithTag(WEBTOON_TAG).fetchSemanticsNode().layoutInfo.density.density
+        val scrolled = (before - onNodeWithTag("page 1 ready").fetchSemanticsNode().positionInRoot.y) / density
+        (scrolled / viewport.value) shouldBe (0.5f plusOrMinus 0.05f)
     }
 
     @Test

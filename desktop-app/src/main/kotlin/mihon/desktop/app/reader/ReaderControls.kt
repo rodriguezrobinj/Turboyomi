@@ -23,11 +23,14 @@ import eu.kanade.presentation.reader.components.ChapterNavigatorType
 import eu.kanade.tachiyomi.ui.reader.ReaderViewModel
 import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
 import mihon.icons.materialsymbols.MaterialSymbols
+import mihon.icons.materialsymbols.rounded.Fullscreen
+import mihon.icons.materialsymbols.rounded.FullscreenExit
 import mihon.icons.materialsymbols.rounded.Settings
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
 
 const val QUICK_SETTINGS_TAG = "reader quick settings"
+const val FULLSCREEN_TAG = "reader fullscreen"
 
 /** Top bar (manga and chapter), bottom bar (page slider, chapters, settings) and the page number (spec 2a §4). */
 @Composable
@@ -42,6 +45,9 @@ fun ReaderControls(
     onNextChapter: () -> Unit,
     onPageIndexChange: (Int) -> Unit,
     onOpenSettings: () -> Unit,
+    // Null outside a window: no button
+    isFullscreen: Boolean?,
+    onToggleFullscreen: () -> Unit,
 ) {
     val chapters = state.viewerChapters
     Box(Modifier.fillMaxSize()) {
@@ -93,6 +99,14 @@ fun ReaderControls(
                             MaterialSymbols.Rounded.Settings,
                             contentDescription = stringResource(MR.strings.action_settings),
                         )
+                    }
+                    if (isFullscreen != null) {
+                        IconButton(onClick = onToggleFullscreen, modifier = Modifier.testTag(FULLSCREEN_TAG)) {
+                            Icon(
+                                with(MaterialSymbols.Rounded) { if (isFullscreen) FullscreenExit else Fullscreen },
+                                contentDescription = stringResource(MR.strings.pref_fullscreen),
+                            )
+                        }
                     }
                 }
             }

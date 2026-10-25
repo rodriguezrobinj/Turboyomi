@@ -171,10 +171,12 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
             else -> key(chapters.currChapter, mode) {
                 if (mode.type == ReadingMode.ViewerType.Webtoon) {
                     val sidePadding by preferences.webtoonSidePadding.collectAsState()
+                    val scrollStep by preferences.webtoonScrollStep.collectAsState()
                     WebtoonViewer(
                         chapters = chapters,
                         gap = mode == ReadingMode.CONTINUOUS_VERTICAL,
                         sidePaddingPercent = sidePadding,
+                        scrollStepPercent = scrollStep,
                         cache = cache,
                         onPageSelected = viewModel::onPageSelected,
                         onReachedEnd = { scope.launch { viewModel.loadNextChapter(from = chapters.currChapter) } },
@@ -234,6 +236,8 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
             onNextChapter = { scope.launch { viewModel.loadNextChapter() } },
             onPageIndexChange = { index -> scope.launch { controller?.goToPage(index) } },
             onOpenSettings = { showSettings = true },
+            isFullscreen = window?.isFullscreen,
+            onToggleFullscreen = { window?.toggleFullscreen() },
         )
         if (showSettings) {
             ReaderQuickSettings(
