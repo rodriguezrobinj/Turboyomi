@@ -135,6 +135,8 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
             .background(ReaderBackground.fromPreference(background).color())
             .testTag(READER_TAG)
             .onPointerEvent(PointerEventType.Move) { lastMouseMove = System.nanoTime() }
+            // A clicked control would keep the focus, and the keys with it, until the controls hide and drop it
+            .onPointerEvent(PointerEventType.Release) { focus.requestFocus() }
             .focusRequester(focus)
             .focusable()
             .onKeyEvent { event ->

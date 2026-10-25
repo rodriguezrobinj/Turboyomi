@@ -7,10 +7,17 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.center
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.window.WindowState
@@ -107,5 +114,21 @@ class ReaderScreenTest {
         }
         onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.DirectionRight) }
         waitForTag("page 2 ready")
+    }
+
+    @Test
+    fun `after a click on a control the arrows still turn pages once the controls hide`() = runComposeUiTest {
+        openReader(WindowControls(WindowState()))
+        waitForTag("page 1 ready")
+        // The middle third shows the controls, once told apart from a double click
+        onNodeWithTag(READER_TAG).performMouseInput { click(center) }
+        waitUntil(timeoutMillis = 5_000) { onAllNodesWithTag(QUICK_SETTINGS_TAG).fetchSemanticsNodes().isNotEmpty() }
+        // A control in the top bar
+        onNodeWithContentDescription(str(MR.strings.action_bookmark)).performMouseInput { click() }
+        waitUntil(timeoutMillis = 10_000) { onAllNodesWithTag(QUICK_SETTINGS_TAG).fetchSemanticsNodes().isEmpty() }
+
+        onNodeWithTag(READER_TAG).assertIsFocused()
+        onRoot().performKeyInput { pressKey(Key.DirectionRight) }
+        waitForTag("page 2")
     }
 }

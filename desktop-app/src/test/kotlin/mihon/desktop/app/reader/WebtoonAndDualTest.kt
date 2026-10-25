@@ -8,17 +8,20 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.unit.height
 import androidx.compose.ui.window.WindowState
 import cafe.adriel.voyager.navigator.Navigator
 import eu.kanade.presentation.util.DefaultNavigatorScreenTransition
 import eu.kanade.presentation.util.Screen
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
 import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
+import io.kotest.matchers.floats.plusOrMinus
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
 import mihon.desktop.app.main.AppProviders
@@ -137,6 +140,22 @@ class WebtoonAndDualTest {
             waitForIdle()
         }
         waitUntil(timeoutMillis = 10_000) { leftChapter() }
+    }
+
+    @Test
+    fun `quick presses of the down arrow add up instead of cutting each other short`() = runComposeUiTest {
+        open(ReadingMode.WEBTOON, ReaderPreferences.DualPageView.NEVER)
+        waitForTag("page 1 ready")
+        val viewport = onNodeWithTag(WEBTOON_TAG).getBoundsInRoot().height
+        val before = onNodeWithTag("page 1 ready").fetchSemanticsNode().positionInRoot.y
+
+        // A held key: each repeat comes before the last glide has ended
+        onNodeWithTag(READER_TAG).performKeyInput { repeat(4) { pressKey(Key.DirectionDown) } }
+        waitForIdle()
+
+        val density = onNodeWithTag(WEBTOON_TAG).fetchSemanticsNode().layoutInfo.density.density
+        val scrolled = (before - onNodeWithTag("page 1 ready").fetchSemanticsNode().positionInRoot.y) / density
+        (scrolled / viewport.value) shouldBe (0.6f plusOrMinus 0.05f)
     }
 
     @Test
