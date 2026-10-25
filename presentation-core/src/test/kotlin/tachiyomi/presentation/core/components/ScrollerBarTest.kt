@@ -1,19 +1,25 @@
 package tachiyomi.presentation.core.components
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.center
 import androidx.compose.ui.test.click
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.unit.dp
@@ -84,5 +90,51 @@ class ScrollerBarTest {
 
         state.firstVisibleItemIndex shouldBe 0
         state.firstVisibleItemScrollOffset shouldBe 0
+    }
+
+    @Test
+    fun `the scroller keeps its own gutter, the rows never reach the thumb`() = runComposeUiTest {
+        setContent {
+            FastScrollLazyColumn(Modifier.size(200.dp, 400.dp)) {
+                items(200) { Box(Modifier.fillMaxWidth().height(50.dp).testTag("row$it")) }
+            }
+        }
+        waitForIdle()
+
+        val row = onNodeWithTag("row0").getBoundsInRoot()
+        val thumb = onNodeWithTag(THUMB_TAG).getBoundsInRoot()
+        (row.right < thumb.left) shouldBe true
+        // Centered in the gutter, not stuck to the window edge
+        (200.dp - thumb.right) shouldBe (thumb.left - row.right)
+    }
+
+    @Test
+    fun `a grid's thumb starts below its top content padding, not under the app bar`() = runComposeUiTest {
+        setContent {
+            FastScrollLazyVerticalGrid(
+                columns = GridCells.Fixed(3),
+                modifier = Modifier.size(300.dp, 400.dp),
+                contentPadding = PaddingValues(top = 64.dp),
+            ) {
+                items(300) { Box(Modifier.height(50.dp)) }
+            }
+        }
+        waitForIdle()
+
+        onNodeWithTag(THUMB_TAG).getBoundsInRoot().top shouldBe 64.dp
+    }
+
+    @Test
+    fun `a scrollbar column works inside an alert dialog`() = runComposeUiTest {
+        setContent {
+            AlertDialog(
+                onDismissRequest = {},
+                confirmButton = {},
+                text = { ScrollbarLazyColumn { items(50) { Text("opcion $it") } } },
+            )
+        }
+        waitForIdle()
+
+        onNodeWithText("opcion 0").assertExists()
     }
 }

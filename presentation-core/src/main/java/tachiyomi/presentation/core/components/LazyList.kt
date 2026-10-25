@@ -2,7 +2,6 @@ package tachiyomi.presentation.core.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
@@ -10,7 +9,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import tachiyomi.presentation.core.util.keyboardScrollable
 
@@ -59,7 +57,6 @@ fun FastScrollLazyColumn(
         listState = state,
         modifier = modifier,
         topContentPadding = contentPadding.calculateTopPadding(),
-        endContentPadding = contentPadding.calculateEndPadding(LocalLayoutDirection.current),
     ) {
         LazyColumn(
             modifier = Modifier.keyboardScrollable(state),

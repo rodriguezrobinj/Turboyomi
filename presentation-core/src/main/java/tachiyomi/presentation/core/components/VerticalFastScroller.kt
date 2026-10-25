@@ -78,11 +78,12 @@ fun VerticalFastScroller(
     thumbColor: Color = MaterialTheme.colorScheme.primary,
     topContentPadding: Dp = Dp.Hairline,
     bottomContentPadding: Dp = Dp.Hairline,
-    endContentPadding: Dp = Dp.Hairline,
     content: @Composable () -> Unit,
 ) {
     SubcomposeLayout(modifier = modifier) { constraints ->
-        val contentPlaceable = subcompose("content", content).map { it.measure(constraints) }
+        val gutter = ScrollerGutter.roundToPx()
+        val contentConstraints = constraints.withoutGutter(gutter)
+        val contentPlaceable = subcompose("content", content).map { it.measure(contentConstraints) }
         val contentHeight = contentPlaceable.fastMaxBy { it.height }?.height ?: 0
         val contentWidth = contentPlaceable.fastMaxBy { it.width }?.width ?: 0
 
@@ -174,7 +175,6 @@ fun VerticalFastScroller(
                 scrollInProgress = stableScrollInProgress,
                 thumbAllowed = thumbAllowed,
                 thumbColor = thumbColor,
-                endContentPadding = endContentPadding,
                 dragInteractionSource = dragInteractionSource,
                 onDrag = { delta ->
                     thumbOffsetY = (thumbOffsetY + delta).coerceIn(thumbTopPadding, thumbTopPadding + trackHeightPx)
@@ -187,12 +187,12 @@ fun VerticalFastScroller(
         }.map { it.measure(scrollerConstraints) }
         val scrollerWidth = scrollerPlaceable.fastMaxBy { it.width }?.width ?: 0
 
-        layout(contentWidth, contentHeight) {
+        layout(contentWidth + gutter, contentHeight) {
             contentPlaceable.fastForEach {
                 it.place(0, 0)
             }
             scrollerPlaceable.fastForEach {
-                it.placeRelative(contentWidth - scrollerWidth, 0)
+                it.placeRelative(contentWidth + gutter - scrollerWidth, 0)
             }
         }
     }
@@ -244,7 +244,6 @@ fun VerticalGridFastScroller(
     thumbColor: Color = MaterialTheme.colorScheme.primary,
     topContentPadding: Dp = Dp.Hairline,
     bottomContentPadding: Dp = Dp.Hairline,
-    endContentPadding: Dp = Dp.Hairline,
     content: @Composable () -> Unit,
 ) {
     val slotSizesSums = rememberColumnWidthSums(
@@ -254,7 +253,9 @@ fun VerticalGridFastScroller(
     )
 
     SubcomposeLayout(modifier = modifier) { constraints ->
-        val contentPlaceable = subcompose("content", content).map { it.measure(constraints) }
+        val gutter = ScrollerGutter.roundToPx()
+        val contentConstraints = constraints.withoutGutter(gutter)
+        val contentPlaceable = subcompose("content", content).map { it.measure(contentConstraints) }
         val contentHeight = contentPlaceable.fastMaxBy { it.height }?.height ?: 0
         val contentWidth = contentPlaceable.fastMaxBy { it.width }?.width ?: 0
 
@@ -279,7 +280,7 @@ fun VerticalGridFastScroller(
             val thumbHeightPx = with(LocalDensity.current) { ThumbLength.toPx() }
             val trackHeightPx = heightPx - thumbHeightPx
 
-            val columnCount = remember(columns) { slotSizesSums(constraints).size.coerceAtLeast(1) }
+            val columnCount = remember(columns) { slotSizesSums(contentConstraints).size.coerceAtLeast(1) }
             val scrollRange = remember(columns) { computeGridScrollRange(state = state, columnCount = columnCount) }
 
             // When thumb dragged
@@ -319,7 +320,6 @@ fun VerticalGridFastScroller(
                 scrollInProgress = state.isScrollInProgress,
                 thumbAllowed = thumbAllowed,
                 thumbColor = thumbColor,
-                endContentPadding = endContentPadding,
                 dragInteractionSource = dragInteractionSource,
                 onDrag = { delta ->
                     thumbOffsetY = (thumbOffsetY + delta).coerceIn(thumbTopPadding, thumbTopPadding + trackHeightPx)
@@ -332,12 +332,12 @@ fun VerticalGridFastScroller(
         }.map { it.measure(scrollerConstraints) }
         val scrollerWidth = scrollerPlaceable.fastMaxBy { it.width }?.width ?: 0
 
-        layout(contentWidth, contentHeight) {
+        layout(contentWidth + gutter, contentHeight) {
             contentPlaceable.fastForEach {
                 it.place(0, 0)
             }
             scrollerPlaceable.fastForEach {
-                it.placeRelative(contentWidth - scrollerWidth, 0)
+                it.placeRelative(contentWidth + gutter - scrollerWidth, 0)
             }
         }
     }
@@ -374,12 +374,18 @@ private fun computeGridScrollRange(state: LazyGridState, columnCount: Int): Int 
 
 private class MutableData<T>(var value: T)
 
+/** The strip the scroller owns at the end: the content is measured without it, so rows never reach the thumb. */
+private fun Constraints.withoutGutter(gutter: Int) = copy(
+    minWidth = (minWidth - gutter).coerceAtLeast(0),
+    maxWidth = if (hasBoundedWidth) (maxWidth - gutter).coerceAtLeast(0) else maxWidth,
+)
+
 object Scroller {
     const val STICKY_HEADER_KEY_PREFIX = "sticky:"
 }
 
 private val ThumbLength = 48.dp
-private val TrackWidth = 18.dp
+private val ScrollerGutter = 18.dp
 private val ThumbThickness = 6.dp
 private val ThumbThicknessHover = 10.dp
 private val ThumbShape = RoundedCornerShape(50)
@@ -407,7 +413,6 @@ private fun ScrollerBar(
     scrollInProgress: Boolean,
     thumbAllowed: () -> Boolean,
     thumbColor: Color,
-    endContentPadding: Dp,
     dragInteractionSource: MutableInteractionSource,
     onDrag: (Float) -> Unit,
     onTrackPress: (towardsEnd: Boolean) -> Unit,
@@ -424,8 +429,7 @@ private fun ScrollerBar(
     Box(
         Modifier
             .fillMaxHeight()
-            .padding(end = endContentPadding)
-            .width(TrackWidth)
+            .width(ScrollerGutter)
             .testTag(TRACK_TAG)
             .hoverable(hoverSource)
             .pointerInput(thumbHeightPx) {

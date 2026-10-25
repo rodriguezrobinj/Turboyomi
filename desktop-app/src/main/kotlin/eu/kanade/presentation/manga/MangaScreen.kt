@@ -360,7 +360,6 @@ private fun MangaScreenSmallImpl(
             VerticalFastScroller(
                 listState = chapterListState,
                 topContentPadding = topPadding,
-                endContentPadding = contentPadding.calculateEndPadding(layoutDirection),
             ) {
                 LazyColumn(
                     modifier = Modifier.fillMaxHeight().keyboardScrollable(chapterListState),

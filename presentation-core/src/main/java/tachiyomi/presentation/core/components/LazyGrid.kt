@@ -23,9 +23,8 @@ fun FastScrollLazyVerticalGrid(
     thumbAllowed: () -> Boolean = { true },
     thumbColor: Color = MaterialTheme.colorScheme.primary,
     contentPadding: PaddingValues = PaddingValues(0.dp),
-    topContentPadding: Dp = Dp.Hairline,
+    topContentPadding: Dp = contentPadding.calculateTopPadding(),
     bottomContentPadding: Dp = Dp.Hairline,
-    endContentPadding: Dp = Dp.Hairline,
     reverseLayout: Boolean = false,
     verticalArrangement: Arrangement.Vertical =
         if (!reverseLayout) Arrangement.Top else Arrangement.Bottom,
@@ -43,7 +42,6 @@ fun FastScrollLazyVerticalGrid(
         thumbColor = thumbColor,
         topContentPadding = topContentPadding,
         bottomContentPadding = bottomContentPadding,
-        endContentPadding = endContentPadding,
     ) {
         LazyVerticalGrid(
             columns = columns,

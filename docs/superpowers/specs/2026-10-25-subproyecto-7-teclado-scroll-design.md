@@ -69,7 +69,7 @@ mapea: es selección de texto.
 Cambios en `VerticalFastScroller` y `VerticalGridFastScroller` (la lógica está duplicada en los dos):
 
 - **Siempre visible** cuando el contenido no cabe: el pulgar queda con `alpha = 0.5` en reposo, y 1 al desplazar, al pasar el puntero o al arrastrar. Sin desvanecimiento.
-- **Carril:** una franja invisible de 18 dp a la derecha, con el pulgar centrado (sin fondo). Con hover el pulgar se ensancha (de 6 a 10 dp).
+- **Carril:** una franja invisible de 18 dp que el scroller se reserva a la derecha: el contenido se mide sin ella, así que las filas y tarjetas nunca llegan al pulgar, que va centrado (sin fondo). El pulgar arranca bajo el padding superior de la lista (la barra de la app), también en las rejillas. Con hover el pulgar se ensancha (de 6 a 10 dp).
 - **Arrastre:** `draggable` sin la condición de visibilidad actual.
 - **Clic en el carril** fuera del pulgar: salta una página (0,9 del alto) hacia ese lado, repetido mientras se mantiene pulsado hasta que el pulgar alcanza el puntero.
 - `ScrollbarLazyColumn` pasa a envolver el mismo scroller que `FastScrollLazyColumn`. `Scrollbar.kt` (`drawVerticalScrollbar`) se queda: solo lo usa su `@Preview`.
