@@ -1125,7 +1125,7 @@
     <string name="desktop_tracker_login_done">Signed in</string>
     <string name="desktop_tracker_login_failed">Couldn\'t sign in</string>
     <string name="desktop_tracker_login_expired">That sign-in was opened before the app closed; start it again from Settings › Tracking</string>
-    <string name="desktop_legacy_migration_failed">Couldn\'t bring over MangaReader\'s data; close any other copy of the app and restart it</string>
+    <string name="desktop_legacy_migration_failed">Couldn\'t bring over MangaReader\'s data; close any other copy of the app and open it again</string>
     <string name="desktop_tracker_protocol_failed">The browser can\'t come back to the app, so the services that sign in through it won\'t work</string>
     <string name="desktop_instance_unreachable">Another window of the app is already open but isn\'t responding. Close it from the Task Manager and try again.</string>
     <string name="desktop_clear_image_cache">Clear image cache</string>

@@ -27,14 +27,12 @@ object Startup {
         }
     }
 
-    /** Something the user must know before the window opens; the start goes on once they close it. */
-    fun warn(message: String) {
-        JOptionPane.showMessageDialog(null, message, AppDirs.APP_NAME, JOptionPane.WARNING_MESSAGE)
-    }
-
     /** The app can't start: says why and where the log is, then exits with 1. Never leaves a windowless process. */
-    fun fatal(message: String, logs: Path): Nothing {
-        JOptionPane.showMessageDialog(null, "$message\n\nLog: $logs", AppDirs.APP_NAME, JOptionPane.ERROR_MESSAGE)
+    fun fatal(message: String, logs: Path): Nothing = stop("$message\n\nLog: $logs")
+
+    /** The app can't start and there is no log to point at: says why, then exits with 1. */
+    fun stop(message: String): Nothing {
+        JOptionPane.showMessageDialog(null, message, AppDirs.APP_NAME, JOptionPane.ERROR_MESSAGE)
         exitProcess(1)
     }
 }

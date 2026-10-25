@@ -200,8 +200,14 @@ val jlinkRuntime by tasks.registering(Exec::class) {
         val extra = "java.desktop,java.net.http,java.sql,jdk.crypto.ec,jdk.unsupported,jdk.charsets,jdk.localedata," +
             "java.naming,java.management"
         commandLine(
-            jdk.get().resolve("bin/jlink.exe").path, "--add-modules", "$deps,$extra", "--strip-debug",
-            "--no-header-files", "--no-man-pages", "--output", runtime.get().asFile.path,
+            jdk.get().resolve("bin/jlink.exe").path,
+            "--add-modules",
+            "$deps,$extra",
+            "--strip-debug",
+            "--no-header-files",
+            "--no-man-pages",
+            "--output",
+            runtime.get().asFile.path,
         )
     }
 }

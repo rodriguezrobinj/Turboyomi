@@ -105,6 +105,17 @@ class LegacyMigrationTest {
     }
 
     @Test
+    fun `the start after a failed one tries again, once the folder is free`() {
+        oldSettings(storageDir = null)
+        val db = local.resolve("MangaReader/db").createDirectories().resolve("open.db").apply { writeText("x") }
+        RandomAccessFile(db.toFile(), "rw").use { LegacyMigration.run(env) { documents } }
+
+        LegacyMigration.run(env) { documents } shouldBe LegacyMigration.Result.Migrated
+
+        local.resolve("Turboyomi/db/open.db").readText() shouldBe "x"
+    }
+
+    @Test
     fun `the development home skips the migration`() {
         oldSettings(storageDir = null)
 
