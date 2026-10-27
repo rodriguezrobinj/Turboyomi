@@ -61,6 +61,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import mihon.desktop.app.browser.EmbeddedBrowser
+import mihon.desktop.app.main.ShortcutHelp
 import mihon.desktop.app.platform.ExitHooks
 import mihon.desktop.app.platform.FileDialogs
 import mihon.desktop.app.platform.LocalWindowControls
@@ -203,11 +204,18 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
         }
     }
 
-    // The controls, a dialog (quick settings) or another viewer stop it too
-    LaunchedEffect(state.menuVisible) {
-        if (state.menuVisible) stopAutoScroll()
+    // The controls, a dialog (quick settings, the keyboard help) or another viewer stop it too
+    LaunchedEffect(state.menuVisible, ShortcutHelp.open) {
+        if (state.menuVisible || ShortcutHelp.open) stopAutoScroll()
     }
-    DisposableEffect(mode) { onDispose { stopAutoScroll() } }
+    // The keyboard help shows this viewer's keys while the reader is open
+    DisposableEffect(mode) {
+        ShortcutHelp.readerViewer = mode.type
+        onDispose {
+            stopAutoScroll()
+            ShortcutHelp.readerViewer = null
+        }
+    }
 
     Box(
         Modifier

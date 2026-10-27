@@ -14,6 +14,7 @@ class ShortcutsTest {
         shortcutFor(Key.F5, ctrl = false, alt = false, shift = false) shouldBe Shortcut.Refresh
         shortcutFor(Key.F11, ctrl = false, alt = false, shift = false) shouldBe Shortcut.Fullscreen
         shortcutFor(Key.Comma, ctrl = true, alt = false, shift = false) shouldBe Shortcut.Settings
+        shortcutFor(Key.F1, ctrl = false, alt = false, shift = false) shouldBe Shortcut.Help
     }
 
     @Test
@@ -30,6 +31,7 @@ class ShortcutsTest {
         Shortcut.GlobalSearch.beforeFocusedComponent shouldBe true
         Shortcut.Refresh.beforeFocusedComponent shouldBe true
         Shortcut.Settings.beforeFocusedComponent shouldBe true
+        Shortcut.Help.beforeFocusedComponent shouldBe true
     }
 
     @Test

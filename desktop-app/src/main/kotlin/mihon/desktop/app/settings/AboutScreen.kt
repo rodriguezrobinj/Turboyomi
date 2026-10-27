@@ -9,6 +9,7 @@ import eu.kanade.presentation.more.settings.screen.SearchableSettings
 import eu.kanade.tachiyomi.util.system.openInBrowser
 import kotlinx.coroutines.launch
 import mihon.app.di.appGraph
+import mihon.desktop.app.main.ShortcutHelp
 import mihon.desktop.app.update.AppReleases
 import mihon.desktop.core.DesktopBuildInfo
 import tachiyomi.i18n.MR
@@ -39,6 +40,11 @@ object AboutScreen : SearchableSettings {
             Preference.PreferenceItem.SwitchPreference(
                 preference = graph.basePreferences.autoCheckAppUpdates,
                 title = stringResource(MR.strings.desktop_update_check_auto),
+            ),
+            Preference.PreferenceItem.TextPreference(
+                title = stringResource(MR.strings.desktop_help_title),
+                subtitle = stringResource(MR.strings.desktop_help_keys_help),
+                onClick = { ShortcutHelp.open = true },
             ),
             Preference.PreferenceItem.TextPreference(
                 title = "GitHub",

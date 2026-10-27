@@ -49,5 +49,9 @@ object AppEvents {
         Shortcut.NextCategory -> _categoryStep.tryEmit(1)
         Shortcut.PreviousCategory -> _categoryStep.tryEmit(-1)
         Shortcut.Fullscreen -> _fullscreen.tryEmit(Unit)
+        Shortcut.Help -> {
+            ShortcutHelp.open = true
+            true
+        }
     }
 }

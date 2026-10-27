@@ -34,6 +34,7 @@ import mihon.desktop.app.main.AppEvents
 import mihon.desktop.app.main.AppProviders
 import mihon.desktop.app.main.ConnectWindowBack
 import mihon.desktop.app.main.Shortcut
+import mihon.desktop.app.main.ShortcutHelp
 import mihon.desktop.app.platform.LocalWindowControls
 import mihon.desktop.app.platform.WindowControls
 import mihon.desktop.app.reader.viewer.WEBTOON_TAG
@@ -309,6 +310,26 @@ class WebtoonAndDualTest {
         onAllNodes(hasText("pantalla anterior")).fetchSemanticsNodes().isNotEmpty() shouldBe true
         mainClock.autoAdvance = true
     }
+
+    @Test
+    fun `the reader tells the help its viewer, and opening the help stops the automatic scrolling`() =
+        runComposeUiTest {
+            open(ReadingMode.WEBTOON, ReaderPreferences.DualPageView.NEVER)
+            waitForTag("page 1 ready")
+            ShortcutHelp.readerViewer shouldBe ReadingMode.ViewerType.Webtoon
+            try {
+                mainClock.autoAdvance = false
+                onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.S) }
+                mainClock.advanceTimeBy(300)
+                onNodeWithTag(AUTOSCROLL_TAG).assertExists()
+                runOnUiThread { ShortcutHelp.open = true }
+                mainClock.advanceTimeBy(100)
+                onNodeWithTag(AUTOSCROLL_TAG).assertDoesNotExist()
+            } finally {
+                ShortcutHelp.open = false
+                mainClock.autoAdvance = true
+            }
+        }
 
     @Test
     fun `the automatic scrolling stops by itself after the last chapter`() = runComposeUiTest {

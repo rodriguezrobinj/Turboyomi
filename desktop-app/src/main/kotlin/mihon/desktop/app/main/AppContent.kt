@@ -133,6 +133,10 @@ fun AppContent(graph: AppGraph, crash: Throwable?, onRestart: () -> Unit) {
                     EmbeddedBrowserConsent(graph.cefInstaller) {
                         CefRuntime.startAsync(graph.appDirs.cef, graph.appDirs.cefCache)
                     }
+                    // F1 or Settings › About (spec 8a §3 C), over whatever screen is open
+                    if (ShortcutHelp.open) {
+                        ShortcutHelpDialog(ShortcutHelp.readerViewer) { ShortcutHelp.open = false }
+                    }
                 }
             }
         }
