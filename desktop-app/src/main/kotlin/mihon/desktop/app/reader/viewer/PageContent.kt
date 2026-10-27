@@ -40,6 +40,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import mihon.desktop.app.reader.ImageScale
+import mihon.desktop.app.reader.LocalPageColorFilter
 import mihon.desktop.app.reader.ReaderAction
 import mihon.desktop.app.reader.image.DecodedPage
 import mihon.desktop.app.reader.image.DecodedPageCache
@@ -169,9 +170,16 @@ private fun PageError(page: ReaderPage, onRetry: (ReaderPage) -> Unit, modifier:
 
 @Composable
 fun DecodedPageImage(page: DecodedPage, contentScale: ContentScale, modifier: Modifier) {
+    val filter = LocalPageColorFilter.current
     when (page) {
         is DecodedPage.Still -> if (page.tiles.size == 1) {
-            Image(page.tiles.single(), contentDescription = null, contentScale = contentScale, modifier = modifier)
+            Image(
+                page.tiles.single(),
+                contentDescription = null,
+                contentScale = contentScale,
+                modifier = modifier,
+                colorFilter = filter,
+            )
         } else {
             // Very tall page: its strips stacked, each as wide as the page
             Column(modifier) {
@@ -181,6 +189,7 @@ fun DecodedPageImage(page: DecodedPage, contentScale: ContentScale, modifier: Mo
                         contentDescription = null,
                         contentScale = ContentScale.FillWidth,
                         modifier = Modifier.fillMaxWidth(),
+                        colorFilter = filter,
                     )
                 }
             }
@@ -193,7 +202,13 @@ fun DecodedPageImage(page: DecodedPage, contentScale: ContentScale, modifier: Mo
                     frame = (frame + 1) % page.frames.size
                 }
             }
-            Image(page.frames[frame], contentDescription = null, contentScale = contentScale, modifier = modifier)
+            Image(
+                page.frames[frame],
+                contentDescription = null,
+                contentScale = contentScale,
+                modifier = modifier,
+                colorFilter = filter,
+            )
         }
     }
 }
