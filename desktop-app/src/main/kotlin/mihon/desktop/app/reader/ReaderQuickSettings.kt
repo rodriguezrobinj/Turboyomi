@@ -121,6 +121,7 @@ fun ReaderQuickSettings(
                         titleStyle = MaterialTheme.typography.titleSmall,
                     )
                 }
+                WidePages(preferences, webtoon = mode.type == ReadingMode.ViewerType.Webtoon)
                 ImageFilters(preferences)
             }
         }
@@ -197,4 +198,43 @@ private fun FilterSlider(label: StringResource, value: Int, range: IntRange, onC
         steps = 0,
         titleStyle = MaterialTheme.typography.titleSmall,
     )
+}
+
+/** Crop, split and turn for the mode's kind of viewer (spec 8c); splitting and turning exclude each other, as in Mihon. */
+@Composable
+private fun WidePages(preferences: ReaderPreferences, webtoon: Boolean) {
+    val crop = if (webtoon) preferences.cropBordersWebtoon else preferences.cropBorders
+    val split = if (webtoon) preferences.dualPageSplitWebtoon else preferences.dualPageSplitPaged
+    val splitInvert = if (webtoon) preferences.dualPageInvertWebtoon else preferences.dualPageInvertPaged
+    val rotate = if (webtoon) preferences.dualPageRotateToFitWebtoon else preferences.dualPageRotateToFit
+    val rotateInvert = if (webtoon) {
+        preferences.dualPageRotateToFitInvertWebtoon
+    } else {
+        preferences.dualPageRotateToFitInvert
+    }
+    val cropOn by crop.collectAsState()
+    val splitOn by split.collectAsState()
+    val splitInvertOn by splitInvert.collectAsState()
+    val rotateOn by rotate.collectAsState()
+    val rotateInvertOn by rotateInvert.collectAsState()
+    Group(MR.strings.pref_category_display) {
+        Chip(MR.strings.pref_crop_borders, selected = cropOn) { crop.set(!cropOn) }
+        Chip(MR.strings.pref_dual_page_split, selected = splitOn) {
+            // Read before the write: the state may already hold the new value after it
+            val on = !splitOn
+            split.set(on)
+            if (on) rotate.set(false)
+        }
+        if (splitOn) {
+            Chip(MR.strings.pref_dual_page_invert, selected = splitInvertOn) { splitInvert.set(!splitInvertOn) }
+        }
+        Chip(MR.strings.pref_page_rotate, selected = rotateOn) {
+            val on = !rotateOn
+            rotate.set(on)
+            if (on) split.set(false)
+        }
+        if (rotateOn) {
+            Chip(MR.strings.pref_page_rotate_invert, selected = rotateInvertOn) { rotateInvert.set(!rotateInvertOn) }
+        }
+    }
 }

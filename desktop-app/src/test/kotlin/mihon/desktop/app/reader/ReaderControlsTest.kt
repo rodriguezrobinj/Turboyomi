@@ -211,6 +211,32 @@ class ReaderControlsTest {
         }
 
     @Test
+    fun `the quick settings crop borders and split or turn wide pages, one or the other`() = runComposeUiTest {
+        open()
+        waitForTag("page 1 ready")
+        onNodeWithTag(READER_TAG).performMouseInput { click(center) }
+        waitForTag(QUICK_SETTINGS_TAG)
+        onNodeWithTag(QUICK_SETTINGS_TAG).performClick()
+        val preferences = startTestApp().readerPreferences
+        try {
+            onNodeWithText(str(MR.strings.pref_crop_borders)).performScrollTo().performClick()
+            waitForIdle()
+            preferences.cropBorders.get() shouldBe true
+            onNodeWithText(str(MR.strings.pref_page_rotate)).performScrollTo().performClick()
+            waitForIdle()
+            onNodeWithText(str(MR.strings.pref_dual_page_split)).performScrollTo().performClick()
+            waitForIdle()
+            // Splitting turns the rotation off, as in Mihon
+            preferences.dualPageSplitPaged.get() shouldBe true
+            preferences.dualPageRotateToFit.get() shouldBe false
+        } finally {
+            preferences.cropBorders.set(false)
+            preferences.dualPageSplitPaged.set(false)
+            preferences.dualPageRotateToFit.set(false)
+        }
+    }
+
+    @Test
     fun `a chapter whose page list fails offers retry and opening it in WebView`() = runComposeUiTest {
         open(failPageList = true)
         waitFor("José")
