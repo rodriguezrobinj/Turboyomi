@@ -19,6 +19,7 @@ import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.withKeyDown
 import androidx.compose.ui.window.WindowState
 import cafe.adriel.voyager.navigator.Navigator
 import eu.kanade.presentation.util.DefaultNavigatorScreenTransition
@@ -106,6 +107,35 @@ class ReaderControlsTest {
             onAllNodes(hasTestTag("page 3 ready") and inVerticalPager).fetchSemanticsNodes().isNotEmpty()
         }
     }
+
+    @Test
+    fun `ctrl plus and minus zoom the page with a note, ctrl+0 goes back, and a new page starts at 100 %`() =
+        runComposeUiTest {
+            open()
+            fun ctrl(key: Key) =
+                onNodeWithTag(READER_TAG).performKeyInput { withKeyDown(Key.CtrlLeft) { pressKey(key) } }
+            fun zoomNote(percent: Int) = "${str(MR.strings.desktop_zoom)}: $percent %"
+
+            waitForTag("page 1 ready")
+            ctrl(Key.Plus)
+            waitFor(zoomNote(125))
+            ctrl(Key.Plus)
+            waitFor(zoomNote(156))
+            ctrl(Key.Minus)
+            waitFor(zoomNote(125))
+            ctrl(Key.Zero)
+            waitFor(zoomNote(100))
+
+            // Never past 5×
+            repeat(10) { ctrl(Key.Plus) }
+            waitFor(zoomNote(500))
+
+            // The next page starts over
+            onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.DirectionRight) }
+            waitForTag("page 2 ready")
+            ctrl(Key.Plus)
+            waitFor(zoomNote(125))
+        }
 
     @Test
     fun `a chapter whose page list fails offers retry and opening it in WebView`() = runComposeUiTest {

@@ -122,4 +122,7 @@ interface ViewerController {
      * at the end. Webtoon only; the paged viewers do nothing.
      */
     suspend fun autoScroll(speed: () -> Float) {}
+
+    /** Paged: zooms the page or pages on screen and returns the new scale; null where there's nothing to zoom. */
+    suspend fun zoom(action: ReaderAction): Float? = null
 }

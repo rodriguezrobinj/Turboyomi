@@ -931,6 +931,7 @@
     <string name="desktop_webtoon_scroll_step">Avance con las flechas (webtoon)</string>
     <string name="desktop_autoscroll">Desplazamiento automático</string>
     <string name="desktop_webtoon_autoscroll_speed">Velocidad del desplazamiento automático (webtoon)</string>
+    <string name="desktop_zoom">Zoom</string>
     <string name="desktop_image_copied">Imagen copiada</string>
     <string name="desktop_update_progress">Actualizando %1$d/%2$d · %3$s</string>
     <string name="desktop_and_more">y %1$d más</string>

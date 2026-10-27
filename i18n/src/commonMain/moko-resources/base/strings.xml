@@ -1157,6 +1157,7 @@
     <string name="desktop_webtoon_scroll_step">Arrow key scroll (webtoon)</string>
     <string name="desktop_autoscroll">Automatic scrolling</string>
     <string name="desktop_webtoon_autoscroll_speed">Automatic scrolling speed (webtoon)</string>
+    <string name="desktop_zoom">Zoom</string>
     <string name="desktop_image_copied">Image copied</string>
     <string name="desktop_update_progress">Updating %1$d/%2$d · %3$s</string>
     <string name="desktop_and_more">and %1$d more</string>

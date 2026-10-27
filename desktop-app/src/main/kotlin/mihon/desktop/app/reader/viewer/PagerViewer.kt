@@ -29,6 +29,9 @@ import eu.kanade.tachiyomi.ui.reader.model.ReaderChapter
 import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
 import eu.kanade.tachiyomi.ui.reader.model.ViewerChapters
 import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import mihon.desktop.app.reader.ImageScale
@@ -65,6 +68,7 @@ fun PagerViewer(
     val current = chapters.currChapter
     val pages = current.pages.orEmpty()
     val sizes = remember { mutableStateMapOf<PageKey, IntSize>() }
+    val zoomers = remember { mutableMapOf<PageKey, PageZoomer>() }
     val spreads = if (dual && mode.direction == ReadingMode.Direction.Horizontal) {
         pairPages(pages.size, { sizes[pages[it].pageKey]?.let { s -> s.width > s.height } ?: false }, shifted)
     } else {
@@ -93,7 +97,7 @@ fun PagerViewer(
     }
     val latestOnPastEnd by rememberUpdatedState(onPastEnd)
     val controller = remember(state) {
-        PagerController(state, { latestItems }, { latestCurrent }) { latestOnPastEnd(it) }
+        PagerController(state, { latestItems }, { latestCurrent }, { zoomers.values.toList() }) { latestOnPastEnd(it) }
     }
     LaunchedEffect(controller) { onController(controller) }
 
@@ -128,6 +132,9 @@ fun PagerViewer(
                         onSize = { sizes[page.pageKey] = it },
                         onSave = onSave,
                         onCopy = onCopy,
+                        onZoomer = { zoomer ->
+                            if (zoomer == null) zoomers.remove(page.pageKey) else zoomers[page.pageKey] = zoomer
+                        },
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -149,6 +156,7 @@ private class PagerController(
     private val state: PagerState,
     private val items: () -> List<ViewerItem>,
     private val current: () -> ReaderChapter,
+    private val zoomers: () -> List<PageZoomer>,
     private val onPastEnd: (forward: Boolean) -> Unit,
 ) : ViewerController {
     override suspend fun perform(action: ReaderAction) {
@@ -174,5 +182,10 @@ private class PagerController(
 
     override suspend fun goToPage(index: Int) {
         state.scrollToPage(items().itemOfPage(current(), index))
+    }
+
+    // Both pages of a spread at once
+    override suspend fun zoom(action: ReaderAction): Float? = coroutineScope {
+        zoomers().map { async { it.zoom(action) } }.awaitAll().firstOrNull()
     }
 }

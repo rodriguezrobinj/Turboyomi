@@ -79,6 +79,7 @@ import tachiyomi.presentation.core.screens.EmptyScreen
 import tachiyomi.presentation.core.screens.EmptyScreenAction
 import tachiyomi.presentation.core.screens.LoadingScreen
 import tachiyomi.presentation.core.util.collectAsState
+import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.seconds
 
 const val READER_TAG = "reader"
@@ -159,6 +160,13 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
         showNotice("${context.stringResource(setting.title)}: $value ${setting.unit}")
     }
 
+    fun zoom(action: ReaderAction) {
+        scope.launch {
+            val scale = controller?.zoom(action) ?: return@launch
+            showNotice("${context.stringResource(MR.strings.desktop_zoom)}: ${(scale * 100).roundToInt()} %")
+        }
+    }
+
     fun stopAutoScroll() {
         autoScrollJob?.cancel()
         autoScrollJob = null
@@ -184,7 +192,8 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
         when (action) {
             ReaderAction.ToggleMenu -> viewModel.showMenus(!state.menuVisible)
             ReaderAction.ToggleAutoScroll -> toggleAutoScroll()
-            ReaderAction.ZoomIn, ReaderAction.ZoomOut, ReaderAction.ZoomReset,
+            ReaderAction.ZoomIn, ReaderAction.ZoomOut, ReaderAction.ZoomReset ->
+                if (mode.type == ReadingMode.ViewerType.Webtoon) adjust(action) else zoom(action)
             ReaderAction.ScrollStepUp, ReaderAction.ScrollStepDown,
             ReaderAction.AutoScrollFaster, ReaderAction.AutoScrollSlower,
             -> adjust(action)
