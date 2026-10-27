@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -17,10 +19,12 @@ import androidx.compose.ui.window.Dialog
 import dev.icerock.moko.resources.StringResource
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
 import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
+import tachiyomi.core.common.preference.getAndSet
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.components.BaseSliderItem
 import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.util.collectAsState
+import tachiyomi.presentation.core.util.keyboardScrollable
 
 /**
  * The reader's quick settings (spec 2a §4): mode for this manga, scale, background, dual pages, and the webtoon's
@@ -47,7 +51,12 @@ fun ReaderQuickSettings(
             tonalElevation = 6.dp,
             modifier = Modifier.widthIn(max = 560.dp),
         ) {
-            Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            // Taller than a low window with every filter on
+            val scroll = rememberScrollState()
+            Column(
+                Modifier.keyboardScrollable(scroll).verticalScroll(scroll).padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
                 Group(MR.strings.pref_viewer_type) {
                     ReadingMode.entries.filter { it != ReadingMode.DEFAULT }.forEach {
                         Chip(it.stringRes, selected = it == mode) { onModeChange(it) }
@@ -112,6 +121,7 @@ fun ReaderQuickSettings(
                         titleStyle = MaterialTheme.typography.titleSmall,
                     )
                 }
+                ImageFilters(preferences)
             }
         }
     }
@@ -128,4 +138,63 @@ private fun Group(title: StringResource, content: @Composable () -> Unit) {
 @Composable
 private fun Chip(label: StringResource, selected: Boolean, onClick: () -> Unit) {
     FilterChip(selected = selected, onClick = onClick, label = { Text(stringResource(label)) })
+}
+
+/** Mihon's color filter page (ColorFilterPage), as one group; the brightness only dims on the desktop (spec 8b). */
+@Composable
+private fun ImageFilters(preferences: ReaderPreferences) {
+    val customBrightness by preferences.customBrightness.collectAsState()
+    val customBrightnessValue by preferences.customBrightnessValue.collectAsState()
+    val colorFilter by preferences.colorFilter.collectAsState()
+    val colorFilterValue by preferences.colorFilterValue.collectAsState()
+    val colorFilterMode by preferences.colorFilterMode.collectAsState()
+    val grayscale by preferences.grayscale.collectAsState()
+    val invertedColors by preferences.invertedColors.collectAsState()
+    Group(MR.strings.custom_filter) {
+        Chip(MR.strings.pref_custom_brightness, selected = customBrightness) {
+            preferences.customBrightness.set(!customBrightness)
+        }
+        Chip(MR.strings.pref_custom_color_filter, selected = colorFilter) { preferences.colorFilter.set(!colorFilter) }
+        Chip(MR.strings.pref_grayscale, selected = grayscale) { preferences.grayscale.set(!grayscale) }
+        Chip(MR.strings.pref_inverted_colors, selected = invertedColors) {
+            preferences.invertedColors.set(!invertedColors)
+        }
+    }
+    if (customBrightness) {
+        FilterSlider(MR.strings.pref_custom_brightness, customBrightnessValue.coerceAtMost(0), -75..0) {
+            preferences.customBrightnessValue.set(it)
+        }
+    }
+    if (colorFilter) {
+        ColorChannels.forEach { (label, shift) ->
+            FilterSlider(label, colorFilterValue ushr shift and 0xFF, 0..255) { value ->
+                preferences.colorFilterValue.getAndSet { (it and (0xFF shl shift).inv()) or (value shl shift) }
+            }
+        }
+        Group(MR.strings.pref_color_filter_mode) {
+            ReaderPreferences.ColorFilterMode.forEachIndexed { index, (label, _) ->
+                Chip(label, selected = colorFilterMode == index) { preferences.colorFilterMode.set(index) }
+            }
+        }
+    }
+}
+
+// The color filter's ARGB channels and where each sits in the Int
+private val ColorChannels = listOf(
+    MR.strings.color_filter_r_value to 16,
+    MR.strings.color_filter_g_value to 8,
+    MR.strings.color_filter_b_value to 0,
+    MR.strings.color_filter_a_value to 24,
+)
+
+@Composable
+private fun FilterSlider(label: StringResource, value: Int, range: IntRange, onChange: (Int) -> Unit) {
+    BaseSliderItem(
+        value = value,
+        valueRange = range,
+        title = stringResource(label),
+        onChange = onChange,
+        steps = 0,
+        titleStyle = MaterialTheme.typography.titleSmall,
+    )
 }

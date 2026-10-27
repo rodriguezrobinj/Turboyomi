@@ -17,6 +17,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performMouseInput
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.test.withKeyDown
@@ -28,6 +29,7 @@ import eu.kanade.presentation.util.DefaultNavigatorScreenTransition
 import eu.kanade.presentation.util.Screen
 import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
 import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import kotlinx.coroutines.runBlocking
 import mihon.desktop.app.browser.EmbeddedBrowser
@@ -166,6 +168,22 @@ class ReaderControlsTest {
                 preferences.invertedColors.set(false)
             }
         }
+
+    @Test
+    fun `the quick settings switch the color filter on and show its sliders`() = runComposeUiTest {
+        open()
+        waitForTag("page 1 ready")
+        onNodeWithTag(READER_TAG).performMouseInput { click(center) }
+        waitForTag(QUICK_SETTINGS_TAG)
+        onNodeWithTag(QUICK_SETTINGS_TAG).performClick()
+        try {
+            onNodeWithText(str(MR.strings.pref_custom_color_filter)).performScrollTo().performClick()
+            waitFor(str(MR.strings.color_filter_r_value))
+            startTestApp().readerPreferences.colorFilter.get() shouldBe true
+        } finally {
+            startTestApp().readerPreferences.colorFilter.set(false)
+        }
+    }
 
     @Test
     fun `a chapter whose page list fails offers retry and opening it in WebView`() = runComposeUiTest {
