@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -24,6 +25,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -42,6 +44,7 @@ import kotlinx.coroutines.withContext
 import mihon.desktop.app.reader.ImageScale
 import mihon.desktop.app.reader.LocalPageColorFilter
 import mihon.desktop.app.reader.ReaderAction
+import mihon.desktop.app.reader.image.DecodeOptions
 import mihon.desktop.app.reader.image.DecodedPage
 import mihon.desktop.app.reader.image.DecodedPageCache
 import mihon.desktop.app.reader.image.PageDecoder
@@ -79,12 +82,16 @@ fun PageContent(
     LaunchedEffect(page) { page.chapter.pageLoader?.loadPage(page) }
 
     val key = page.pageKey
-    val decoded by produceState<Result<DecodedPage>?>(cache.get(key)?.let(Result.Companion::success), status) {
-        if (value?.isSuccess == true || status != Page.State.Ready) return@produceState
-        val stream = page.stream ?: return@produceState
-        value = withContext(Dispatchers.IO) {
-            runCatching { PageDecoder.decode(stream().use { it.readBytes() }) }
-        }.onSuccess { cache.put(key, it) }
+    val options = LocalDecodeOptions.current
+    // A new cache comes with new decode options (crop, turn): decoded again from scratch then
+    val decoded by key(cache) {
+        produceState<Result<DecodedPage>?>(cache.get(key)?.let(Result.Companion::success), status) {
+            if (value?.isSuccess == true || status != Page.State.Ready) return@produceState
+            val stream = page.stream ?: return@produceState
+            value = withContext(Dispatchers.IO) {
+                runCatching { PageDecoder.decode(stream().use { it.readBytes() }, options) }
+            }.onSuccess { cache.put(key, it) }
+        }
     }
 
     // The page's width, for the click zones of zoomable's onTap, which only gives the offset
@@ -232,3 +239,6 @@ private suspend fun ZoomState.zoomBy(action: ReaderAction, layout: IntSize): Flo
     changeScale(target, Offset(layout.width / 2f, layout.height / 2f))
     return target
 }
+
+/** How the reader decodes its pages for the mode it's in (spec 8c): its cache is made again when they change. */
+val LocalDecodeOptions: ProvidableCompositionLocal<DecodeOptions> = staticCompositionLocalOf { DecodeOptions() }

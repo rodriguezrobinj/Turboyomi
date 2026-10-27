@@ -68,7 +68,9 @@ import mihon.desktop.app.main.ShortcutHelp
 import mihon.desktop.app.platform.ExitHooks
 import mihon.desktop.app.platform.FileDialogs
 import mihon.desktop.app.platform.LocalWindowControls
+import mihon.desktop.app.reader.image.DecodeOptions
 import mihon.desktop.app.reader.image.DecodedPageCache
+import mihon.desktop.app.reader.viewer.LocalDecodeOptions
 import mihon.desktop.app.reader.viewer.PagerViewer
 import mihon.desktop.app.reader.viewer.ViewerController
 import mihon.desktop.app.reader.viewer.WebtoonViewer
@@ -116,7 +118,6 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
     val scope = rememberCoroutineScope()
     val focus = remember { FocusRequester() }
     var controller by remember { mutableStateOf<ViewerController?>(null) }
-    val cache = remember { DecodedPageCache() }
     val mode = remember(state.manga) { viewModel.getMangaReadingMode() }
     val scale by preferences.imageScaleType.collectAsState()
     val background by preferences.readerTheme.collectAsState()
@@ -133,6 +134,23 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
     val colorFilterMode by preferences.colorFilterMode.collectAsState()
     val grayscale by preferences.grayscale.collectAsState()
     val invertedColors by preferences.invertedColors.collectAsState()
+    val webtoon = mode.type == ReadingMode.ViewerType.Webtoon
+    val cropPaged by preferences.cropBorders.collectAsState()
+    val cropWebtoon by preferences.cropBordersWebtoon.collectAsState()
+    val rotatePaged by preferences.dualPageRotateToFit.collectAsState()
+    val rotatePagedInvert by preferences.dualPageRotateToFitInvert.collectAsState()
+    val rotateWebtoon by preferences.dualPageRotateToFitWebtoon.collectAsState()
+    val rotateWebtoonInvert by preferences.dualPageRotateToFitInvertWebtoon.collectAsState()
+    val splitPaged by preferences.dualPageSplitPaged.collectAsState()
+    val splitWebtoon by preferences.dualPageSplitWebtoon.collectAsState()
+    val split = if (webtoon) splitWebtoon else splitPaged
+    // Splitting wins over turning (spec 8c); the decoder turns only the pages that turn out wide
+    val decodeOptions = DecodeOptions(
+        crop = if (webtoon) cropWebtoon else cropPaged,
+        rotateWide = !split && if (webtoon) rotateWebtoon else rotatePaged,
+        rotateInvert = if (webtoon) rotateWebtoonInvert else rotatePagedInvert,
+    )
+    val cache = remember(decodeOptions) { DecodedPageCache() }
     val pageColorFilter = remember(grayscale, invertedColors) {
         readerColorMatrix(grayscale, invertedColors)?.let(ColorFilter::colorMatrix)
     }
@@ -260,7 +278,10 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
             },
     ) {
         // Grayscale and inverted colors on the pages only (spec 8b)
-        CompositionLocalProvider(LocalPageColorFilter provides pageColorFilter) {
+        CompositionLocalProvider(
+            LocalPageColorFilter provides pageColorFilter,
+            LocalDecodeOptions provides decodeOptions,
+        ) {
             val chapters = state.viewerChapters
             when {
                 state.initError != null -> {

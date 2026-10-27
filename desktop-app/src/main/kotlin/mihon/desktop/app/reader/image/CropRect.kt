@@ -15,7 +15,11 @@ fun contentBounds(width: Int, height: Int, pixel: (x: Int, y: Int) -> Int): Crop
     val border = pixel(0, 0)
     if (!border.isNearWhite() && !border.isNearBlack()) return whole
     fun blankRow(y: Int) = (0 until width step SAMPLE).all { pixel(it, y).isCloseTo(border) }
-    fun blankColumn(x: Int, top: Int, bottom: Int) = (top until bottom step SAMPLE).all { pixel(x, it).isCloseTo(border) }
+    fun blankColumn(
+        x: Int,
+        top: Int,
+        bottom: Int,
+    ) = (top until bottom step SAMPLE).all { pixel(x, it).isCloseTo(border) }
 
     var top = 0
     while (top < height && blankRow(top)) top++
