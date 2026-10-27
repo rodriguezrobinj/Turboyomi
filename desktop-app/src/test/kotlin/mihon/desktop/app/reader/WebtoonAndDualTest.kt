@@ -361,6 +361,25 @@ class WebtoonAndDualTest {
     }
 
     @Test
+    fun `a manga's own side padding wins over the global one, and the ctrl keys change it`() = runComposeUiTest {
+        val chapters = open(ReadingMode.WEBTOON, ReaderPreferences.DualPageView.NEVER)
+        val preferences = startTestApp().readerPreferences
+        val own = preferences.webtoonSidePaddingFor(chapters[0].mangaId)
+        try {
+            preferences.webtoonSidePadding.set(5)
+            own.set(20)
+            waitForTag("page 1 ready")
+
+            onNodeWithTag(READER_TAG).performKeyInput { withKeyDown(Key.CtrlLeft) { pressKey(Key.Plus) } }
+            waitUntil { own.get() == 15 }
+            preferences.webtoonSidePadding.get() shouldBe 5
+        } finally {
+            own.delete()
+            preferences.webtoonSidePadding.set(0)
+        }
+    }
+
+    @Test
     fun `the end key stays on a short last page while the pages above it load`() = runComposeUiTest {
         val chapters = open(ReadingMode.WEBTOON, ReaderPreferences.DualPageView.NEVER)
         TestSources.images.short += "${chapters[0].url}/5.png"
