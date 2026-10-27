@@ -59,6 +59,12 @@ object SettingsReaderScreen : SearchableSettings {
                 valueRange = ReaderPreferences.WEBTOON_SCROLL_STEP_MIN..ReaderPreferences.WEBTOON_SCROLL_STEP_MAX,
             ),
             Preference.PreferenceItem.SliderPreference(
+                preference = preferences.webtoonAutoScrollSpeed,
+                title = stringResource(MR.strings.desktop_webtoon_autoscroll_speed),
+                valueText = { "$it %/s" },
+                valueRange = ReaderPreferences.WEBTOON_AUTOSCROLL_MIN..ReaderPreferences.WEBTOON_AUTOSCROLL_MAX,
+            ),
+            Preference.PreferenceItem.SliderPreference(
                 preference = preferences.preloadPages,
                 title = stringResource(MR.strings.desktop_reader_preload_pages),
                 valueRange = 1..10,

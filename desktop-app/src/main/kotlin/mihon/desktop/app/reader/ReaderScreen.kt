@@ -7,6 +7,8 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -19,6 +21,7 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import dev.icerock.moko.resources.StringResource
 import dev.zacsweers.metrox.viewmodel.assistedMetroViewModel
 import eu.kanade.presentation.util.Screen
 import eu.kanade.presentation.util.formattedMessage
@@ -53,6 +57,7 @@ import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
 import eu.kanade.tachiyomi.util.system.openInBrowser
 import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import mihon.desktop.app.browser.EmbeddedBrowser
@@ -66,8 +71,10 @@ import mihon.desktop.app.reader.viewer.WebtoonViewer
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.Public
 import mihon.icons.materialsymbols.rounded.Refresh
+import mihon.icons.materialsymbols.roundedfilled.PlayArrow
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.i18n.MR
+import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.screens.EmptyScreen
 import tachiyomi.presentation.core.screens.EmptyScreenAction
 import tachiyomi.presentation.core.screens.LoadingScreen
@@ -113,6 +120,12 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
     var showSettings by remember { mutableStateOf(false) }
     // What a Ctrl key or Ctrl+wheel just changed, and when: shown for a moment over the page
     var notice by remember { mutableStateOf<Pair<String, Long>?>(null) }
+    val autoScrollSpeed by preferences.webtoonAutoScrollSpeed.collectAsState()
+    val latestAutoScrollSpeed by rememberUpdatedState(autoScrollSpeed)
+    var autoScrollJob by remember { mutableStateOf<Job?>(null) }
+    // The viewer's last turn, jump or scroll, which the automatic scrolling takes over from (End keeps retrying)
+    var viewerJob by remember { mutableStateOf<Job?>(null) }
+    var autoScrolling by remember { mutableStateOf(false) }
     val context = LocalContext.current
     // Asks the source, so once per chapter rather than on every recomposition
     val chapterUrl = remember(state.currentChapter, state.source, state.initError) { viewModel.getChapterUrl() }
@@ -126,32 +139,66 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
         }
     }
 
+    fun showNotice(text: String) {
+        notice = text to System.nanoTime()
+    }
+
     fun adjust(action: ReaderAction) {
-        val padding = action == ReaderAction.ZoomIn || action == ReaderAction.ZoomOut
-        val preference = if (padding) preferences.webtoonSidePadding else preferences.webtoonScrollStep
-        val range = if (padding) {
-            ReaderPreferences.WEBTOON_PADDING_MIN..ReaderPreferences.WEBTOON_PADDING_MAX
-        } else {
-            ReaderPreferences.WEBTOON_SCROLL_STEP_MIN..ReaderPreferences.WEBTOON_SCROLL_STEP_MAX
+        val setting = when (action) {
+            ReaderAction.ZoomIn, ReaderAction.ZoomOut -> WebtoonSetting.SidePadding
+            ReaderAction.ScrollStepUp, ReaderAction.ScrollStepDown -> WebtoonSetting.ScrollStep
+            else -> WebtoonSetting.AutoScrollSpeed
         }
         // Zooming in narrows the padding
-        val sign = if (action == ReaderAction.ZoomOut || action == ReaderAction.ScrollStepUp) 1 else -1
-        val value = (preference.get() + sign * ReaderPreferences.WEBTOON_KEY_STEP).coerceIn(range)
+        val up = action == ReaderAction.ZoomOut ||
+            action == ReaderAction.ScrollStepUp ||
+            action == ReaderAction.AutoScrollFaster
+        val preference = setting.preference(preferences)
+        val value = (preference.get() + (if (up) 1 else -1) * setting.step).coerceIn(setting.range)
         preference.set(value)
-        val title = if (padding) MR.strings.pref_webtoon_side_padding else MR.strings.desktop_webtoon_scroll_step
-        notice = "${context.stringResource(title)}: $value %" to System.nanoTime()
+        showNotice("${context.stringResource(setting.title)}: $value ${setting.unit}")
+    }
+
+    fun stopAutoScroll() {
+        autoScrollJob?.cancel()
+        autoScrollJob = null
+    }
+
+    fun toggleAutoScroll() {
+        if (autoScrolling) return stopAutoScroll()
+        val viewer = controller ?: return
+        viewerJob?.cancel()
+        autoScrollJob = scope.launch {
+            autoScrolling = true
+            try {
+                viewer.autoScroll { latestAutoScrollSpeed / 100f }
+            } finally {
+                autoScrolling = false
+            }
+        }
     }
 
     fun perform(action: ReaderAction) {
+        // Reading on by hand stops the scrolling by itself; changing a setting doesn't
+        if (action !in KeepsAutoScroll) stopAutoScroll()
         when (action) {
             ReaderAction.ToggleMenu -> viewModel.showMenus(!state.menuVisible)
-            ReaderAction.ZoomIn, ReaderAction.ZoomOut, ReaderAction.ScrollStepUp, ReaderAction.ScrollStepDown ->
-                adjust(action)
+            ReaderAction.ToggleAutoScroll -> toggleAutoScroll()
+            ReaderAction.ZoomIn, ReaderAction.ZoomOut, ReaderAction.ZoomReset,
+            ReaderAction.ScrollStepUp, ReaderAction.ScrollStepDown,
+            ReaderAction.AutoScrollFaster, ReaderAction.AutoScrollSlower,
+            -> adjust(action)
             ReaderAction.NextChapter -> scope.launch { viewModel.loadNextChapter() }
             ReaderAction.PreviousChapter -> scope.launch { viewModel.loadPreviousChapter() }
-            else -> scope.launch { controller?.perform(action) }
+            else -> viewerJob = scope.launch { controller?.perform(action) }
         }
     }
+
+    // The controls, a dialog (quick settings) or another viewer stop it too
+    LaunchedEffect(state.menuVisible) {
+        if (state.menuVisible) stopAutoScroll()
+    }
+    DisposableEffect(mode) { onDispose { stopAutoScroll() } }
 
     Box(
         Modifier
@@ -276,6 +323,20 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
             isFullscreen = window?.isFullscreen,
             onToggleFullscreen = { window?.toggleFullscreen() },
         )
+        if (autoScrolling) {
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.inverseSurface,
+                modifier = Modifier.align(Alignment.TopEnd).padding(top = 80.dp, end = 16.dp).testTag(AUTOSCROLL_TAG),
+            ) {
+                Icon(
+                    MaterialSymbols.RoundedFilled.PlayArrow,
+                    contentDescription = stringResource(MR.strings.desktop_autoscroll),
+                    tint = MaterialTheme.colorScheme.inverseOnSurface,
+                    modifier = Modifier.padding(8.dp),
+                )
+            }
+        }
         notice?.let { (text, at) ->
             LaunchedEffect(at) {
                 delay(1.5.seconds)
@@ -325,4 +386,46 @@ private fun isDualPage(view: ReaderPreferences.DualPageView): Boolean = when (vi
     ReaderPreferences.DualPageView.NEVER -> false
     ReaderPreferences.DualPageView.ALWAYS -> true
     ReaderPreferences.DualPageView.WIDE -> LocalWindowInfo.current.containerSize.let { it.width > it.height }
+}
+
+const val AUTOSCROLL_TAG = "autoscroll on"
+
+private val KeepsAutoScroll = setOf(
+    ReaderAction.ToggleAutoScroll,
+    ReaderAction.AutoScrollFaster,
+    ReaderAction.AutoScrollSlower,
+    ReaderAction.ZoomIn,
+    ReaderAction.ZoomOut,
+    ReaderAction.ZoomReset,
+    ReaderAction.ScrollStepUp,
+    ReaderAction.ScrollStepDown,
+)
+
+/** The webtoon settings the reader's Ctrl keys change in place, with the note that says the new value. */
+private enum class WebtoonSetting(val title: StringResource, val range: IntRange, val step: Int, val unit: String) {
+    SidePadding(
+        MR.strings.pref_webtoon_side_padding,
+        ReaderPreferences.WEBTOON_PADDING_MIN..ReaderPreferences.WEBTOON_PADDING_MAX,
+        ReaderPreferences.WEBTOON_KEY_STEP,
+        "%",
+    ),
+    ScrollStep(
+        MR.strings.desktop_webtoon_scroll_step,
+        ReaderPreferences.WEBTOON_SCROLL_STEP_MIN..ReaderPreferences.WEBTOON_SCROLL_STEP_MAX,
+        ReaderPreferences.WEBTOON_KEY_STEP,
+        "%",
+    ),
+    AutoScrollSpeed(
+        MR.strings.desktop_autoscroll,
+        ReaderPreferences.WEBTOON_AUTOSCROLL_MIN..ReaderPreferences.WEBTOON_AUTOSCROLL_MAX,
+        ReaderPreferences.WEBTOON_AUTOSCROLL_STEP,
+        "%/s",
+    ),
+    ;
+
+    fun preference(preferences: ReaderPreferences) = when (this) {
+        SidePadding -> preferences.webtoonSidePadding
+        ScrollStep -> preferences.webtoonScrollStep
+        AutoScrollSpeed -> preferences.webtoonAutoScrollSpeed
+    }
 }

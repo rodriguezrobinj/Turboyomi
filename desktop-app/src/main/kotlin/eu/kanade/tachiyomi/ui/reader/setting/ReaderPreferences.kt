@@ -113,6 +113,9 @@ class ReaderPreferences(
     // desktop: how far ↑ and ↓ scroll the webtoon, in percent of the window's height
     val webtoonScrollStep: Preference<Int> = preferenceStore.getInt("pref_webtoon_scroll_step", 15)
 
+    // desktop: how fast S scrolls the webtoon by itself, in percent of the window's height per second (spec 8a)
+    val webtoonAutoScrollSpeed: Preference<Int> = preferenceStore.getInt("pref_webtoon_autoscroll_speed", 10)
+
     val webtoonDisableZoomOut: Preference<Boolean> = preferenceStore.getBoolean("webtoon_disable_zoom_out", false)
 
     // endregion
@@ -299,6 +302,9 @@ class ReaderPreferences(
         const val WEBTOON_SCROLL_STEP_MIN = 5
         const val WEBTOON_SCROLL_STEP_MAX = 100
         const val WEBTOON_KEY_STEP = 5
+        const val WEBTOON_AUTOSCROLL_MIN = 2
+        const val WEBTOON_AUTOSCROLL_MAX = 50
+        const val WEBTOON_AUTOSCROLL_STEP = 2
 
         const val MILLI_CONVERSION = 100
 

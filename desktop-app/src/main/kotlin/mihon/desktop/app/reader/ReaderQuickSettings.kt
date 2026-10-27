@@ -24,7 +24,7 @@ import tachiyomi.presentation.core.util.collectAsState
 
 /**
  * The reader's quick settings (spec 2a §4): mode for this manga, scale, background, dual pages, and the webtoon's
- * side padding and scroll step.
+ * side padding, scroll step and automatic scrolling speed.
  */
 @Composable
 fun ReaderQuickSettings(
@@ -40,6 +40,7 @@ fun ReaderQuickSettings(
     val dual by preferences.dualPageView.collectAsState()
     val sidePadding by preferences.webtoonSidePadding.collectAsState()
     val scrollStep by preferences.webtoonScrollStep.collectAsState()
+    val autoScrollSpeed by preferences.webtoonAutoScrollSpeed.collectAsState()
     Dialog(onDismissRequest = onDismissRequest) {
         Surface(
             shape = MaterialTheme.shapes.extraLarge,
@@ -96,6 +97,18 @@ fun ReaderQuickSettings(
                         title = stringResource(MR.strings.desktop_webtoon_scroll_step),
                         valueString = "$scrollStep %",
                         onChange = preferences.webtoonScrollStep::set,
+                        titleStyle = MaterialTheme.typography.titleSmall,
+                    )
+                    BaseSliderItem(
+                        value = autoScrollSpeed,
+                        valueRange =
+                        ReaderPreferences.WEBTOON_AUTOSCROLL_MIN..ReaderPreferences.WEBTOON_AUTOSCROLL_MAX,
+                        // Stops every 2 %/s, like Ctrl+Shift+↑ and ↓
+                        steps = (ReaderPreferences.WEBTOON_AUTOSCROLL_MAX - ReaderPreferences.WEBTOON_AUTOSCROLL_MIN) /
+                            ReaderPreferences.WEBTOON_AUTOSCROLL_STEP - 1,
+                        title = stringResource(MR.strings.desktop_webtoon_autoscroll_speed),
+                        valueString = "$autoScrollSpeed %/s",
+                        onChange = preferences.webtoonAutoScrollSpeed::set,
                         titleStyle = MaterialTheme.typography.titleSmall,
                     )
                 }

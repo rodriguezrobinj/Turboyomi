@@ -116,4 +116,10 @@ interface ViewerController {
     suspend fun perform(action: ReaderAction)
 
     suspend fun goToPage(index: Int)
+
+    /**
+     * Scrolls by itself, [speed] of the window's height per second read on every frame, until cancelled or stuck
+     * at the end. Webtoon only; the paged viewers do nothing.
+     */
+    suspend fun autoScroll(speed: () -> Float) {}
 }

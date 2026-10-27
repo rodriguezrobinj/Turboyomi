@@ -11,6 +11,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -29,8 +30,10 @@ import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
 import io.kotest.matchers.floats.plusOrMinus
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
+import mihon.desktop.app.main.AppEvents
 import mihon.desktop.app.main.AppProviders
 import mihon.desktop.app.main.ConnectWindowBack
+import mihon.desktop.app.main.Shortcut
 import mihon.desktop.app.platform.LocalWindowControls
 import mihon.desktop.app.platform.WindowControls
 import mihon.desktop.app.reader.viewer.WEBTOON_TAG
@@ -238,6 +241,92 @@ class WebtoonAndDualTest {
             waitForIdle()
             preferences.webtoonSidePadding.get() shouldBe ReaderPreferences.WEBTOON_PADDING_MIN
         }
+
+    @Test
+    fun `S scrolls the webtoon by itself, faster with ctrl+shift+up, until the wheel stops it`() =
+        runComposeUiTest {
+            open(ReadingMode.WEBTOON, ReaderPreferences.DualPageView.NEVER)
+            val preferences = startTestApp().readerPreferences
+            preferences.webtoonAutoScrollSpeed.set(10)
+            waitForTag("page 1 ready")
+            fun top() = onNodeWithTag("page 1 ready").fetchSemanticsNode().positionInRoot.y
+
+            // The scrolling runs every frame: with the clock moving by itself the test would never be idle
+            mainClock.autoAdvance = false
+            val start = top()
+            onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.S) }
+            mainClock.advanceTimeBy(1_000)
+            onNodeWithTag(AUTOSCROLL_TAG).assertExists()
+            (top() < start) shouldBe true
+
+            // Faster, with a note, and still running
+            onNodeWithTag(READER_TAG).performKeyInput {
+                withKeyDown(Key.CtrlLeft) { withKeyDown(Key.ShiftLeft) { pressKey(Key.DirectionUp) } }
+            }
+            mainClock.advanceTimeBy(100)
+            preferences.webtoonAutoScrollSpeed.get() shouldBe 12
+            onNodeWithText("${str(MR.strings.desktop_autoscroll)}: 12 %/s").assertExists()
+            onNodeWithTag(AUTOSCROLL_TAG).assertExists()
+
+            // A new speed from the quick settings' slider is taken up at once, without stopping
+            preferences.webtoonAutoScrollSpeed.set(20)
+            mainClock.advanceTimeBy(500)
+            onNodeWithTag(AUTOSCROLL_TAG).assertExists()
+
+            // The wheel takes over
+            onNodeWithTag(READER_TAG).performMouseInput { scroll(1f) }
+            mainClock.advanceTimeBy(100)
+            onNodeWithTag(AUTOSCROLL_TAG).assertDoesNotExist()
+            mainClock.autoAdvance = true
+        }
+
+    @Test
+    fun `S stops the automatic scrolling, and so do the arrows and leaving the reader`() = runComposeUiTest {
+        open(ReadingMode.WEBTOON, ReaderPreferences.DualPageView.NEVER)
+        waitForTag("page 1 ready")
+        mainClock.autoAdvance = false
+
+        onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.S) }
+        mainClock.advanceTimeBy(300)
+        onNodeWithTag(AUTOSCROLL_TAG).assertExists()
+        onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.S) }
+        mainClock.advanceTimeBy(100)
+        onNodeWithTag(AUTOSCROLL_TAG).assertDoesNotExist()
+
+        onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.S) }
+        mainClock.advanceTimeBy(300)
+        onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.DirectionDown) }
+        mainClock.advanceTimeBy(100)
+        onNodeWithTag(AUTOSCROLL_TAG).assertDoesNotExist()
+
+        // Leaving the reader: back to the screen below, and nothing keeps scrolling a list that's gone
+        onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.S) }
+        mainClock.advanceTimeBy(300)
+        // Esc reaches the reader as Compose's back event, which ConnectWindowBack forwards
+        runOnUiThread { AppEvents.send(Shortcut.Back) }
+        mainClock.advanceTimeBy(2_000)
+        onAllNodes(hasTestTag(READER_TAG)).fetchSemanticsNodes().isEmpty() shouldBe true
+        onAllNodes(hasText("pantalla anterior")).fetchSemanticsNodes().isNotEmpty() shouldBe true
+        mainClock.autoAdvance = true
+    }
+
+    @Test
+    fun `the automatic scrolling stops by itself after the last chapter`() = runComposeUiTest {
+        open(ReadingMode.WEBTOON, ReaderPreferences.DualPageView.NEVER, chapterIndex = 2)
+        startTestApp().readerPreferences.webtoonAutoScrollSpeed.set(ReaderPreferences.WEBTOON_AUTOSCROLL_MAX)
+        waitForTag("page 1 ready")
+        onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.MoveEnd) }
+        waitForIdle()
+
+        mainClock.autoAdvance = false
+        onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.S) }
+        mainClock.advanceTimeBy(300)
+        onNodeWithTag(AUTOSCROLL_TAG).assertExists()
+        // At the end with no chapter after it: stopped once the list hasn't grown for 2 s
+        mainClock.advanceTimeBy(8_000)
+        onNodeWithTag(AUTOSCROLL_TAG).assertDoesNotExist()
+        mainClock.autoAdvance = true
+    }
 
     @Test
     fun `the end key stays on a short last page while the pages above it load`() = runComposeUiTest {
