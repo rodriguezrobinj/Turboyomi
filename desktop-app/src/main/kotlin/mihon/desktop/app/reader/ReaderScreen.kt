@@ -164,7 +164,8 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
                 )
             }
             chapters == null -> LoadingScreen()
-            else -> key(chapters.currChapter, mode) {
+            // Not per chapter: the viewers go on from one chapter into the next (see viewerItems)
+            else -> key(mode) {
                 if (mode.type == ReadingMode.ViewerType.Webtoon) {
                     val sidePadding by preferences.webtoonSidePadding.collectAsState()
                     val scrollStep by preferences.webtoonScrollStep.collectAsState()
@@ -182,6 +183,7 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
                         onTap = ::perform,
                         onRetry = viewModel::retryPage,
                         onController = { controller = it },
+                        jump = state.chapterJumps,
                         onSave = { page -> savePage(context, state, page) },
                         onCopy = { page ->
                             scope.launch(Dispatchers.IO) {
@@ -208,6 +210,7 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
                         onTap = ::perform,
                         onRetry = viewModel::retryPage,
                         onController = { controller = it },
+                        jump = state.chapterJumps,
                         onSave = { page -> savePage(context, state, page) },
                         onCopy = { page ->
                             scope.launch(Dispatchers.IO) {
