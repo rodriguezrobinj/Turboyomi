@@ -73,7 +73,7 @@ fun PageContent(
     scale: ImageScale,
     cache: DecodedPageCache,
     zoom: Boolean,
-    onTap: (x: Float, width: Float) -> Unit,
+    onTap: (position: Offset, size: IntSize) -> Unit,
     onRetry: (ReaderPage) -> Unit,
     onSize: (IntSize) -> Unit,
     modifier: Modifier = Modifier,
@@ -103,7 +103,7 @@ fun PageContent(
     // The page's width, for the click zones of zoomable's onTap, which only gives the offset
     var size by remember { mutableStateOf(IntSize(1, 1)) }
     val tapModifier = Modifier.pointerInput(page) {
-        detectTapGestures { offset -> onTap(offset.x, size.width.toFloat()) }
+        detectTapGestures { offset -> onTap(offset, size) }
     }
 
     val result = decoded
@@ -132,7 +132,7 @@ fun PageContent(
                 val pageModifier = if (zoom) {
                     Modifier.fillMaxSize().zoomable(
                         zoomState = zoomState,
-                        onTap = { offset: Offset -> onTap(offset.x, size.width.toFloat()) },
+                        onTap = { offset: Offset -> onTap(offset, size) },
                         mouseWheelZoom = MouseWheelZoom.EnabledWithCtrlKey,
                     )
                 } else {

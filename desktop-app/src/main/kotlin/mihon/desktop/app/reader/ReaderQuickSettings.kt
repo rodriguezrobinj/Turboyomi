@@ -217,7 +217,19 @@ private fun WidePages(preferences: ReaderPreferences, webtoon: Boolean) {
     val splitInvertOn by splitInvert.collectAsState()
     val rotateOn by rotate.collectAsState()
     val rotateInvertOn by rotateInvert.collectAsState()
+    val showPageNumber by preferences.showPageNumber.collectAsState()
+    val alwaysShowTransition by preferences.alwaysShowChapterTransition.collectAsState()
+    val navigation = if (webtoon) preferences.navigationModeWebtoon else preferences.navigationModePager
+    val navigationInvert = if (webtoon) preferences.webtoonNavInverted else preferences.pagerNavInverted
+    val navigationOn by navigation.collectAsState()
+    val navigationInvertOn by navigationInvert.collectAsState()
     Group(MR.strings.pref_category_display) {
+        Chip(MR.strings.pref_show_page_number, selected = showPageNumber) {
+            preferences.showPageNumber.set(!showPageNumber)
+        }
+        Chip(MR.strings.pref_always_show_chapter_transition, selected = alwaysShowTransition) {
+            preferences.alwaysShowChapterTransition.set(!alwaysShowTransition)
+        }
         Chip(MR.strings.pref_crop_borders, selected = cropOn) { crop.set(!cropOn) }
         Chip(MR.strings.pref_dual_page_split, selected = splitOn) {
             // Read before the write: the state may already hold the new value after it
@@ -235,6 +247,19 @@ private fun WidePages(preferences: ReaderPreferences, webtoon: Boolean) {
         }
         if (rotateOn) {
             Chip(MR.strings.pref_page_rotate_invert, selected = rotateInvertOn) { rotateInvert.set(!rotateInvertOn) }
+        }
+    }
+    // Spec 8d: Mihon's tap zones, mirrored on request
+    Group(MR.strings.pref_viewer_nav) {
+        ReaderPreferences.TapZones.forEachIndexed { index, label ->
+            Chip(label, selected = navigationOn == index) { navigation.set(index) }
+        }
+    }
+    if (navigationOn != TapNavigation.DISABLED) {
+        Group(MR.strings.pref_read_with_tapping_inverted) {
+            ReaderPreferences.TappingInvertMode.entries.forEach {
+                Chip(it.titleRes, selected = navigationInvertOn == it) { navigationInvert.set(it) }
+            }
         }
     }
 }

@@ -71,8 +71,10 @@ import mihon.desktop.app.platform.LocalWindowControls
 import mihon.desktop.app.reader.image.DecodeOptions
 import mihon.desktop.app.reader.image.DecodedPageCache
 import mihon.desktop.app.reader.viewer.LocalDecodeOptions
+import mihon.desktop.app.reader.viewer.LocalViewerSettings
 import mihon.desktop.app.reader.viewer.PagerViewer
 import mihon.desktop.app.reader.viewer.ViewerController
+import mihon.desktop.app.reader.viewer.ViewerSettings
 import mihon.desktop.app.reader.viewer.WebtoonViewer
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.Public
@@ -153,6 +155,13 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
         rotateInvert = if (webtoon) rotateWebtoonInvert else rotatePagedInvert,
     )
     val cache = remember(decodeOptions) { DecodedPageCache() }
+    val showPageNumber by preferences.showPageNumber.collectAsState()
+    val alwaysShowTransition by preferences.alwaysShowChapterTransition.collectAsState()
+    val navigationMode by (if (webtoon) preferences.navigationModeWebtoon else preferences.navigationModePager)
+        .collectAsState()
+    val navigationInvert by (if (webtoon) preferences.webtoonNavInverted else preferences.pagerNavInverted)
+        .collectAsState()
+    val viewerSettings = ViewerSettings(TapNavigation(navigationMode, navigationInvert), alwaysShowTransition)
     val pageColorFilter = remember(grayscale, invertedColors) {
         readerColorMatrix(grayscale, invertedColors)?.let(ColorFilter::colorMatrix)
     }
@@ -283,6 +292,7 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
         CompositionLocalProvider(
             LocalPageColorFilter provides pageColorFilter,
             LocalDecodeOptions provides decodeOptions,
+            LocalViewerSettings provides viewerSettings,
         ) {
             val chapters = state.viewerChapters
             when {
@@ -393,6 +403,7 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
             onOpenSettings = { showSettings = true },
             isFullscreen = window?.isFullscreen,
             onToggleFullscreen = { window?.toggleFullscreen() },
+            showPageNumber = showPageNumber,
         )
         if (autoScrolling) {
             Surface(

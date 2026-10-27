@@ -69,6 +69,7 @@ fun PagerViewer(
     onCopy: (ReaderPage) -> Unit,
     jump: Int = 0,
 ) {
+    val navigation = LocalViewerSettings.current.tapNavigation
     val current = chapters.currChapter
     val pages = current.pages.orEmpty()
     val sizes = remember { mutableStateMapOf<PageKey, IntSize>() }
@@ -118,7 +119,18 @@ fun PagerViewer(
         when (val item = items[index]) {
             is ViewerItem.Transition -> Box(
                 Modifier.fillMaxSize().pointerInput(item) {
-                    detectTapGestures { onTap(tapActionFor(it.x, size.width.toFloat(), mode)) }
+                    detectTapGestures {
+                        onTap(
+                            tapActionFor(
+                                it.x,
+                                it.y,
+                                size.width.toFloat(),
+                                size.height.toFloat(),
+                                mode,
+                                navigation,
+                            ),
+                        )
+                    }
                 },
                 contentAlignment = Alignment.Center,
             ) {
@@ -134,7 +146,18 @@ fun PagerViewer(
                         scale = scale,
                         cache = cache,
                         zoom = true,
-                        onTap = { x, width -> onTap(tapActionFor(x, width, mode)) },
+                        onTap = { at, size ->
+                            onTap(
+                                tapActionFor(
+                                    at.x,
+                                    at.y,
+                                    size.width.toFloat(),
+                                    size.height.toFloat(),
+                                    mode,
+                                    navigation,
+                                ),
+                            )
+                        },
                         onRetry = onRetry,
                         onSize = { sizes[page.pageKey] = it },
                         onSave = onSave,
