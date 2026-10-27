@@ -53,8 +53,8 @@ class ReaderInputTest {
 
     @Test
     fun `ctrl with plus, minus and the arrows changes the webtoon's zoom and scroll step`() {
-        fun ctrl(key: Key, mode: ReadingMode = ReadingMode.WEBTOON) =
-            readerActionFor(key, shift = false, ctrl = true, alt = false, mode = mode)
+        fun ctrl(key: Key, mode: ReadingMode = ReadingMode.WEBTOON, shift: Boolean = false) =
+            readerActionFor(key, shift = shift, ctrl = true, alt = false, mode = mode)
         ctrl(Key.Plus) shouldBe ReaderAction.ZoomIn
         ctrl(Key.Equals) shouldBe ReaderAction.ZoomIn
         ctrl(Key.NumPadAdd) shouldBe ReaderAction.ZoomIn
@@ -62,11 +62,36 @@ class ReaderInputTest {
         ctrl(Key.NumPadSubtract) shouldBe ReaderAction.ZoomOut
         ctrl(Key.DirectionUp, ReadingMode.CONTINUOUS_VERTICAL) shouldBe ReaderAction.ScrollStepUp
         ctrl(Key.DirectionDown) shouldBe ReaderAction.ScrollStepDown
-        // Only webtoon has a side padding and a scroll step
-        ctrl(Key.Plus, ReadingMode.LEFT_TO_RIGHT) shouldBe null
+        // Webtoon has no zoom to reset, and the scroll step and speed are webtoon's only
+        ctrl(Key.Zero) shouldBe null
         ctrl(Key.DirectionUp, ReadingMode.VERTICAL) shouldBe null
+        ctrl(Key.DirectionUp, ReadingMode.VERTICAL, shift = true) shouldBe null
         // AltGr is Ctrl+Alt on Windows
         readerActionFor(Key.Plus, shift = false, ctrl = true, alt = true, mode = ReadingMode.WEBTOON) shouldBe null
+    }
+
+    @Test
+    fun `ctrl with plus, minus and zero zooms the page in paged modes`() {
+        fun ctrl(key: Key) = readerActionFor(key, shift = false, ctrl = true, alt = false, ReadingMode.LEFT_TO_RIGHT)
+        ctrl(Key.Plus) shouldBe ReaderAction.ZoomIn
+        ctrl(Key.Equals) shouldBe ReaderAction.ZoomIn
+        ctrl(Key.NumPadAdd) shouldBe ReaderAction.ZoomIn
+        ctrl(Key.Minus) shouldBe ReaderAction.ZoomOut
+        ctrl(Key.NumPadSubtract) shouldBe ReaderAction.ZoomOut
+        ctrl(Key.Zero) shouldBe ReaderAction.ZoomReset
+        ctrl(Key.NumPad0) shouldBe ReaderAction.ZoomReset
+    }
+
+    @Test
+    fun `S and ctrl+shift with the arrows run the webtoon's automatic scrolling`() {
+        key(Key.S, ReadingMode.WEBTOON) shouldBe ReaderAction.ToggleAutoScroll
+        key(Key.S, ReadingMode.CONTINUOUS_VERTICAL) shouldBe ReaderAction.ToggleAutoScroll
+        key(Key.S, ReadingMode.LEFT_TO_RIGHT) shouldBe null
+        key(Key.S, ReadingMode.WEBTOON, shift = true) shouldBe null
+        readerActionFor(Key.DirectionUp, shift = true, ctrl = true, alt = false, ReadingMode.WEBTOON) shouldBe
+            ReaderAction.AutoScrollFaster
+        readerActionFor(Key.DirectionDown, shift = true, ctrl = true, alt = false, ReadingMode.WEBTOON) shouldBe
+            ReaderAction.AutoScrollSlower
     }
 
     @Test
