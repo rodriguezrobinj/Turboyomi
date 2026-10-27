@@ -13,16 +13,33 @@ enum class ReaderAction {
     NextChapter,
     PreviousChapter,
     ToggleMenu,
+
+    // Webtoon only: less or more side padding, a longer or shorter step for ↑ and ↓
+    ZoomIn,
+    ZoomOut,
+    ScrollStepUp,
+    ScrollStepDown,
 }
 
 /**
  * The reader's keys (spec 2a §4, "Entrada"). ← and → follow the reading direction; ↑ and ↓ scroll in webtoon and
- * turn pages otherwise. Keys with Ctrl or Alt are the window's (Alt+←, Ctrl+F); Esc is Compose's back key.
+ * turn pages otherwise. In webtoon Ctrl with +, - and ↑, ↓ zoom and change the scroll step. Other keys with Ctrl or
+ * Alt are the window's (Alt+←, Ctrl+F); Esc is Compose's back key.
  */
 fun readerActionFor(key: Key, shift: Boolean, ctrl: Boolean, alt: Boolean, mode: ReadingMode): ReaderAction? {
-    if (ctrl || alt) return null
     val rightToLeft = mode == ReadingMode.RIGHT_TO_LEFT
     val webtoon = mode.type == ReadingMode.ViewerType.Webtoon
+    if (ctrl && !alt && webtoon) {
+        return when (key) {
+            // Equals: + is Shift+= on a US keyboard
+            Key.Plus, Key.Equals, Key.NumPadAdd -> ReaderAction.ZoomIn
+            Key.Minus, Key.NumPadSubtract -> ReaderAction.ZoomOut
+            Key.DirectionUp -> ReaderAction.ScrollStepUp
+            Key.DirectionDown -> ReaderAction.ScrollStepDown
+            else -> null
+        }
+    }
+    if (ctrl || alt) return null
     return when (key) {
         Key.DirectionRight -> if (rightToLeft) ReaderAction.PreviousPage else ReaderAction.NextPage
         Key.DirectionLeft -> if (rightToLeft) ReaderAction.NextPage else ReaderAction.PreviousPage
