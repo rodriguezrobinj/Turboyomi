@@ -56,7 +56,7 @@ object SettingsReaderScreen : SearchableSettings {
                 preference = preferences.webtoonScrollStep,
                 title = stringResource(MR.strings.desktop_webtoon_scroll_step),
                 valueText = { "$it %" },
-                valueRange = 5..100,
+                valueRange = ReaderPreferences.WEBTOON_SCROLL_STEP_MIN..ReaderPreferences.WEBTOON_SCROLL_STEP_MAX,
             ),
             Preference.PreferenceItem.SliderPreference(
                 preference = preferences.preloadPages,
