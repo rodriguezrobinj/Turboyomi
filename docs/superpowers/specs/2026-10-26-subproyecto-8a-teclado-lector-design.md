@@ -82,17 +82,17 @@ el visor no tiene zoom). `PagerController` lo aplica al `ZoomState` de la págin
 ### C. Ayuda de atajos (F1)
 
 **Una sola fuente.** Nuevo `main/ShortcutHelp.kt`:
-- `data class ShortcutRow(val keys: String, val description: StringResource)`; las teclas se escriben como se ven
-  en un teclado español ("Ctrl + F", "Alt + ←", "Re Pág").
-- `appShortcutRows: List<Pair<Shortcut?, ShortcutRow>>` y
-  `readerShortcutRows(mode: ReadingMode?): List<Pair<ReaderAction?, ShortcutRow>>`; con `mode == null`, las filas
-  de ambos tipos de visor con una marca "(webtoon)" o "(páginas)". El `null` del par es para filas sin acción propia
-  (Esc, el scroll de listas del subproyecto 7, el clic en los tercios de la página).
+- `data class ShortcutRow(val keys: StringResource, val description: StringResource, val covers: Set<Enum<*>>, val viewer: ReadingMode.ViewerType?)`:
+  las teclas también se traducen ("Re Pág" / "Page Up").
+- `ShortcutHelp.appRows`, `ShortcutHelp.readerRows` y `readerRowsFor(viewer)`; sin lector, las filas de ambos tipos
+  de visor llevan la marca "(webtoon)" o "(páginas)". Una fila sin `covers` es para teclas sin acción propia (el
+  scroll de listas del subproyecto 7).
 
 **Apertura.** `Shortcut.Help` con F1 sin modificadores (`beforeFocusedComponent = true`), y un ítem
-"Atajos de teclado" en Ajustes › Acerca de. `AppEvents` emite `help`; `AppContent` muestra `ShortcutHelpDialog`.
-- Si el lector está abierto, el lector pasa su modo (`LocalReaderMode`, un `CompositionLocal` que `ReaderContent`
-  provee), y la sección del lector muestra solo ese modo. Si no, ambos.
+"Atajos de teclado" en Ajustes › Acerca de. `AppEvents.send(Shortcut.Help)` pone `ShortcutHelp.open`; `AppContent` muestra `ShortcutHelpDialog`.
+- El lector guarda su tipo de visor en `ShortcutHelp.readerViewer` mientras está abierto: el diálogo vive en la raíz de
+  `AppContent`, por encima del lector, y un `CompositionLocal` del lector no le llega. La sección del lector muestra
+  solo ese tipo; sin lector, ambos.
 - El diálogo usa `Dialog` + `Surface` como los ajustes rápidos, con dos encabezados y filas de dos columnas
   (teclas | descripción), con scroll y `keyboardScrollable` del subproyecto 7. Se cierra con Esc o clic fuera.
 - Abrir la ayuda pausa el desplazamiento automático (es un diálogo, como los ajustes rápidos).
@@ -109,7 +109,7 @@ automático y su velocidad, "Zoom", "Atajos de teclado", los dos encabezados de 
 - `ReaderInputTest`: `S` y Ctrl+Shift+↑/↓ solo en webtoon; Ctrl+±/0 en modo páginas dan `ZoomIn`/`ZoomOut`/
   `ZoomReset`; Ctrl+0 en webtoon da `null`; AltGr (Ctrl+Alt) sigue sin hacer nada.
 - `ShortcutTest`: F1 es `Shortcut.Help`.
-- `ShortcutHelpTest`: cada `ReaderAction` salvo `ToggleMenu` y cada `Shortcut` aparece en alguna fila (la ayuda no
+- `ShortcutHelpTest`: cada `ReaderAction` y cada `Shortcut` aparece en alguna fila (la ayuda no
   se queda atrás cuando se añade una tecla).
 - Compose (`WebtoonAndDualTest`): `S` arranca (aparece "autoscroll on" y la página baja sola), `S` para; la rueda
   y ↓ lo pausan; Ctrl+Shift+↑ sube la velocidad con aviso sin pausarlo; al final del último capítulo se para solo.
