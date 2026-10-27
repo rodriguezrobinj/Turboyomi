@@ -83,8 +83,16 @@ fun scrollTargetAfterChange(
     chapter: ReaderChapter,
     jump: Boolean,
 ): Int? {
-    val shown = old.getOrNull(shownIndex)?.key()
+    val shownItem = old.getOrNull(shownIndex)
+    val shown = shownItem?.key()
     if (!jump && new.any { it.key() == shown }) return null
+    // The item shown changed shape (paired, or split in halves, once its size is known): stay on its first page
+    if (!jump && shownItem is ViewerItem.Pages) {
+        val page = shownItem.pages.first()
+        new.indexOfFirst { item ->
+            item is ViewerItem.Pages && item.pages.any { it.chapter == page.chapter && it.index == page.index }
+        }.takeIf { it >= 0 }?.let { return it }
+    }
     return new.itemOfPage(chapter, chapter.requestedPage)
 }
 

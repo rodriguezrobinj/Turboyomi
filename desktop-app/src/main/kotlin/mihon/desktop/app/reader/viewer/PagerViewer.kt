@@ -42,6 +42,8 @@ import mihon.desktop.app.reader.image.PageKey
 import mihon.desktop.app.reader.image.pageKey
 import mihon.desktop.app.reader.inDisplayOrder
 import mihon.desktop.app.reader.pairPages
+import mihon.desktop.app.reader.readingHalves
+import mihon.desktop.app.reader.splitPages
 import mihon.desktop.app.reader.tapActionFor
 
 /**
@@ -55,6 +57,8 @@ fun PagerViewer(
     dual: Boolean,
     shifted: Boolean,
     scale: ImageScale,
+    split: Boolean,
+    splitInvert: Boolean,
     cache: DecodedPageCache,
     onPageSelected: (ReaderPage) -> Unit,
     onPastEnd: (forward: Boolean) -> Unit,
@@ -69,16 +73,18 @@ fun PagerViewer(
     val pages = current.pages.orEmpty()
     val sizes = remember { mutableStateMapOf<PageKey, IntSize>() }
     val zoomers = remember { mutableMapOf<PageKey, PageZoomer>() }
-    val spreads = if (dual && mode.direction == ReadingMode.Direction.Horizontal) {
-        pairPages(pages.size, { sizes[pages[it].pageKey]?.let { s -> s.width > s.height } ?: false }, shifted)
-    } else {
-        pages.indices.map { Spread.Single(it) }
+    val rightToLeft = mode == ReadingMode.RIGHT_TO_LEFT
+    val isWide = { index: Int -> sizes[pages[index].pageKey]?.let { s -> s.width > s.height } ?: false }
+    val spreads = when {
+        dual && mode.direction == ReadingMode.Direction.Horizontal -> pairPages(pages.size, isWide, shifted)
+        // With dual pages a wide page already shows alone (spec 8c)
+        split -> splitPages(pages.size, isWide, readingHalves(rightToLeft, splitInvert))
+        else -> pages.indices.map { Spread.Single(it) }
     }
     val items = rememberViewerItems(chapters, spreads)
     val latestItems by rememberUpdatedState(items)
     val latestCurrent by rememberUpdatedState(current)
     val state = rememberPagerState(initialPage = items.itemOfPage(current, current.requestedPage)) { latestItems.size }
-    val rightToLeft = mode == ReadingMode.RIGHT_TO_LEFT
     // Also when pairs change as page sizes become known: the page being read is no longer an item of its own
     FollowItemChanges(items, current, jump, shownIndex = { state.currentPage }) { state.requestScrollToPage(it) }
 
@@ -124,6 +130,7 @@ fun PagerViewer(
                     PageContent(
                         page = page,
                         isCurrent = state.settledPage == index,
+                        half = (item.spread as? Spread.Single)?.half,
                         scale = scale,
                         cache = cache,
                         zoom = true,

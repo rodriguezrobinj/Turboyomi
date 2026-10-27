@@ -7,6 +7,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -46,6 +47,7 @@ import mihon.desktop.app.reader.Spread
 import mihon.desktop.app.reader.image.DecodedPageCache
 import mihon.desktop.app.reader.image.PageKey
 import mihon.desktop.app.reader.image.pageKey
+import mihon.desktop.app.reader.readingHalves
 import mihon.desktop.app.reader.tapActionFor
 import kotlin.math.sign
 import kotlin.time.Duration.Companion.seconds
@@ -64,6 +66,8 @@ fun WebtoonViewer(
     gap: Boolean,
     sidePaddingPercent: Int,
     scrollStepPercent: Int,
+    split: Boolean,
+    splitInvert: Boolean,
     cache: DecodedPageCache,
     onPageSelected: (ReaderPage) -> Unit,
     onReachedEnd: () -> Unit,
@@ -154,24 +158,40 @@ fun WebtoonViewer(
                             goingToChapterDownloaded = false,
                         )
                     }
-                    is ViewerItem.Pages -> PageContent(
-                        page = item.pages.single(),
-                        isCurrent = false,
-                        scale = ImageScale.FIT_WIDTH,
-                        cache = cache,
-                        // spec deviation 5: no zoom on a scrolling list
-                        zoom = false,
-                        onTap = { x, width -> onTap(tapActionFor(x, width, ReadingMode.WEBTOON)) },
-                        onRetry = onRetry,
-                        onSize = { sizes[item.pages.single().pageKey] = it },
-                        onSave = onSave,
-                        onCopy = onCopy,
-                        // A page decoded before keeps its height while it's decoded again (it left the decoded
-                        // cache, or the chapter it's in changed), else the list would jump as it grows back
-                        modifier = sizes[item.pages.single().pageKey]?.let {
-                            Modifier.fillMaxWidth().aspectRatio(it.width.toFloat() / it.height)
-                        } ?: Modifier.fillMaxWidth().fillParentMaxHeight(),
-                    )
+                    is ViewerItem.Pages -> {
+                        val page = item.pages.single()
+                        val size = sizes[page.pageKey]
+                        // A wide page split in two: its halves one under the other (spec 8c)
+                        val halves = if (split && size != null && size.width > size.height) {
+                            readingHalves(rightToLeft = false, invert = splitInvert)
+                        } else {
+                            listOf(null)
+                        }
+                        Column {
+                            halves.forEach { half ->
+                                PageContent(
+                                    page = page,
+                                    isCurrent = false,
+                                    scale = ImageScale.FIT_WIDTH,
+                                    cache = cache,
+                                    // spec deviation 5: no zoom on a scrolling list
+                                    zoom = false,
+                                    onTap = { x, width -> onTap(tapActionFor(x, width, ReadingMode.WEBTOON)) },
+                                    onRetry = onRetry,
+                                    onSize = { sizes[page.pageKey] = it },
+                                    onSave = onSave,
+                                    onCopy = onCopy,
+                                    half = half,
+                                    // A page decoded before keeps its height while it's decoded again (it left the
+                                    // decoded cache, or the chapter it's in changed), else the list would jump
+                                    modifier = size?.let {
+                                        val width = if (half == null) it.width else it.width / 2
+                                        Modifier.fillMaxWidth().aspectRatio(width.toFloat() / it.height)
+                                    } ?: Modifier.fillMaxWidth().fillParentMaxHeight(),
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }

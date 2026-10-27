@@ -186,6 +186,31 @@ class ReaderControlsTest {
     }
 
     @Test
+    fun `a wide page split in two reads as its left half, then its right half, then the next page`() =
+        runComposeUiTest {
+            TestSources.http.images.wide = true
+            open()
+            val preferences = startTestApp().readerPreferences
+            try {
+                preferences.dualPageSplitPaged.set(true)
+                waitForTag("page 1 ready")
+                // Two items for page 1: after one turn page 1 is still there, its other half
+                onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.DirectionRight) }
+                waitForIdle()
+                onNodeWithTag("page 1 ready").assertExists()
+                // Page 2 splits once it's decoded, and the reader stays on it
+                onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.DirectionRight) }
+                waitForTag("page 2 ready")
+                Thread.sleep(1_000)
+                waitForIdle()
+                onNodeWithTag("page 2 ready").assertExists()
+            } finally {
+                TestSources.http.images.wide = false
+                preferences.dualPageSplitPaged.set(false)
+            }
+        }
+
+    @Test
     fun `a chapter whose page list fails offers retry and opening it in WebView`() = runComposeUiTest {
         open(failPageList = true)
         waitFor("José")

@@ -143,6 +143,8 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
     val rotateWebtoonInvert by preferences.dualPageRotateToFitInvertWebtoon.collectAsState()
     val splitPaged by preferences.dualPageSplitPaged.collectAsState()
     val splitWebtoon by preferences.dualPageSplitWebtoon.collectAsState()
+    val splitPagedInvert by preferences.dualPageInvertPaged.collectAsState()
+    val splitWebtoonInvert by preferences.dualPageInvertWebtoon.collectAsState()
     val split = if (webtoon) splitWebtoon else splitPaged
     // Splitting wins over turning (spec 8c); the decoder turns only the pages that turn out wide
     val decodeOptions = DecodeOptions(
@@ -312,6 +314,8 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
                             gap = mode == ReadingMode.CONTINUOUS_VERTICAL,
                             sidePaddingPercent = sidePadding,
                             scrollStepPercent = scrollStep,
+                            split = splitWebtoon,
+                            splitInvert = splitWebtoonInvert,
                             cache = cache,
                             onPageSelected = viewModel::onPageSelected,
                             onReachedEnd = { scope.launch { viewModel.loadNextChapter(from = chapters.currChapter) } },
@@ -337,6 +341,8 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
                             dual = isDualPage(dualView),
                             shifted = shifted,
                             scale = ImageScale.fromPreference(scale),
+                            split = splitPaged,
+                            splitInvert = splitPagedInvert,
                             cache = cache,
                             onPageSelected = viewModel::onPageSelected,
                             onPastEnd = { forward ->

@@ -1,5 +1,6 @@
 package mihon.desktop.app.reader.viewer
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ContextMenuArea
 import androidx.compose.foundation.ContextMenuItem
 import androidx.compose.foundation.Image
@@ -7,6 +8,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -33,6 +35,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -41,6 +44,7 @@ import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import mihon.desktop.app.reader.Half
 import mihon.desktop.app.reader.ImageScale
 import mihon.desktop.app.reader.LocalPageColorFilter
 import mihon.desktop.app.reader.ReaderAction
@@ -55,6 +59,7 @@ import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
+import kotlin.math.roundToInt
 
 /**
  * One page: loads it, decodes it once it's downloaded and draws it. Failures stay on this page with a retry
@@ -75,6 +80,7 @@ fun PageContent(
     onSave: (ReaderPage) -> Unit = {},
     onCopy: (ReaderPage) -> Unit = {},
     onZoomer: (PageZoomer?) -> Unit = {},
+    half: Half? = null,
 ) {
     val saveLabel = stringResource(MR.strings.action_save)
     val copyLabel = stringResource(MR.strings.action_copy_to_clipboard)
@@ -111,6 +117,9 @@ fun PageContent(
         when {
             status is Page.State.Error || result?.isFailure == true -> PageError(page, onRetry, tapModifier)
             result == null -> PageLoading(page, tapModifier)
+            // One half of a wide page split in two (spec 8c): drawn as it is, without zoom
+            half != null && result.getOrThrow() is DecodedPage.Still ->
+                HalfPageImage(result.getOrThrow() as DecodedPage.Still, half, tapModifier.fillMaxSize())
             else -> {
                 // A new zoom state each time the page becomes current: the zoom starts over (spec 2a §4)
                 val zoomState = key(page, isCurrent) { rememberZoomState(maxScale = MAX_ZOOM) }
@@ -242,3 +251,26 @@ private suspend fun ZoomState.zoomBy(action: ReaderAction, layout: IntSize): Flo
 
 /** How the reader decodes its pages for the mode it's in (spec 8c): its cache is made again when they change. */
 val LocalDecodeOptions: ProvidableCompositionLocal<DecodeOptions> = staticCompositionLocalOf { DecodeOptions() }
+
+@Composable
+private fun HalfPageImage(page: DecodedPage.Still, half: Half, modifier: Modifier) {
+    val filter = LocalPageColorFilter.current
+    val halfWidth = page.width / 2
+    Box(modifier, contentAlignment = Alignment.Center) {
+        Canvas(Modifier.aspectRatio(halfWidth.toFloat() / page.height)) {
+            val scale = size.width / halfWidth
+            var top = 0
+            page.tiles.forEach { tile ->
+                drawImage(
+                    tile,
+                    srcOffset = IntOffset(if (half == Half.Right) page.width - halfWidth else 0, 0),
+                    srcSize = IntSize(halfWidth, tile.height),
+                    dstOffset = IntOffset(0, (top * scale).roundToInt()),
+                    dstSize = IntSize(size.width.roundToInt(), (tile.height * scale).roundToInt()),
+                    colorFilter = filter,
+                )
+                top += tile.height
+            }
+        }
+    }
+}
