@@ -235,8 +235,10 @@ private class WebtoonController(
      * ponytail: bounded tries and wait; a page that keeps failing leaves the jump where it got.
      */
     private suspend fun scrollToLastPage() {
+        val chapter = current()
         repeat(LAST_PAGE_TRIES) {
-            val chapter = current()
+            // A move to another chapter while it waited (P, the chapter buttons) goes where that move went
+            if (current() != chapter) return
             state.scrollToItem(items().indexOfLast { it is ViewerItem.Pages && it.chapter == chapter }.coerceAtLeast(0))
             if (visiblePagesSized()) return
             withTimeoutOrNull(5.seconds) { snapshotFlow { visiblePagesSized() }.first { it } } ?: return

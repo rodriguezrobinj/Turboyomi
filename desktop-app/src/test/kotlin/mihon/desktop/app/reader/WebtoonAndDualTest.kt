@@ -29,6 +29,7 @@ import mihon.desktop.app.main.ConnectWindowBack
 import mihon.desktop.app.platform.LocalWindowControls
 import mihon.desktop.app.platform.WindowControls
 import mihon.desktop.app.reader.viewer.WEBTOON_TAG
+import mihon.desktop.app.testing.FakeImages
 import mihon.desktop.app.testing.TestLibrary
 import mihon.desktop.app.testing.TestSources
 import mihon.desktop.app.testing.startTestApp
@@ -148,14 +149,24 @@ class WebtoonAndDualTest {
     fun `the previous chapter opens while the next one's page list never comes`() = runComposeUiTest {
         val chapters = open(ReadingMode.WEBTOON, ReaderPreferences.DualPageView.NEVER, chapterIndex = 1)
         TestSources.http.hangingPageLists[chapters[2].url] = false
-        waitForTag("page 1 ready")
-        onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.MoveEnd) }
-        // Near the end the next chapter starts loading in the background, and hangs there
-        waitUntil(timeoutMillis = 10_000) { TestSources.http.hangingPageLists[chapters[2].url] == true }
+        // Slow pages after the first: End is still waiting for their sizes when P is pressed, as on a slow machine
+        val slow = (1 until 6).map { "${chapters[1].url}/$it.png" }
+        TestSources.http.images.slow += slow
+        try {
+            waitForTag("page 1 ready")
+            onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.MoveEnd) }
+            // Near the end the next chapter starts loading in the background, and hangs there
+            waitUntil(timeoutMillis = 10_000) { TestSources.http.hangingPageLists[chapters[2].url] == true }
 
-        onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.P) }
-        waitForTag("page 1 ready")
-        onNodeWithTag("page 1 ready").assertIsDisplayed()
+            onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.P) }
+            waitForTag("page 1 ready")
+            // Still there once End's wait for the slow pages is over: End doesn't follow the move to another chapter
+            Thread.sleep(FakeImages.SLOW_MILLIS * 2)
+            waitForIdle()
+            onNodeWithTag("page 1 ready").assertIsDisplayed()
+        } finally {
+            TestSources.http.images.slow -= slow.toSet()
+        }
     }
 
     @Test
