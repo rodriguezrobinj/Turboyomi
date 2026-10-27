@@ -22,6 +22,8 @@ import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.test.withKeyDown
 import androidx.compose.ui.window.WindowState
 import cafe.adriel.voyager.navigator.Navigator
+import eu.kanade.presentation.reader.BRIGHTNESS_OVERLAY_TAG
+import eu.kanade.presentation.reader.COLOR_OVERLAY_TAG
 import eu.kanade.presentation.util.DefaultNavigatorScreenTransition
 import eu.kanade.presentation.util.Screen
 import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
@@ -135,6 +137,34 @@ class ReaderControlsTest {
             waitForTag("page 2 ready")
             ctrl(Key.Plus)
             waitFor(zoomNote(125))
+        }
+
+    @Test
+    fun `custom brightness dims the page, a color filter goes over it, and grayscale doesn't break drawing`() =
+        runComposeUiTest {
+            open()
+            val preferences = startTestApp().readerPreferences
+            try {
+                preferences.customBrightness.set(true)
+                preferences.customBrightnessValue.set(-50)
+                preferences.colorFilter.set(true)
+                preferences.colorFilterValue.set(0x40FF8800)
+                preferences.grayscale.set(true)
+                preferences.invertedColors.set(true)
+                waitForTag("page 1 ready")
+                waitForTag(BRIGHTNESS_OVERLAY_TAG)
+                onNodeWithTag(COLOR_OVERLAY_TAG).assertExists()
+
+                // A brighter value from an Android backup: the desktop can't brighten the screen, so no overlay
+                preferences.customBrightnessValue.set(40)
+                waitForIdle()
+                onNodeWithTag(BRIGHTNESS_OVERLAY_TAG).assertDoesNotExist()
+            } finally {
+                preferences.customBrightness.set(false)
+                preferences.colorFilter.set(false)
+                preferences.grayscale.set(false)
+                preferences.invertedColors.set(false)
+            }
         }
 
     @Test

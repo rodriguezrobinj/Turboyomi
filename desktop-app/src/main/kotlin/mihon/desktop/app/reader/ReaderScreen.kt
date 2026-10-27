@@ -13,6 +13,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -27,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isAltPressed
 import androidx.compose.ui.input.key.isCtrlPressed
@@ -47,6 +49,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.icerock.moko.resources.StringResource
 import dev.zacsweers.metrox.viewmodel.assistedMetroViewModel
+import eu.kanade.presentation.reader.ReaderContentOverlay
 import eu.kanade.presentation.util.Screen
 import eu.kanade.presentation.util.formattedMessage
 import eu.kanade.tachiyomi.source.online.HttpSource
@@ -123,6 +126,16 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
     // What a Ctrl key or Ctrl+wheel just changed, and when: shown for a moment over the page
     var notice by remember { mutableStateOf<Pair<String, Long>?>(null) }
     val autoScrollSpeed by preferences.webtoonAutoScrollSpeed.collectAsState()
+    val customBrightness by preferences.customBrightness.collectAsState()
+    val customBrightnessValue by preferences.customBrightnessValue.collectAsState()
+    val colorFilter by preferences.colorFilter.collectAsState()
+    val colorFilterValue by preferences.colorFilterValue.collectAsState()
+    val colorFilterMode by preferences.colorFilterMode.collectAsState()
+    val grayscale by preferences.grayscale.collectAsState()
+    val invertedColors by preferences.invertedColors.collectAsState()
+    val pageColorFilter = remember(grayscale, invertedColors) {
+        readerColorMatrix(grayscale, invertedColors)?.let(ColorFilter::colorMatrix)
+    }
     val latestAutoScrollSpeed by rememberUpdatedState(autoScrollSpeed)
     var autoScrollJob by remember { mutableStateOf<Job?>(null) }
     // The viewer's last turn, jump or scroll, which the automatic scrolling takes over from (End keeps retrying)
@@ -246,84 +259,98 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
                 true
             },
     ) {
-        val chapters = state.viewerChapters
-        when {
-            state.initError != null -> {
-                val error = state.initError!!
-                val url = chapterUrl
-                EmptyScreen(
-                    message = with(context) { error.formattedMessage },
-                    actions = listOfNotNull(
-                        EmptyScreenAction(MR.strings.action_retry, MaterialSymbols.Rounded.Refresh) {
-                            viewModel.retryInit()
-                        },
-                        url?.let {
-                            EmptyScreenAction(MR.strings.action_open_in_web_view, MaterialSymbols.Rounded.Public) {
-                                EmbeddedBrowser.open(context, it, (state.source as? HttpSource)?.headers)
-                            }
-                        },
-                    ),
-                )
-            }
-            chapters == null -> LoadingScreen()
-            // Not per chapter: the viewers go on from one chapter into the next (see viewerItems)
-            else -> key(mode) {
-                if (mode.type == ReadingMode.ViewerType.Webtoon) {
-                    val sidePadding by preferences.webtoonSidePadding.collectAsState()
-                    val scrollStep by preferences.webtoonScrollStep.collectAsState()
-                    WebtoonViewer(
-                        chapters = chapters,
-                        gap = mode == ReadingMode.CONTINUOUS_VERTICAL,
-                        sidePaddingPercent = sidePadding,
-                        scrollStepPercent = scrollStep,
-                        cache = cache,
-                        onPageSelected = viewModel::onPageSelected,
-                        onReachedEnd = { scope.launch { viewModel.loadNextChapter(from = chapters.currChapter) } },
-                        onReachedStart = {
-                            scope.launch { viewModel.loadPreviousChapter(from = chapters.currChapter) }
-                        },
-                        onTap = ::perform,
-                        onRetry = viewModel::retryPage,
-                        onController = { controller = it },
-                        jump = state.chapterJumps,
-                        onSave = { page -> savePage(context, state, page) },
-                        onCopy = { page ->
-                            scope.launch(Dispatchers.IO) {
-                                page.stream?.let { PageActions.copyImage(it().use { s -> s.readBytes() }) }
-                                context.toast(MR.strings.desktop_image_copied)
-                            }
-                        },
+        // Grayscale and inverted colors on the pages only (spec 8b)
+        CompositionLocalProvider(LocalPageColorFilter provides pageColorFilter) {
+            val chapters = state.viewerChapters
+            when {
+                state.initError != null -> {
+                    val error = state.initError!!
+                    val url = chapterUrl
+                    EmptyScreen(
+                        message = with(context) { error.formattedMessage },
+                        actions = listOfNotNull(
+                            EmptyScreenAction(MR.strings.action_retry, MaterialSymbols.Rounded.Refresh) {
+                                viewModel.retryInit()
+                            },
+                            url?.let {
+                                EmptyScreenAction(MR.strings.action_open_in_web_view, MaterialSymbols.Rounded.Public) {
+                                    EmbeddedBrowser.open(context, it, (state.source as? HttpSource)?.headers)
+                                }
+                            },
+                        ),
                     )
-                } else {
-                    PagerViewer(
-                        chapters = chapters,
-                        mode = mode,
-                        dual = isDualPage(dualView),
-                        shifted = shifted,
-                        scale = ImageScale.fromPreference(scale),
-                        cache = cache,
-                        onPageSelected = viewModel::onPageSelected,
-                        onPastEnd = { forward ->
-                            scope.launch {
-                                val from = chapters.currChapter
-                                if (forward) viewModel.loadNextChapter(from) else viewModel.loadPreviousChapter(from)
-                            }
-                        },
-                        onTap = ::perform,
-                        onRetry = viewModel::retryPage,
-                        onController = { controller = it },
-                        jump = state.chapterJumps,
-                        onSave = { page -> savePage(context, state, page) },
-                        onCopy = { page ->
-                            scope.launch(Dispatchers.IO) {
-                                page.stream?.let { PageActions.copyImage(it().use { s -> s.readBytes() }) }
-                                context.toast(MR.strings.desktop_image_copied)
-                            }
-                        },
-                    )
+                }
+                chapters == null -> LoadingScreen()
+                // Not per chapter: the viewers go on from one chapter into the next (see viewerItems)
+                else -> key(mode) {
+                    if (mode.type == ReadingMode.ViewerType.Webtoon) {
+                        val sidePadding by preferences.webtoonSidePadding.collectAsState()
+                        val scrollStep by preferences.webtoonScrollStep.collectAsState()
+                        WebtoonViewer(
+                            chapters = chapters,
+                            gap = mode == ReadingMode.CONTINUOUS_VERTICAL,
+                            sidePaddingPercent = sidePadding,
+                            scrollStepPercent = scrollStep,
+                            cache = cache,
+                            onPageSelected = viewModel::onPageSelected,
+                            onReachedEnd = { scope.launch { viewModel.loadNextChapter(from = chapters.currChapter) } },
+                            onReachedStart = {
+                                scope.launch { viewModel.loadPreviousChapter(from = chapters.currChapter) }
+                            },
+                            onTap = ::perform,
+                            onRetry = viewModel::retryPage,
+                            onController = { controller = it },
+                            jump = state.chapterJumps,
+                            onSave = { page -> savePage(context, state, page) },
+                            onCopy = { page ->
+                                scope.launch(Dispatchers.IO) {
+                                    page.stream?.let { PageActions.copyImage(it().use { s -> s.readBytes() }) }
+                                    context.toast(MR.strings.desktop_image_copied)
+                                }
+                            },
+                        )
+                    } else {
+                        PagerViewer(
+                            chapters = chapters,
+                            mode = mode,
+                            dual = isDualPage(dualView),
+                            shifted = shifted,
+                            scale = ImageScale.fromPreference(scale),
+                            cache = cache,
+                            onPageSelected = viewModel::onPageSelected,
+                            onPastEnd = { forward ->
+                                scope.launch {
+                                    val from = chapters.currChapter
+                                    if (forward) {
+                                        viewModel.loadNextChapter(
+                                            from,
+                                        )
+                                    } else {
+                                        viewModel.loadPreviousChapter(from)
+                                    }
+                                }
+                            },
+                            onTap = ::perform,
+                            onRetry = viewModel::retryPage,
+                            onController = { controller = it },
+                            jump = state.chapterJumps,
+                            onSave = { page -> savePage(context, state, page) },
+                            onCopy = { page ->
+                                scope.launch(Dispatchers.IO) {
+                                    page.stream?.let { PageActions.copyImage(it().use { s -> s.readBytes() }) }
+                                    context.toast(MR.strings.desktop_image_copied)
+                                }
+                            },
+                        )
+                    }
                 }
             }
         }
+        ReaderContentOverlay(
+            brightness = if (customBrightness) customBrightnessValue.coerceAtMost(0) else 0,
+            color = colorFilterValue.takeIf { colorFilter },
+            colorBlendMode = ReaderPreferences.ColorFilterMode.getOrNull(colorFilterMode)?.second,
+        )
         ReaderControls(
             state = state,
             mode = mode,
