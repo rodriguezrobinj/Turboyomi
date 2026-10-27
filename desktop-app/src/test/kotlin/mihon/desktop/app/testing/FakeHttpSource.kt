@@ -7,6 +7,7 @@ import eu.kanade.tachiyomi.source.model.SChapter
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.model.SMangaUpdate
 import eu.kanade.tachiyomi.source.online.HttpSource
+import kotlinx.coroutines.awaitCancellation
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -74,6 +75,9 @@ class FakeHttpSource(
     @Volatile
     var failPageList: Exception? = null
 
+    /** Chapter urls whose page list never comes, each set to true once it's asked for. */
+    val hangingPageLists = ConcurrentHashMap<String, Boolean>()
+
     override suspend fun getPopularManga(page: Int): MangasPage = MangasPage(emptyList(), false)
 
     override suspend fun getSearchManga(page: Int, query: String, filters: FilterList): MangasPage =
@@ -105,6 +109,7 @@ class FakeHttpSource(
             failPageList = null
             throw it
         }
+        if (hangingPageLists.replace(chapter.url, true) != null) awaitCancellation()
         return (0 until pageCount).map { Page(it, imageUrl = "$baseUrl${chapter.url}/$it.png") }
     }
 }

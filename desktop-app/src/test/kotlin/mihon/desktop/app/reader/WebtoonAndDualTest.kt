@@ -145,6 +145,20 @@ class WebtoonAndDualTest {
     }
 
     @Test
+    fun `the previous chapter opens while the next one's page list never comes`() = runComposeUiTest {
+        val chapters = open(ReadingMode.WEBTOON, ReaderPreferences.DualPageView.NEVER, chapterIndex = 1)
+        TestSources.http.hangingPageLists[chapters[2].url] = false
+        waitForTag("page 1 ready")
+        onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.MoveEnd) }
+        // Near the end the next chapter starts loading in the background, and hangs there
+        waitUntil(timeoutMillis = 10_000) { TestSources.http.hangingPageLists[chapters[2].url] == true }
+
+        onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.P) }
+        waitForTag("page 1 ready")
+        onNodeWithTag("page 1 ready").assertIsDisplayed()
+    }
+
+    @Test
     fun `quick presses of the down arrow add up instead of cutting each other short`() = runComposeUiTest {
         open(ReadingMode.WEBTOON, ReaderPreferences.DualPageView.NEVER)
         waitForTag("page 1 ready")

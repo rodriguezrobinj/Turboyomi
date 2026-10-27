@@ -37,6 +37,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -129,6 +130,7 @@ class ReaderViewModel(
 
     // The next chapter's background load, which a move to that chapter waits for instead of loading it twice
     private var preloadJob: Job? = null
+    private var preloadChapter: ReaderChapter? = null
 
     init {
         viewModelScope.launch { init() }
@@ -228,7 +230,8 @@ class ReaderViewModel(
         chapter: ReaderChapter,
         jump: Boolean = false,
     ): ViewerChapters {
-        preloadJob?.join()
+        // A move elsewhere cancels it: a slow source would hold the move up to the call timeout
+        if (chapter == preloadChapter) preloadJob?.join() else preloadJob?.cancelAndJoin()
         loader.loadChapter(chapter)
 
         val chapterPos = chapterList.indexOf(chapter)
@@ -282,6 +285,7 @@ class ReaderViewModel(
         val loader = loader ?: return
         if (chapter.state != ReaderChapter.State.Wait || preloadJob?.isActive == true) return
         logcat { "Preloading ${chapter.chapter.url}" }
+        preloadChapter = chapter
         preloadJob = viewModelScope.launch(Dispatchers.IO) {
             try {
                 loader.loadChapter(chapter)
