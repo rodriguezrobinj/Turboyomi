@@ -20,6 +20,7 @@ import eu.kanade.presentation.more.settings.screen.SettingsSearchScreen
 import eu.kanade.presentation.more.settings.screen.SettingsTrackingScreen
 import eu.kanade.presentation.more.settings.widget.TextPreferenceWidget
 import eu.kanade.presentation.util.Tab
+import eu.kanade.tachiyomi.ui.stats.StatsScreen
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.Code
 import mihon.icons.materialsymbols.rounded.CollectionsBookmark
@@ -28,6 +29,7 @@ import mihon.icons.materialsymbols.rounded.Explore
 import mihon.icons.materialsymbols.rounded.Image
 import mihon.icons.materialsymbols.rounded.Info
 import mihon.icons.materialsymbols.rounded.Palette
+import mihon.icons.materialsymbols.rounded.QueryStats
 import mihon.icons.materialsymbols.rounded.Search
 import mihon.icons.materialsymbols.rounded.Settings
 import mihon.icons.materialsymbols.rounded.Storage
@@ -48,6 +50,8 @@ data object SettingsTab : Tab {
 
     /** The settings categories, in the list's order; the settings search indexes these too (spec 9b §2). */
     val screens: List<Triple<StringResource, ImageVector, Screen>> = listOf(
+        // desktop: Mihon's More tab is this list, so its Statistics entry comes first (spec 9c §2)
+        Triple(MR.strings.label_stats, MaterialSymbols.Rounded.QueryStats, StatsScreen()),
         Triple(
             MR.strings.pref_category_library,
             MaterialSymbols.Rounded.CollectionsBookmark,
