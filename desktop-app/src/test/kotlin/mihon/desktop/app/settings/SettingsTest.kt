@@ -94,6 +94,9 @@ class SettingsTest {
         onNodeWithText(str(MR.strings.label_settings)).performClick()
         waitForText(str(MR.strings.pref_category_advanced))
         onNodeWithText(str(MR.strings.pref_category_advanced)).performClick()
+        waitForText(str(MR.strings.pref_verbose_logging))
+        // The browser group closes a long list (spec 9a §2): it's composed once scrolled to
+        onNode(hasScrollToNodeAction()).performScrollToNode(hasText(str(MR.strings.desktop_cef_install)))
         waitForText(str(MR.strings.desktop_cef_status_not_installed))
         onNodeWithText(str(MR.strings.desktop_cef_install)).performClick()
 
@@ -112,7 +115,8 @@ class SettingsTest {
         onNodeWithText(str(MR.strings.label_settings)).performClick()
         waitForText(str(MR.strings.pref_category_advanced))
         onNodeWithText(str(MR.strings.pref_category_advanced)).performClick()
-        waitForText(str(MR.strings.pref_clear_cookies))
+        waitForText(str(MR.strings.pref_verbose_logging))
+        onNode(hasScrollToNodeAction()).performScrollToNode(hasText(str(MR.strings.pref_clear_cookies)))
         onNodeWithText(str(MR.strings.pref_clear_cookies)).performClick()
         waitForIdle()
 

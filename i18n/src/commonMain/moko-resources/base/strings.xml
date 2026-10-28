@@ -1101,6 +1101,7 @@
     <string name="desktop_image_cache_cleared">Image cache cleared</string>
     <string name="desktop_open_logs_folder">Open logs folder</string>
     <string name="desktop_open_log">Open log</string>
+    <string name="desktop_dump_logs_failed">Couldn\'t write the debug info</string>
     <string name="desktop_cef_title">Built-in browser</string>
     <string name="desktop_cef_consent_message">Opening pages inside the app, getting past Cloudflare and signing in to sources need a Chromium browser from JetBrains (%1$s). It\'s downloaded once.</string>
     <string name="desktop_cef_download">Download</string>

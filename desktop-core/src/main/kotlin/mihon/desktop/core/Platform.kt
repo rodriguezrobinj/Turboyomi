@@ -5,6 +5,7 @@ import android.content.Context
 import android.os.Looper
 import dev.zacsweers.metro.createGraphFactory
 import mihon.desktop.core.cef.CefCookieSync
+import mihon.desktop.core.cef.CefData
 import mihon.desktop.core.cef.CefRuntime
 import mihon.desktop.core.cookies.PersistentCookieStore
 import org.koin.core.context.startKoin
@@ -83,8 +84,9 @@ object Platform {
         val graph = createGraph(application, dirs, isDebugBuild)
         Injekt = InjektScope(DesktopInjektRegistrar(application, graph))
         // The embedded browser starts in the background when it's installed (spec 2b §2). A removal asked for while
-        // it ran happens first, before anything loads its DLLs
+        // it ran happens first, before anything loads its DLLs, and so does clearing its data
         graph.cefInstaller.applyPendingRemoval()
+        CefData(dirs.cefCache).applyPending()
         if (graph.cefInstaller.isInstalled()) CefRuntime.startAsync(dirs.cef, dirs.cefCache)
         return graph
     }
