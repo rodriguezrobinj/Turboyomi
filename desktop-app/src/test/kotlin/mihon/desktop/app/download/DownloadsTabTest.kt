@@ -19,8 +19,9 @@ import tachiyomi.i18n.MR
 
 @OptIn(ExperimentalTestApi::class)
 class DownloadsTabTest {
+    // GitHub's runners compose the first screens far slower than a desktop
     private fun androidx.compose.ui.test.ComposeUiTest.waitFor(matcher: androidx.compose.ui.test.SemanticsMatcher) =
-        waitUntil(timeoutMillis = 15_000) {
+        waitUntil(timeoutMillis = 30_000) {
             onAllNodes(matcher, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         }
 
