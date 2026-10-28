@@ -524,6 +524,8 @@
     <string name="ext_app_info">Información de la aplicación</string>
     <string name="pref_verbose_logging">Registro detallado</string>
     <string name="pref_verbose_logging_summary">Mostrar registros detallados en el registro del sistema (reduce el rendimiento de la aplicación)</string>
+    <string name="pref_redact_sensitive_headers">Ocultar cabeceras sensibles</string>
+    <string name="pref_redact_sensitive_headers_summary">Oculta ciertos valores sensibles en los registros. Mantenlo activado por tu seguridad si compartes los registros con otras personas.</string>
     <string name="label_warning">Advertencia</string>
     <string name="notification_size_warning">Las actualizaciones grandes pueden implicar un mayor uso de la batería y que los distintos servicios bloqueen o ralenticen el acceso a tu dispositivo. Toca aquí para más información.</string>
     <string name="action_display_language_badge">Idioma</string>
@@ -864,6 +866,8 @@
     <string name="pref_display_images_description">Ver imágenes en las descripciones de manga</string>
     <string name="pref_disallow_non_ascii_filenames">Prohibir los nombres de archivo que no sean ASCII</string>
     <string name="pref_disallow_non_ascii_filenames_details">Permite guardar tus datos en ciertos tipos de almacenamiento que no admitan Unicode. Al activarlo tendrás que renombrar las carpetas de tus fuentes y manga, pasándolas a representaciones UTF-8 en hexadecimal en minúscula. No tienes que hacer lo mismo con las carpetas de capítulos.</string>
+    <string name="pref_enable_chapter_name_hash">Añadir un sufijo hash a los nombres de capítulo</string>
+    <string name="pref_enable_chapter_name_hash_details">Añade un sufijo hash único a los nombres de capítulo para evitar conflictos de nombres. Si lo desactivas, no podrás descargar capítulos con nombres idénticos.</string>
     <string name="pref_download_concurrent_sources">Descarga simultánea desde fuentes</string>
     <string name="pref_download_concurrent_pages">Descarga simultánea de páginas</string>
     <string name="pref_download_concurrent_pages_summary">Cantidad de páginas a descargar simultáneamente desde cada fuente remota</string>
@@ -909,6 +913,7 @@
     <string name="desktop_image_cache_cleared">Caché de imágenes borrada</string>
     <string name="desktop_open_logs_folder">Abrir carpeta de logs</string>
     <string name="desktop_open_log">Abrir registro</string>
+    <string name="desktop_dump_logs_failed">No se pudo escribir la información de depuración</string>
     <string name="desktop_cef_title">Navegador integrado</string>
     <string name="desktop_cef_consent_message">Para abrir páginas dentro de la app, pasar Cloudflare e iniciar sesión en las fuentes hace falta un navegador Chromium de JetBrains (%1$s). Se descarga una sola vez.</string>
     <string name="desktop_cef_download">Descargar</string>

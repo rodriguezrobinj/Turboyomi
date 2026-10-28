@@ -8,6 +8,8 @@ import eu.kanade.tachiyomi.network.interceptor.CloudflareInterceptor
 import eu.kanade.tachiyomi.network.interceptor.UncaughtExceptionInterceptor
 import eu.kanade.tachiyomi.network.interceptor.UserAgentInterceptor
 import kotlinx.coroutines.CoroutineScope
+import logcat.LogPriority
+import logcat.logcat
 import mihon.core.metro.AppCoroutineScope
 import okhttp3.Cache
 import okhttp3.OkHttpClient
@@ -56,9 +58,9 @@ class NetworkHelper(
             .addInterceptor(UserAgentInterceptor(::defaultUserAgentProvider))
 
         if (preferences.verboseLogging.get()) {
-            builder.addNetworkInterceptor(
-                HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.HEADERS },
-            )
+            // desktop: into the app log, not java.util.logging
+            val logger = HttpLoggingInterceptor.Logger { message -> logcat("OkHttp", LogPriority.INFO) { message } }
+            builder.addNetworkInterceptor(httpLoggingInterceptor(preferences.redactSensitiveHeaders.get(), logger))
         }
 
         when (preferences.dohProvider.get()) {
@@ -90,3 +92,12 @@ class NetworkHelper(
 
     fun defaultUserAgentProvider() = preferences.defaultUserAgent.get().trim()
 }
+
+internal fun httpLoggingInterceptor(redact: Boolean, logger: HttpLoggingInterceptor.Logger) =
+    HttpLoggingInterceptor(logger).apply {
+        level = HttpLoggingInterceptor.Level.HEADERS
+        if (redact) {
+            redactHeader("Authorization")
+            redactHeader("Auth")
+        }
+    }

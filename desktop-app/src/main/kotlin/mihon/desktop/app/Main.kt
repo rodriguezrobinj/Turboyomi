@@ -64,6 +64,7 @@ import mihon.desktop.app.tray.TrayNotifier
 import mihon.desktop.app.tray.closeAction
 import mihon.desktop.app.update.UpdateState
 import mihon.desktop.core.AppDirs
+import mihon.desktop.core.DesktopLogging
 import mihon.desktop.core.LegacyMigration
 import mihon.desktop.core.Platform
 import mihon.desktop.core.SingleInstance
@@ -126,6 +127,7 @@ fun main(args: Array<String>) {
         Startup.fatal(e.message ?: e.toString(), dirs.logs)
     }
     DesktopApp.graph = graph
+    DesktopLogging.setVerbose(graph.networkPreferences.verboseLogging.get())
     AppMessages.install()
     DesktopImageLoader.install(graph)
     // Loads the installed extensions (their sources feed SourceManager) and the store listings at startup
