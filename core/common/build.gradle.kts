@@ -64,5 +64,6 @@ dependencies {
 
     testImplementation(libs.bundles.test)
     testImplementation(libs.okhttp.mockwebserver)
+    testImplementation(libs.kotlinx.coroutines.test)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
