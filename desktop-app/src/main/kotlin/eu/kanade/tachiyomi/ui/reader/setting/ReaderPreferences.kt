@@ -295,6 +295,11 @@ class ReaderPreferences(
         const val WEBTOON_PADDING_MIN = 0
         const val WEBTOON_PADDING_MAX = 25
 
+        // desktop: the range of webtoonScrollStep, and how much the reader's Ctrl keys change it and the padding
+        const val WEBTOON_SCROLL_STEP_MIN = 5
+        const val WEBTOON_SCROLL_STEP_MAX = 100
+        const val WEBTOON_KEY_STEP = 5
+
         const val MILLI_CONVERSION = 100
 
         val TapZones = listOf(

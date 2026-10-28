@@ -8,12 +8,17 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.withKeyDown
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.window.WindowState
 import cafe.adriel.voyager.navigator.Navigator
@@ -33,8 +38,10 @@ import mihon.desktop.app.testing.FakeImages
 import mihon.desktop.app.testing.TestLibrary
 import mihon.desktop.app.testing.TestSources
 import mihon.desktop.app.testing.startTestApp
+import mihon.desktop.app.testing.str
 import org.junit.jupiter.api.Test
 import tachiyomi.domain.chapter.model.Chapter
+import tachiyomi.i18n.MR
 
 @OptIn(ExperimentalTestApi::class)
 class WebtoonAndDualTest {
@@ -199,6 +206,49 @@ class WebtoonAndDualTest {
         val scrolled = (before - onNodeWithTag("page 1 ready").fetchSemanticsNode().positionInRoot.y) / density
         (scrolled / viewport.value) shouldBe (0.5f plusOrMinus 0.05f)
     }
+
+    @Test
+    fun `the quick settings have the webtoon's side padding and scroll step`() = runComposeUiTest {
+        open(ReadingMode.WEBTOON, ReaderPreferences.DualPageView.NEVER)
+        waitForTag("page 1 ready")
+        onNodeWithTag(READER_TAG).performMouseInput { click(center) }
+        waitForTag(QUICK_SETTINGS_TAG)
+        onNodeWithTag(QUICK_SETTINGS_TAG).performClick()
+        onNodeWithText(str(MR.strings.pref_webtoon_side_padding)).assertExists()
+        onNodeWithText(str(MR.strings.desktop_webtoon_scroll_step)).assertExists()
+    }
+
+    @Test
+    fun `ctrl keys and ctrl wheel change the side padding and the scroll step and say the new value`() =
+        runComposeUiTest {
+            open(ReadingMode.WEBTOON, ReaderPreferences.DualPageView.NEVER)
+            val preferences = startTestApp().readerPreferences
+            preferences.webtoonSidePadding.set(10)
+            waitForTag("page 1 ready")
+
+            onNodeWithTag(READER_TAG).performKeyInput { withKeyDown(Key.CtrlLeft) { pressKey(Key.Plus) } }
+            waitUntil { preferences.webtoonSidePadding.get() == 5 }
+            onNodeWithText("${str(MR.strings.pref_webtoon_side_padding)}: 5 %").assertExists()
+
+            onNodeWithTag(READER_TAG).performKeyInput { withKeyDown(Key.CtrlLeft) { pressKey(Key.DirectionUp) } }
+            waitUntil { preferences.webtoonScrollStep.get() == 20 }
+
+            // The wheel down with Ctrl zooms out: more padding. Without Ctrl it only scrolls
+            onNodeWithTag(READER_TAG).performKeyInput { keyDown(Key.CtrlLeft) }
+            onNodeWithTag(READER_TAG).performMouseInput { scroll(1f) }
+            onNodeWithTag(READER_TAG).performKeyInput { keyUp(Key.CtrlLeft) }
+            waitUntil { preferences.webtoonSidePadding.get() == 10 }
+            onNodeWithTag(READER_TAG).performMouseInput { scroll(1f) }
+            waitForIdle()
+            preferences.webtoonSidePadding.get() shouldBe 10
+
+            // Never past the ends of the settings' range
+            onNodeWithTag(READER_TAG).performKeyInput {
+                withKeyDown(Key.CtrlLeft) { repeat(4) { pressKey(Key.Plus) } }
+            }
+            waitForIdle()
+            preferences.webtoonSidePadding.get() shouldBe ReaderPreferences.WEBTOON_PADDING_MIN
+        }
 
     @Test
     fun `the end key stays on a short last page while the pages above it load`() = runComposeUiTest {
