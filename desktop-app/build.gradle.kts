@@ -77,7 +77,6 @@ dependencies {
     implementation(libs.swipe)
     implementation(libs.composeGrid)
     implementation(libs.composeRichEditor)
-    implementation(libs.diskLruCache)
     implementation(libs.zoomable)
     implementation(libs.reorderable)
     implementation(libs.stringSimilarity)

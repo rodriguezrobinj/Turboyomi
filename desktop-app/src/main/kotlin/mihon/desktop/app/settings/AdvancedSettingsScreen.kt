@@ -7,6 +7,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import coil3.PlatformContext
@@ -14,6 +15,7 @@ import coil3.SingletonImageLoader
 import eu.kanade.presentation.more.settings.Preference
 import eu.kanade.presentation.more.settings.screen.SearchableSettings
 import eu.kanade.tachiyomi.util.system.toast
+import kotlinx.coroutines.launch
 import mihon.app.di.appGraph
 import mihon.desktop.app.browser.EmbeddedBrowser
 import mihon.desktop.core.cef.CefCookieSync
@@ -32,6 +34,7 @@ object AdvancedSettingsScreen : SearchableSettings {
     @Composable
     override fun getPreferences(): List<Preference> {
         val context = LocalContext.current
+        val scope = rememberCoroutineScope()
         return listOf(
             Preference.PreferenceItem.TextPreference(
                 title = stringResource(MR.strings.desktop_clear_image_cache),
@@ -39,8 +42,10 @@ object AdvancedSettingsScreen : SearchableSettings {
                     val loader = SingletonImageLoader.get(PlatformContext.INSTANCE)
                     loader.memoryCache?.clear()
                     loader.diskCache?.clear()
-                    context.appGraph.chapterCache.clear() // spec 2a §3: Avanzado › borrar caché
-                    context.toast(MR.strings.desktop_image_cache_cleared)
+                    scope.launch {
+                        context.appGraph.chapterCache.clear() // spec 2a §3: Avanzado › borrar caché
+                        context.toast(MR.strings.desktop_image_cache_cleared)
+                    }
                 },
             ),
             Preference.PreferenceItem.TextPreference(
