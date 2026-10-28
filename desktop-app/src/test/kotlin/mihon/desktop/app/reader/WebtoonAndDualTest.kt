@@ -323,6 +323,24 @@ class WebtoonAndDualTest {
     }
 
     @Test
+    fun `S with the controls showing hides them and starts the automatic scrolling`() = runComposeUiTest {
+        open(ReadingMode.WEBTOON, ReaderPreferences.DualPageView.NEVER)
+        waitForTag("page 1 ready")
+        onNodeWithTag(READER_TAG).performMouseInput { click(center) }
+        waitForTag(QUICK_SETTINGS_TAG)
+
+        mainClock.autoAdvance = false
+        onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.S) }
+        // Past the controls' exit animation
+        mainClock.advanceTimeBy(1_000)
+        onNodeWithTag(AUTOSCROLL_TAG).assertExists()
+        onNodeWithTag(QUICK_SETTINGS_TAG).assertDoesNotExist()
+        onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.S) }
+        mainClock.advanceTimeBy(100)
+        mainClock.autoAdvance = true
+    }
+
+    @Test
     fun `the reader tells the help its viewer, and opening the help stops the automatic scrolling`() =
         runComposeUiTest {
             open(ReadingMode.WEBTOON, ReaderPreferences.DualPageView.NEVER)
@@ -358,6 +376,25 @@ class WebtoonAndDualTest {
         mainClock.advanceTimeBy(8_000)
         onNodeWithTag(AUTOSCROLL_TAG).assertDoesNotExist()
         mainClock.autoAdvance = true
+    }
+
+    @Test
+    fun `a manga's own side padding wins over the global one, and the ctrl keys change it`() = runComposeUiTest {
+        val chapters = open(ReadingMode.WEBTOON, ReaderPreferences.DualPageView.NEVER)
+        val preferences = startTestApp().readerPreferences
+        val own = preferences.webtoonSidePaddingFor(chapters[0].mangaId)
+        try {
+            preferences.webtoonSidePadding.set(5)
+            own.set(20)
+            waitForTag("page 1 ready")
+
+            onNodeWithTag(READER_TAG).performKeyInput { withKeyDown(Key.CtrlLeft) { pressKey(Key.Plus) } }
+            waitUntil { own.get() == 15 }
+            preferences.webtoonSidePadding.get() shouldBe 5
+        } finally {
+            own.delete()
+            preferences.webtoonSidePadding.set(0)
+        }
     }
 
     @Test

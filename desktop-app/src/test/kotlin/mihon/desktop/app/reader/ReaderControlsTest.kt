@@ -142,6 +142,17 @@ class ReaderControlsTest {
         }
 
     @Test
+    fun `the zoom note shows as soon as the key is pressed, not after the animation`() = runComposeUiTest {
+        open()
+        waitForTag("page 1 ready")
+        mainClock.autoAdvance = false
+        onNodeWithTag(READER_TAG).performKeyInput { withKeyDown(Key.CtrlLeft) { pressKey(Key.Plus) } }
+        mainClock.advanceTimeBy(50)
+        onAllNodes(hasText("${str(MR.strings.desktop_zoom)}: 125 %")).fetchSemanticsNodes().isNotEmpty() shouldBe true
+        mainClock.autoAdvance = true
+    }
+
+    @Test
     fun `custom brightness dims the page, a color filter goes over it, and grayscale doesn't break drawing`() =
         runComposeUiTest {
             open()

@@ -113,6 +113,7 @@ fun WebtoonViewer(
             cache.retainAround(page.chapter.chapter.id, page.index)
         }
     }
+    val navigation = LocalViewerSettings.current.tapNavigation
     val latestOnReachedEnd by rememberUpdatedState(onReachedEnd)
     val latestOnReachedStart by rememberUpdatedState(onReachedStart)
     val latestScrollStep by rememberUpdatedState(scrollStepPercent)
@@ -148,7 +149,18 @@ fun WebtoonViewer(
                 when (item) {
                     is ViewerItem.Transition -> Box(
                         Modifier.fillMaxWidth().heightIn(min = 240.dp).pointerInput(item) {
-                            detectTapGestures { onTap(tapActionFor(it.x, size.width.toFloat(), ReadingMode.WEBTOON)) }
+                            detectTapGestures {
+                                onTap(
+                                    tapActionFor(
+                                        it.x,
+                                        it.y,
+                                        size.width.toFloat(),
+                                        size.height.toFloat(),
+                                        ReadingMode.WEBTOON,
+                                        navigation,
+                                    ),
+                                )
+                            }
                         },
                         contentAlignment = Alignment.Center,
                     ) {
@@ -176,7 +188,18 @@ fun WebtoonViewer(
                                     cache = cache,
                                     // spec deviation 5: no zoom on a scrolling list
                                     zoom = false,
-                                    onTap = { x, width -> onTap(tapActionFor(x, width, ReadingMode.WEBTOON)) },
+                                    onTap = { at, size ->
+                                        onTap(
+                                            tapActionFor(
+                                                at.x,
+                                                at.y,
+                                                size.width.toFloat(),
+                                                size.height.toFloat(),
+                                                ReadingMode.WEBTOON,
+                                                navigation,
+                                            ),
+                                        )
+                                    },
                                     onRetry = onRetry,
                                     onSize = { sizes[page.pageKey] = it },
                                     onSave = onSave,

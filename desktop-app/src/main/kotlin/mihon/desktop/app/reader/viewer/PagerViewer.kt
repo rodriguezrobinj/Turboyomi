@@ -29,9 +29,6 @@ import eu.kanade.tachiyomi.ui.reader.model.ReaderChapter
 import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
 import eu.kanade.tachiyomi.ui.reader.model.ViewerChapters
 import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import mihon.desktop.app.reader.ImageScale
@@ -69,6 +66,7 @@ fun PagerViewer(
     onCopy: (ReaderPage) -> Unit,
     jump: Int = 0,
 ) {
+    val navigation = LocalViewerSettings.current.tapNavigation
     val current = chapters.currChapter
     val pages = current.pages.orEmpty()
     val sizes = remember { mutableStateMapOf<PageKey, IntSize>() }
@@ -118,7 +116,18 @@ fun PagerViewer(
         when (val item = items[index]) {
             is ViewerItem.Transition -> Box(
                 Modifier.fillMaxSize().pointerInput(item) {
-                    detectTapGestures { onTap(tapActionFor(it.x, size.width.toFloat(), mode)) }
+                    detectTapGestures {
+                        onTap(
+                            tapActionFor(
+                                it.x,
+                                it.y,
+                                size.width.toFloat(),
+                                size.height.toFloat(),
+                                mode,
+                                navigation,
+                            ),
+                        )
+                    }
                 },
                 contentAlignment = Alignment.Center,
             ) {
@@ -134,7 +143,18 @@ fun PagerViewer(
                         scale = scale,
                         cache = cache,
                         zoom = true,
-                        onTap = { x, width -> onTap(tapActionFor(x, width, mode)) },
+                        onTap = { at, size ->
+                            onTap(
+                                tapActionFor(
+                                    at.x,
+                                    at.y,
+                                    size.width.toFloat(),
+                                    size.height.toFloat(),
+                                    mode,
+                                    navigation,
+                                ),
+                            )
+                        },
                         onRetry = onRetry,
                         onSize = { sizes[page.pageKey] = it },
                         onSave = onSave,
@@ -192,7 +212,5 @@ private class PagerController(
     }
 
     // Both pages of a spread at once
-    override suspend fun zoom(action: ReaderAction): Float? = coroutineScope {
-        zoomers().map { async { it.zoom(action) } }.awaitAll().firstOrNull()
-    }
+    override suspend fun zoom(action: ReaderAction): Float? = zoomers().map { it.zoom(action) }.firstOrNull()
 }

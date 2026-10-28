@@ -26,6 +26,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
@@ -42,7 +43,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mihon.desktop.app.reader.Half
 import mihon.desktop.app.reader.ImageScale
@@ -54,7 +57,6 @@ import mihon.desktop.app.reader.image.DecodedPageCache
 import mihon.desktop.app.reader.image.PageDecoder
 import mihon.desktop.app.reader.image.pageKey
 import net.engawapg.lib.zoomable.MouseWheelZoom
-import net.engawapg.lib.zoomable.ZoomState
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 import tachiyomi.i18n.MR
@@ -73,7 +75,7 @@ fun PageContent(
     scale: ImageScale,
     cache: DecodedPageCache,
     zoom: Boolean,
-    onTap: (x: Float, width: Float) -> Unit,
+    onTap: (position: Offset, size: IntSize) -> Unit,
     onRetry: (ReaderPage) -> Unit,
     onSize: (IntSize) -> Unit,
     modifier: Modifier = Modifier,
@@ -103,7 +105,7 @@ fun PageContent(
     // The page's width, for the click zones of zoomable's onTap, which only gives the offset
     var size by remember { mutableStateOf(IntSize(1, 1)) }
     val tapModifier = Modifier.pointerInput(page) {
-        detectTapGestures { offset -> onTap(offset.x, size.width.toFloat()) }
+        detectTapGestures { offset -> onTap(offset, size) }
     }
 
     val result = decoded
@@ -124,15 +126,26 @@ fun PageContent(
                 // A new zoom state each time the page becomes current: the zoom starts over (spec 2a §4)
                 val zoomState = key(page, isCurrent) { rememberZoomState(maxScale = MAX_ZOOM) }
                 if (zoom && isCurrent) {
+                    val zoomScope = rememberCoroutineScope()
                     DisposableEffect(zoomState) {
-                        onZoomer(PageZoomer { action -> zoomState.zoomBy(action, size) })
+                        // A key pressed again while the last one animates goes on from where that one is heading
+                        var heading: Pair<Job, Float>? = null
+                        onZoomer(
+                            PageZoomer { action ->
+                                val from = heading?.takeIf { it.first.isActive }?.second ?: zoomState.scale
+                                val target = zoomTarget(action, from)
+                                val center = Offset(size.width / 2f, size.height / 2f)
+                                heading = zoomScope.launch { zoomState.changeScale(target, center) } to target
+                                target
+                            },
+                        )
                         onDispose { onZoomer(null) }
                     }
                 }
                 val pageModifier = if (zoom) {
                     Modifier.fillMaxSize().zoomable(
                         zoomState = zoomState,
-                        onTap = { offset: Offset -> onTap(offset.x, size.width.toFloat()) },
+                        onTap = { offset: Offset -> onTap(offset, size) },
                         mouseWheelZoom = MouseWheelZoom.EnabledWithCtrlKey,
                     )
                 } else {
@@ -229,9 +242,9 @@ fun DecodedPageImage(page: DecodedPage, contentScale: ContentScale, modifier: Mo
     }
 }
 
-/** Zooms the current page from the keyboard (Ctrl+±, Ctrl+0); returns the new scale. */
+/** Zooms the current page from the keyboard (Ctrl+±, Ctrl+0); returns the scale it animates to. */
 fun interface PageZoomer {
-    suspend fun zoom(action: ReaderAction): Float
+    fun zoom(action: ReaderAction): Float
 }
 
 private const val MAX_ZOOM = 5f
@@ -239,15 +252,11 @@ private const val MAX_ZOOM = 5f
 // Each Ctrl+± multiplies or divides the scale by this
 private const val KEY_ZOOM_FACTOR = 1.25f
 
-private suspend fun ZoomState.zoomBy(action: ReaderAction, layout: IntSize): Float {
-    val target = when (action) {
-        ReaderAction.ZoomIn -> scale * KEY_ZOOM_FACTOR
-        ReaderAction.ZoomOut -> scale / KEY_ZOOM_FACTOR
-        else -> 1f
-    }.coerceIn(1f, MAX_ZOOM)
-    changeScale(target, Offset(layout.width / 2f, layout.height / 2f))
-    return target
-}
+private fun zoomTarget(action: ReaderAction, scale: Float): Float = when (action) {
+    ReaderAction.ZoomIn -> scale * KEY_ZOOM_FACTOR
+    ReaderAction.ZoomOut -> scale / KEY_ZOOM_FACTOR
+    else -> 1f
+}.coerceIn(1f, MAX_ZOOM)
 
 /** How the reader decodes its pages for the mode it's in (spec 8c): its cache is made again when they change. */
 val LocalDecodeOptions: ProvidableCompositionLocal<DecodeOptions> = staticCompositionLocalOf { DecodeOptions() }
