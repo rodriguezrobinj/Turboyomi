@@ -17,15 +17,19 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performMouseInput
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.test.withKeyDown
 import androidx.compose.ui.window.WindowState
 import cafe.adriel.voyager.navigator.Navigator
+import eu.kanade.presentation.reader.BRIGHTNESS_OVERLAY_TAG
+import eu.kanade.presentation.reader.COLOR_OVERLAY_TAG
 import eu.kanade.presentation.util.DefaultNavigatorScreenTransition
 import eu.kanade.presentation.util.Screen
 import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
 import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import kotlinx.coroutines.runBlocking
 import mihon.desktop.app.browser.EmbeddedBrowser
@@ -136,6 +140,112 @@ class ReaderControlsTest {
             ctrl(Key.Plus)
             waitFor(zoomNote(125))
         }
+
+    @Test
+    fun `the zoom note shows as soon as the key is pressed, not after the animation`() = runComposeUiTest {
+        open()
+        waitForTag("page 1 ready")
+        mainClock.autoAdvance = false
+        onNodeWithTag(READER_TAG).performKeyInput { withKeyDown(Key.CtrlLeft) { pressKey(Key.Plus) } }
+        mainClock.advanceTimeBy(50)
+        onAllNodes(hasText("${str(MR.strings.desktop_zoom)}: 125 %")).fetchSemanticsNodes().isNotEmpty() shouldBe true
+        mainClock.autoAdvance = true
+    }
+
+    @Test
+    fun `custom brightness dims the page, a color filter goes over it, and grayscale doesn't break drawing`() =
+        runComposeUiTest {
+            open()
+            val preferences = startTestApp().readerPreferences
+            try {
+                preferences.customBrightness.set(true)
+                preferences.customBrightnessValue.set(-50)
+                preferences.colorFilter.set(true)
+                preferences.colorFilterValue.set(0x40FF8800)
+                preferences.grayscale.set(true)
+                preferences.invertedColors.set(true)
+                waitForTag("page 1 ready")
+                waitForTag(BRIGHTNESS_OVERLAY_TAG)
+                onNodeWithTag(COLOR_OVERLAY_TAG).assertExists()
+
+                // A brighter value from an Android backup: the desktop can't brighten the screen, so no overlay
+                preferences.customBrightnessValue.set(40)
+                waitForIdle()
+                onNodeWithTag(BRIGHTNESS_OVERLAY_TAG).assertDoesNotExist()
+            } finally {
+                preferences.customBrightness.set(false)
+                preferences.colorFilter.set(false)
+                preferences.grayscale.set(false)
+                preferences.invertedColors.set(false)
+            }
+        }
+
+    @Test
+    fun `the quick settings switch the color filter on and show its sliders`() = runComposeUiTest {
+        open()
+        waitForTag("page 1 ready")
+        onNodeWithTag(READER_TAG).performMouseInput { click(center) }
+        waitForTag(QUICK_SETTINGS_TAG)
+        onNodeWithTag(QUICK_SETTINGS_TAG).performClick()
+        try {
+            onNodeWithText(str(MR.strings.pref_custom_color_filter)).performScrollTo().performClick()
+            waitFor(str(MR.strings.color_filter_r_value))
+            startTestApp().readerPreferences.colorFilter.get() shouldBe true
+        } finally {
+            startTestApp().readerPreferences.colorFilter.set(false)
+        }
+    }
+
+    @Test
+    fun `a wide page split in two reads as its left half, then its right half, then the next page`() =
+        runComposeUiTest {
+            TestSources.http.images.wide = true
+            open()
+            val preferences = startTestApp().readerPreferences
+            try {
+                preferences.dualPageSplitPaged.set(true)
+                waitForTag("page 1 ready")
+                // Two items for page 1: after one turn page 1 is still there, its other half
+                onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.DirectionRight) }
+                waitForIdle()
+                onNodeWithTag("page 1 ready").assertExists()
+                // Page 2 splits once it's decoded, and the reader stays on it
+                onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.DirectionRight) }
+                waitForTag("page 2 ready")
+                Thread.sleep(1_000)
+                waitForIdle()
+                onNodeWithTag("page 2 ready").assertExists()
+            } finally {
+                TestSources.http.images.wide = false
+                preferences.dualPageSplitPaged.set(false)
+            }
+        }
+
+    @Test
+    fun `the quick settings crop borders and split or turn wide pages, one or the other`() = runComposeUiTest {
+        open()
+        waitForTag("page 1 ready")
+        onNodeWithTag(READER_TAG).performMouseInput { click(center) }
+        waitForTag(QUICK_SETTINGS_TAG)
+        onNodeWithTag(QUICK_SETTINGS_TAG).performClick()
+        val preferences = startTestApp().readerPreferences
+        try {
+            onNodeWithText(str(MR.strings.pref_crop_borders)).performScrollTo().performClick()
+            waitForIdle()
+            preferences.cropBorders.get() shouldBe true
+            onNodeWithText(str(MR.strings.pref_page_rotate)).performScrollTo().performClick()
+            waitForIdle()
+            onNodeWithText(str(MR.strings.pref_dual_page_split)).performScrollTo().performClick()
+            waitForIdle()
+            // Splitting turns the rotation off, as in Mihon
+            preferences.dualPageSplitPaged.get() shouldBe true
+            preferences.dualPageRotateToFit.get() shouldBe false
+        } finally {
+            preferences.cropBorders.set(false)
+            preferences.dualPageSplitPaged.set(false)
+            preferences.dualPageRotateToFit.set(false)
+        }
+    }
 
     @Test
     fun `a chapter whose page list fails offers retry and opening it in WebView`() = runComposeUiTest {

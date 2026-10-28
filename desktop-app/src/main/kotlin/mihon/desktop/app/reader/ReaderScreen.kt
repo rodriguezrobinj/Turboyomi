@@ -13,6 +13,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -27,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isAltPressed
 import androidx.compose.ui.input.key.isCtrlPressed
@@ -47,6 +49,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.icerock.moko.resources.StringResource
 import dev.zacsweers.metrox.viewmodel.assistedMetroViewModel
+import eu.kanade.presentation.reader.ReaderContentOverlay
 import eu.kanade.presentation.util.Screen
 import eu.kanade.presentation.util.formattedMessage
 import eu.kanade.tachiyomi.source.online.HttpSource
@@ -65,9 +68,14 @@ import mihon.desktop.app.main.ShortcutHelp
 import mihon.desktop.app.platform.ExitHooks
 import mihon.desktop.app.platform.FileDialogs
 import mihon.desktop.app.platform.LocalWindowControls
+import mihon.desktop.app.platform.ScreenKeeper
+import mihon.desktop.app.reader.image.DecodeOptions
 import mihon.desktop.app.reader.image.DecodedPageCache
+import mihon.desktop.app.reader.viewer.LocalDecodeOptions
+import mihon.desktop.app.reader.viewer.LocalViewerSettings
 import mihon.desktop.app.reader.viewer.PagerViewer
 import mihon.desktop.app.reader.viewer.ViewerController
+import mihon.desktop.app.reader.viewer.ViewerSettings
 import mihon.desktop.app.reader.viewer.WebtoonViewer
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.Public
@@ -113,7 +121,6 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
     val scope = rememberCoroutineScope()
     val focus = remember { FocusRequester() }
     var controller by remember { mutableStateOf<ViewerController?>(null) }
-    val cache = remember { DecodedPageCache() }
     val mode = remember(state.manga) { viewModel.getMangaReadingMode() }
     val scale by preferences.imageScaleType.collectAsState()
     val background by preferences.readerTheme.collectAsState()
@@ -123,6 +130,50 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
     // What a Ctrl key or Ctrl+wheel just changed, and when: shown for a moment over the page
     var notice by remember { mutableStateOf<Pair<String, Long>?>(null) }
     val autoScrollSpeed by preferences.webtoonAutoScrollSpeed.collectAsState()
+    val ownPaddingPreference = remember(state.manga?.id) { preferences.webtoonSidePaddingFor(state.manga?.id ?: -1L) }
+    val ownPadding by ownPaddingPreference.collectAsState()
+    val keepScreenOn by preferences.keepScreenOn.collectAsState()
+    // Made and cleared on the UI thread, which Windows ties the request to
+    DisposableEffect(keepScreenOn) {
+        if (keepScreenOn) ScreenKeeper.keepOn(true)
+        onDispose { if (keepScreenOn) ScreenKeeper.keepOn(false) }
+    }
+    val customBrightness by preferences.customBrightness.collectAsState()
+    val customBrightnessValue by preferences.customBrightnessValue.collectAsState()
+    val colorFilter by preferences.colorFilter.collectAsState()
+    val colorFilterValue by preferences.colorFilterValue.collectAsState()
+    val colorFilterMode by preferences.colorFilterMode.collectAsState()
+    val grayscale by preferences.grayscale.collectAsState()
+    val invertedColors by preferences.invertedColors.collectAsState()
+    val webtoon = mode.type == ReadingMode.ViewerType.Webtoon
+    val cropPaged by preferences.cropBorders.collectAsState()
+    val cropWebtoon by preferences.cropBordersWebtoon.collectAsState()
+    val rotatePaged by preferences.dualPageRotateToFit.collectAsState()
+    val rotatePagedInvert by preferences.dualPageRotateToFitInvert.collectAsState()
+    val rotateWebtoon by preferences.dualPageRotateToFitWebtoon.collectAsState()
+    val rotateWebtoonInvert by preferences.dualPageRotateToFitInvertWebtoon.collectAsState()
+    val splitPaged by preferences.dualPageSplitPaged.collectAsState()
+    val splitWebtoon by preferences.dualPageSplitWebtoon.collectAsState()
+    val splitPagedInvert by preferences.dualPageInvertPaged.collectAsState()
+    val splitWebtoonInvert by preferences.dualPageInvertWebtoon.collectAsState()
+    val split = if (webtoon) splitWebtoon else splitPaged
+    // Splitting wins over turning (spec 8c); the decoder turns only the pages that turn out wide
+    val decodeOptions = DecodeOptions(
+        crop = if (webtoon) cropWebtoon else cropPaged,
+        rotateWide = !split && if (webtoon) rotateWebtoon else rotatePaged,
+        rotateInvert = if (webtoon) rotateWebtoonInvert else rotatePagedInvert,
+    )
+    val cache = remember(decodeOptions) { DecodedPageCache() }
+    val showPageNumber by preferences.showPageNumber.collectAsState()
+    val alwaysShowTransition by preferences.alwaysShowChapterTransition.collectAsState()
+    val navigationMode by (if (webtoon) preferences.navigationModeWebtoon else preferences.navigationModePager)
+        .collectAsState()
+    val navigationInvert by (if (webtoon) preferences.webtoonNavInverted else preferences.pagerNavInverted)
+        .collectAsState()
+    val viewerSettings = ViewerSettings(TapNavigation(navigationMode, navigationInvert), alwaysShowTransition)
+    val pageColorFilter = remember(grayscale, invertedColors) {
+        readerColorMatrix(grayscale, invertedColors)?.let(ColorFilter::colorMatrix)
+    }
     val latestAutoScrollSpeed by rememberUpdatedState(autoScrollSpeed)
     var autoScrollJob by remember { mutableStateOf<Job?>(null) }
     // The viewer's last turn, jump or scroll, which the automatic scrolling takes over from (End keeps retrying)
@@ -155,7 +206,12 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
         val up = action == ReaderAction.ZoomOut ||
             action == ReaderAction.ScrollStepUp ||
             action == ReaderAction.AutoScrollFaster
-        val preference = setting.preference(preferences)
+        // A manga with its own side padding keeps it to itself (spec 8e)
+        val preference = if (setting == WebtoonSetting.SidePadding && ownPadding >= 0) {
+            ownPaddingPreference
+        } else {
+            setting.preference(preferences)
+        }
         val value = (preference.get() + (if (up) 1 else -1) * setting.step).coerceIn(setting.range)
         preference.set(value)
         showNotice("${context.stringResource(setting.title)}: $value ${setting.unit}")
@@ -177,6 +233,8 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
         if (autoScrolling) return stopAutoScroll()
         val viewer = controller ?: return
         viewerJob?.cancel()
+        // Reading on: the controls go away rather than stopping it as soon as it starts
+        viewModel.showMenus(false)
         autoScrollJob = scope.launch {
             autoScrolling = true
             try {
@@ -246,84 +304,107 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
                 true
             },
     ) {
-        val chapters = state.viewerChapters
-        when {
-            state.initError != null -> {
-                val error = state.initError!!
-                val url = chapterUrl
-                EmptyScreen(
-                    message = with(context) { error.formattedMessage },
-                    actions = listOfNotNull(
-                        EmptyScreenAction(MR.strings.action_retry, MaterialSymbols.Rounded.Refresh) {
-                            viewModel.retryInit()
-                        },
-                        url?.let {
-                            EmptyScreenAction(MR.strings.action_open_in_web_view, MaterialSymbols.Rounded.Public) {
-                                EmbeddedBrowser.open(context, it, (state.source as? HttpSource)?.headers)
-                            }
-                        },
-                    ),
-                )
-            }
-            chapters == null -> LoadingScreen()
-            // Not per chapter: the viewers go on from one chapter into the next (see viewerItems)
-            else -> key(mode) {
-                if (mode.type == ReadingMode.ViewerType.Webtoon) {
-                    val sidePadding by preferences.webtoonSidePadding.collectAsState()
-                    val scrollStep by preferences.webtoonScrollStep.collectAsState()
-                    WebtoonViewer(
-                        chapters = chapters,
-                        gap = mode == ReadingMode.CONTINUOUS_VERTICAL,
-                        sidePaddingPercent = sidePadding,
-                        scrollStepPercent = scrollStep,
-                        cache = cache,
-                        onPageSelected = viewModel::onPageSelected,
-                        onReachedEnd = { scope.launch { viewModel.loadNextChapter(from = chapters.currChapter) } },
-                        onReachedStart = {
-                            scope.launch { viewModel.loadPreviousChapter(from = chapters.currChapter) }
-                        },
-                        onTap = ::perform,
-                        onRetry = viewModel::retryPage,
-                        onController = { controller = it },
-                        jump = state.chapterJumps,
-                        onSave = { page -> savePage(context, state, page) },
-                        onCopy = { page ->
-                            scope.launch(Dispatchers.IO) {
-                                page.stream?.let { PageActions.copyImage(it().use { s -> s.readBytes() }) }
-                                context.toast(MR.strings.desktop_image_copied)
-                            }
-                        },
+        // Grayscale and inverted colors on the pages only (spec 8b)
+        CompositionLocalProvider(
+            LocalPageColorFilter provides pageColorFilter,
+            LocalDecodeOptions provides decodeOptions,
+            LocalViewerSettings provides viewerSettings,
+        ) {
+            val chapters = state.viewerChapters
+            when {
+                state.initError != null -> {
+                    val error = state.initError!!
+                    val url = chapterUrl
+                    EmptyScreen(
+                        message = with(context) { error.formattedMessage },
+                        actions = listOfNotNull(
+                            EmptyScreenAction(MR.strings.action_retry, MaterialSymbols.Rounded.Refresh) {
+                                viewModel.retryInit()
+                            },
+                            url?.let {
+                                EmptyScreenAction(MR.strings.action_open_in_web_view, MaterialSymbols.Rounded.Public) {
+                                    EmbeddedBrowser.open(context, it, (state.source as? HttpSource)?.headers)
+                                }
+                            },
+                        ),
                     )
-                } else {
-                    PagerViewer(
-                        chapters = chapters,
-                        mode = mode,
-                        dual = isDualPage(dualView),
-                        shifted = shifted,
-                        scale = ImageScale.fromPreference(scale),
-                        cache = cache,
-                        onPageSelected = viewModel::onPageSelected,
-                        onPastEnd = { forward ->
-                            scope.launch {
-                                val from = chapters.currChapter
-                                if (forward) viewModel.loadNextChapter(from) else viewModel.loadPreviousChapter(from)
-                            }
-                        },
-                        onTap = ::perform,
-                        onRetry = viewModel::retryPage,
-                        onController = { controller = it },
-                        jump = state.chapterJumps,
-                        onSave = { page -> savePage(context, state, page) },
-                        onCopy = { page ->
-                            scope.launch(Dispatchers.IO) {
-                                page.stream?.let { PageActions.copyImage(it().use { s -> s.readBytes() }) }
-                                context.toast(MR.strings.desktop_image_copied)
-                            }
-                        },
-                    )
+                }
+                chapters == null -> LoadingScreen()
+                // Not per chapter: the viewers go on from one chapter into the next (see viewerItems)
+                else -> key(mode) {
+                    if (mode.type == ReadingMode.ViewerType.Webtoon) {
+                        val globalPadding by preferences.webtoonSidePadding.collectAsState()
+                        val sidePadding = if (ownPadding >= 0) ownPadding else globalPadding
+                        val scrollStep by preferences.webtoonScrollStep.collectAsState()
+                        WebtoonViewer(
+                            chapters = chapters,
+                            gap = mode == ReadingMode.CONTINUOUS_VERTICAL,
+                            sidePaddingPercent = sidePadding,
+                            scrollStepPercent = scrollStep,
+                            split = splitWebtoon,
+                            splitInvert = splitWebtoonInvert,
+                            cache = cache,
+                            onPageSelected = viewModel::onPageSelected,
+                            onReachedEnd = { scope.launch { viewModel.loadNextChapter(from = chapters.currChapter) } },
+                            onReachedStart = {
+                                scope.launch { viewModel.loadPreviousChapter(from = chapters.currChapter) }
+                            },
+                            onTap = ::perform,
+                            onRetry = viewModel::retryPage,
+                            onController = { controller = it },
+                            jump = state.chapterJumps,
+                            onSave = { page -> savePage(context, state, page) },
+                            onCopy = { page ->
+                                scope.launch(Dispatchers.IO) {
+                                    page.stream?.let { PageActions.copyImage(it().use { s -> s.readBytes() }) }
+                                    context.toast(MR.strings.desktop_image_copied)
+                                }
+                            },
+                        )
+                    } else {
+                        PagerViewer(
+                            chapters = chapters,
+                            mode = mode,
+                            dual = isDualPage(dualView),
+                            shifted = shifted,
+                            scale = ImageScale.fromPreference(scale),
+                            split = splitPaged,
+                            splitInvert = splitPagedInvert,
+                            cache = cache,
+                            onPageSelected = viewModel::onPageSelected,
+                            onPastEnd = { forward ->
+                                scope.launch {
+                                    val from = chapters.currChapter
+                                    if (forward) {
+                                        viewModel.loadNextChapter(
+                                            from,
+                                        )
+                                    } else {
+                                        viewModel.loadPreviousChapter(from)
+                                    }
+                                }
+                            },
+                            onTap = ::perform,
+                            onRetry = viewModel::retryPage,
+                            onController = { controller = it },
+                            jump = state.chapterJumps,
+                            onSave = { page -> savePage(context, state, page) },
+                            onCopy = { page ->
+                                scope.launch(Dispatchers.IO) {
+                                    page.stream?.let { PageActions.copyImage(it().use { s -> s.readBytes() }) }
+                                    context.toast(MR.strings.desktop_image_copied)
+                                }
+                            },
+                        )
+                    }
                 }
             }
         }
+        ReaderContentOverlay(
+            brightness = if (customBrightness) customBrightnessValue.coerceAtMost(0) else 0,
+            color = colorFilterValue.takeIf { colorFilter },
+            colorBlendMode = ReaderPreferences.ColorFilterMode.getOrNull(colorFilterMode)?.second,
+        )
         ReaderControls(
             state = state,
             mode = mode,
@@ -339,6 +420,7 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
             onOpenSettings = { showSettings = true },
             isFullscreen = window?.isFullscreen,
             onToggleFullscreen = { window?.toggleFullscreen() },
+            showPageNumber = showPageNumber,
         )
         if (autoScrolling) {
             Surface(
@@ -379,6 +461,7 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
                 onModeChange = viewModel::setMangaReadingMode,
                 onShiftChange = { shifted = it },
                 onDismissRequest = { showSettings = false },
+                mangaId = state.manga?.id,
             )
         }
     }
