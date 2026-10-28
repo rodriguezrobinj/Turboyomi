@@ -233,6 +233,8 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
         if (autoScrolling) return stopAutoScroll()
         val viewer = controller ?: return
         viewerJob?.cancel()
+        // Reading on: the controls go away rather than stopping it as soon as it starts
+        viewModel.showMenus(false)
         autoScrollJob = scope.launch {
             autoScrolling = true
             try {
