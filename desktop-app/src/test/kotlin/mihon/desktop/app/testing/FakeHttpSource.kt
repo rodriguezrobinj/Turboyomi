@@ -30,6 +30,10 @@ class FakeImages : Dispatcher() {
     val short: MutableSet<String> = ConcurrentHashMap.newKeySet()
     val slow: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
+    /** Every page served wide (1200×600), a double-page scan. */
+    @Volatile
+    var wide = false
+
     private val png = png(600, 900)
 
     /** Successful page responses served so far, to tell what a download fetched. */
@@ -38,6 +42,7 @@ class FakeImages : Dispatcher() {
     /** The page image every `.png` path serves. */
     fun png(): ByteArray = png
     private val shortPng = png(600, 100)
+    private val widePng = png(1200, 600)
 
     private fun png(width: Int, height: Int): ByteArray = ByteArrayOutputStream().also {
         ImageIO.write(BufferedImage(width, height, BufferedImage.TYPE_INT_RGB), "png", it)
@@ -51,7 +56,10 @@ class FakeImages : Dispatcher() {
             path in short -> MockResponse().setHeader("Content-Type", "image/png").setBody(Buffer().write(shortPng))
             path.endsWith(".png") -> {
                 served.incrementAndGet()
-                MockResponse().setHeader("Content-Type", "image/png").setBody(Buffer().write(png))
+                MockResponse().setHeader(
+                    "Content-Type",
+                    "image/png",
+                ).setBody(Buffer().write(if (wide) widePng else png))
                     .apply { if (path in slow) setBodyDelay(SLOW_MILLIS, TimeUnit.MILLISECONDS) }
             }
             else -> MockResponse().setResponseCode(404)

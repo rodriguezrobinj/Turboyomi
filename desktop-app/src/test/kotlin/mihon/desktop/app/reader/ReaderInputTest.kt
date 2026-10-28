@@ -4,6 +4,7 @@ import androidx.compose.ui.input.key.Key
 import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
+import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences.TappingInvertMode as Invert
 
 class ReaderInputTest {
     private fun key(key: Key, mode: ReadingMode, shift: Boolean = false) =
@@ -92,6 +93,43 @@ class ReaderInputTest {
             ReaderAction.AutoScrollFaster
         readerActionFor(Key.DirectionDown, shift = true, ctrl = true, alt = false, ReadingMode.WEBTOON) shouldBe
             ReaderAction.AutoScrollSlower
+    }
+
+    @Test
+    fun `Mihon's tap zones, from the top left corner of the page`() {
+        fun tap(
+            x: Float,
+            y: Float,
+            nav: Int,
+            mode: ReadingMode = ReadingMode.LEFT_TO_RIGHT,
+            invert: Invert = Invert.NONE,
+        ) =
+            tapActionFor(x * 900f, y * 1200f, 900f, 1200f, mode, TapNavigation(nav, invert))
+        // L: the top and the middle left go back, the bottom and the middle right go on
+        tap(0.5f, 0.1f, TapNavigation.L) shouldBe ReaderAction.PreviousPage
+        tap(0.1f, 0.5f, TapNavigation.L) shouldBe ReaderAction.PreviousPage
+        tap(0.9f, 0.5f, TapNavigation.L) shouldBe ReaderAction.NextPage
+        tap(0.5f, 0.9f, TapNavigation.L) shouldBe ReaderAction.NextPage
+        tap(0.5f, 0.5f, TapNavigation.L) shouldBe ReaderAction.ToggleMenu
+        // Kindle-ish: the left column goes back, the rest below the top third goes on
+        tap(0.1f, 0.5f, TapNavigation.KINDLISH) shouldBe ReaderAction.PreviousPage
+        tap(0.5f, 0.5f, TapNavigation.KINDLISH) shouldBe ReaderAction.NextPage
+        tap(0.5f, 0.1f, TapNavigation.KINDLISH) shouldBe ReaderAction.ToggleMenu
+        // Edge: both sides go on, the bottom middle goes back
+        tap(0.1f, 0.5f, TapNavigation.EDGE) shouldBe ReaderAction.NextPage
+        tap(0.9f, 0.5f, TapNavigation.EDGE) shouldBe ReaderAction.NextPage
+        tap(0.5f, 0.9f, TapNavigation.EDGE) shouldBe ReaderAction.PreviousPage
+        // Right and left follow the reading direction
+        tap(0.1f, 0.5f, TapNavigation.RIGHT_AND_LEFT) shouldBe ReaderAction.PreviousPage
+        tap(0.1f, 0.5f, TapNavigation.RIGHT_AND_LEFT, ReadingMode.RIGHT_TO_LEFT) shouldBe ReaderAction.NextPage
+        // Disabled: every tap shows the controls
+        tap(0.1f, 0.5f, TapNavigation.DISABLED) shouldBe ReaderAction.ToggleMenu
+        // Inverted: the zones are mirrored
+        tap(0.1f, 0.5f, TapNavigation.KINDLISH, invert = Invert.HORIZONTAL) shouldBe ReaderAction.NextPage
+        tap(0.5f, 0.1f, TapNavigation.L, invert = Invert.VERTICAL) shouldBe ReaderAction.NextPage
+        // Default: the side thirds, as before
+        tap(0.1f, 0.5f, TapNavigation.DEFAULT) shouldBe ReaderAction.PreviousPage
+        tap(0.1f, 0.5f, TapNavigation.DEFAULT, invert = Invert.HORIZONTAL) shouldBe ReaderAction.NextPage
     }
 
     @Test

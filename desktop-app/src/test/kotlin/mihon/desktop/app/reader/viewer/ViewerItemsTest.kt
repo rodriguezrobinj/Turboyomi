@@ -9,11 +9,12 @@ import org.junit.jupiter.api.Test
 import tachiyomi.domain.chapter.model.Chapter
 
 class ViewerItemsTest {
-    private fun chapter(id: Long, pages: Int? = null) = ReaderChapter(Chapter.create().copy(id = id)).apply {
-        if (pages != null) {
-            state = ReaderChapter.State.Loaded(List(pages) { i -> ReaderPage(i).also { it.chapter = this } })
+    private fun chapter(id: Long, pages: Int? = null, number: Double = id.toDouble()) =
+        ReaderChapter(Chapter.create().copy(id = id, chapterNumber = number)).apply {
+            if (pages != null) {
+                state = ReaderChapter.State.Loaded(List(pages) { i -> ReaderPage(i).also { it.chapter = this } })
+            }
         }
-    }
 
     private fun items(chapters: ViewerChapters) =
         viewerItems(chapters, chapters.currChapter.pages!!.indices.map { Spread.Single(it) })
@@ -34,6 +35,28 @@ class ViewerItemsTest {
         items(ViewerChapters(two, one, three)).describe() shouldBe listOf("1/2", "1/3", "|", "2/0", "2/1", "2/2", "|")
         items(ViewerChapters(one, null, two)).describe() shouldBe
             listOf("|", "1/0", "1/1", "1/2", "1/3", "|", "2/0", "2/1")
+    }
+
+    @Test
+    fun `without the chapter transition setting, loaded neighbours run straight on unless chapters are missing`() {
+        val one = chapter(1, pages = 2)
+        val two = chapter(2, pages = 2)
+        val five = chapter(5, pages = 2)
+        val noTransition = { chapters: ViewerChapters ->
+            viewerItems(
+                chapters,
+                chapters.currChapter.pages!!.indices.map {
+                    Spread.Single(it)
+                },
+                alwaysShowTransition = false,
+            )
+        }
+
+        noTransition(ViewerChapters(two, one, null)).describe() shouldBe listOf("1/0", "1/1", "2/0", "2/1", "|")
+        // Chapters 3 and 4 are missing: the way across stays, and so does the end of the manga
+        noTransition(ViewerChapters(two, null, five)).describe() shouldBe listOf("|", "2/0", "2/1", "|", "5/0", "5/1")
+        // A neighbour not loaded yet keeps its way across
+        noTransition(ViewerChapters(two, chapter(1), null)).describe() shouldBe listOf("|", "2/0", "2/1", "|")
     }
 
     @Test

@@ -4,7 +4,8 @@ package mihon.desktop.app.reader
 sealed interface Spread {
     val pages: List<Int>
 
-    data class Single(val page: Int) : Spread {
+    /** One page, or one [half] of a wide one split in two (spec 8c). */
+    data class Single(val page: Int, val half: Half? = null) : Spread {
         override val pages get() = listOf(page)
     }
 
