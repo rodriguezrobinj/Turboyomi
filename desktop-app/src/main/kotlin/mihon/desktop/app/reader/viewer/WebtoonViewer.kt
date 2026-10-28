@@ -7,6 +7,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -46,6 +47,7 @@ import mihon.desktop.app.reader.Spread
 import mihon.desktop.app.reader.image.DecodedPageCache
 import mihon.desktop.app.reader.image.PageKey
 import mihon.desktop.app.reader.image.pageKey
+import mihon.desktop.app.reader.readingHalves
 import mihon.desktop.app.reader.tapActionFor
 import kotlin.math.sign
 import kotlin.time.Duration.Companion.seconds
@@ -64,6 +66,8 @@ fun WebtoonViewer(
     gap: Boolean,
     sidePaddingPercent: Int,
     scrollStepPercent: Int,
+    split: Boolean,
+    splitInvert: Boolean,
     cache: DecodedPageCache,
     onPageSelected: (ReaderPage) -> Unit,
     onReachedEnd: () -> Unit,
@@ -109,6 +113,7 @@ fun WebtoonViewer(
             cache.retainAround(page.chapter.chapter.id, page.index)
         }
     }
+    val navigation = LocalViewerSettings.current.tapNavigation
     val latestOnReachedEnd by rememberUpdatedState(onReachedEnd)
     val latestOnReachedStart by rememberUpdatedState(onReachedStart)
     val latestScrollStep by rememberUpdatedState(scrollStepPercent)
@@ -144,7 +149,18 @@ fun WebtoonViewer(
                 when (item) {
                     is ViewerItem.Transition -> Box(
                         Modifier.fillMaxWidth().heightIn(min = 240.dp).pointerInput(item) {
-                            detectTapGestures { onTap(tapActionFor(it.x, size.width.toFloat(), ReadingMode.WEBTOON)) }
+                            detectTapGestures {
+                                onTap(
+                                    tapActionFor(
+                                        it.x,
+                                        it.y,
+                                        size.width.toFloat(),
+                                        size.height.toFloat(),
+                                        ReadingMode.WEBTOON,
+                                        navigation,
+                                    ),
+                                )
+                            }
                         },
                         contentAlignment = Alignment.Center,
                     ) {
@@ -154,24 +170,51 @@ fun WebtoonViewer(
                             goingToChapterDownloaded = false,
                         )
                     }
-                    is ViewerItem.Pages -> PageContent(
-                        page = item.pages.single(),
-                        isCurrent = false,
-                        scale = ImageScale.FIT_WIDTH,
-                        cache = cache,
-                        // spec deviation 5: no zoom on a scrolling list
-                        zoom = false,
-                        onTap = { x, width -> onTap(tapActionFor(x, width, ReadingMode.WEBTOON)) },
-                        onRetry = onRetry,
-                        onSize = { sizes[item.pages.single().pageKey] = it },
-                        onSave = onSave,
-                        onCopy = onCopy,
-                        // A page decoded before keeps its height while it's decoded again (it left the decoded
-                        // cache, or the chapter it's in changed), else the list would jump as it grows back
-                        modifier = sizes[item.pages.single().pageKey]?.let {
-                            Modifier.fillMaxWidth().aspectRatio(it.width.toFloat() / it.height)
-                        } ?: Modifier.fillMaxWidth().fillParentMaxHeight(),
-                    )
+                    is ViewerItem.Pages -> {
+                        val page = item.pages.single()
+                        val size = sizes[page.pageKey]
+                        // A wide page split in two: its halves one under the other (spec 8c)
+                        val halves = if (split && size != null && size.width > size.height) {
+                            readingHalves(rightToLeft = false, invert = splitInvert)
+                        } else {
+                            listOf(null)
+                        }
+                        Column {
+                            halves.forEach { half ->
+                                PageContent(
+                                    page = page,
+                                    isCurrent = false,
+                                    scale = ImageScale.FIT_WIDTH,
+                                    cache = cache,
+                                    // spec deviation 5: no zoom on a scrolling list
+                                    zoom = false,
+                                    onTap = { at, size ->
+                                        onTap(
+                                            tapActionFor(
+                                                at.x,
+                                                at.y,
+                                                size.width.toFloat(),
+                                                size.height.toFloat(),
+                                                ReadingMode.WEBTOON,
+                                                navigation,
+                                            ),
+                                        )
+                                    },
+                                    onRetry = onRetry,
+                                    onSize = { sizes[page.pageKey] = it },
+                                    onSave = onSave,
+                                    onCopy = onCopy,
+                                    half = half,
+                                    // A page decoded before keeps its height while it's decoded again (it left the
+                                    // decoded cache, or the chapter it's in changed), else the list would jump
+                                    modifier = size?.let {
+                                        val width = if (half == null) it.width else it.width / 2
+                                        Modifier.fillMaxWidth().aspectRatio(width.toFloat() / it.height)
+                                    } ?: Modifier.fillMaxWidth().fillParentMaxHeight(),
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -229,6 +272,28 @@ private class WebtoonController(
         state.scrollToItem(items().itemOfPage(current(), index))
     }
 
+    // One scroll for the whole run: the wheel and a drag (MutatePriority.UserInput) cancel it, which is the pause
+    override suspend fun autoScroll(speed: () -> Float) {
+        state.scroll {
+            var last = withFrameNanos { it }
+            var stuckSince = -1L
+            while (true) {
+                val now = withFrameNanos { it }
+                val delta = state.layoutInfo.viewportSize.height * speed() * (now - last) / NANOS_PER_SECOND
+                last = now
+                if (scrollBy(delta) > 0f) {
+                    stuckSince = -1L
+                } else if (stuckSince < 0) {
+                    // The end: the next chapter comes on below, if there is one
+                    stuckSince = now
+                    onPastEnd()
+                } else if (now - stuckSince > AUTOSCROLL_END_WAIT_NANOS) {
+                    return@scroll
+                }
+            }
+        }
+    }
+
     /**
      * Pages that come into view above a short last page grow when they load and push it out (the list keeps its first
      * visible item in place): once every page in view has its size, the jump is made again.
@@ -254,6 +319,11 @@ private class WebtoonController(
 }
 
 private const val LAST_PAGE_TRIES = 5
+
+private const val NANOS_PER_SECOND = 1_000_000_000f
+
+// How long the automatic scrolling waits at the end for the next chapter to come on below
+private const val AUTOSCROLL_END_WAIT_NANOS = 2_000_000_000L
 
 // Critically damped: follows a held key without overshooting the page
 private val GlideSpec = spring<Float>(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)

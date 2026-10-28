@@ -39,6 +39,8 @@ import mihon.desktop.app.reader.image.PageKey
 import mihon.desktop.app.reader.image.pageKey
 import mihon.desktop.app.reader.inDisplayOrder
 import mihon.desktop.app.reader.pairPages
+import mihon.desktop.app.reader.readingHalves
+import mihon.desktop.app.reader.splitPages
 import mihon.desktop.app.reader.tapActionFor
 
 /**
@@ -52,6 +54,8 @@ fun PagerViewer(
     dual: Boolean,
     shifted: Boolean,
     scale: ImageScale,
+    split: Boolean,
+    splitInvert: Boolean,
     cache: DecodedPageCache,
     onPageSelected: (ReaderPage) -> Unit,
     onPastEnd: (forward: Boolean) -> Unit,
@@ -62,19 +66,23 @@ fun PagerViewer(
     onCopy: (ReaderPage) -> Unit,
     jump: Int = 0,
 ) {
+    val navigation = LocalViewerSettings.current.tapNavigation
     val current = chapters.currChapter
     val pages = current.pages.orEmpty()
     val sizes = remember { mutableStateMapOf<PageKey, IntSize>() }
-    val spreads = if (dual && mode.direction == ReadingMode.Direction.Horizontal) {
-        pairPages(pages.size, { sizes[pages[it].pageKey]?.let { s -> s.width > s.height } ?: false }, shifted)
-    } else {
-        pages.indices.map { Spread.Single(it) }
+    val zoomers = remember { mutableMapOf<PageKey, PageZoomer>() }
+    val rightToLeft = mode == ReadingMode.RIGHT_TO_LEFT
+    val isWide = { index: Int -> sizes[pages[index].pageKey]?.let { s -> s.width > s.height } ?: false }
+    val spreads = when {
+        dual && mode.direction == ReadingMode.Direction.Horizontal -> pairPages(pages.size, isWide, shifted)
+        // With dual pages a wide page already shows alone (spec 8c)
+        split -> splitPages(pages.size, isWide, readingHalves(rightToLeft, splitInvert))
+        else -> pages.indices.map { Spread.Single(it) }
     }
     val items = rememberViewerItems(chapters, spreads)
     val latestItems by rememberUpdatedState(items)
     val latestCurrent by rememberUpdatedState(current)
     val state = rememberPagerState(initialPage = items.itemOfPage(current, current.requestedPage)) { latestItems.size }
-    val rightToLeft = mode == ReadingMode.RIGHT_TO_LEFT
     // Also when pairs change as page sizes become known: the page being read is no longer an item of its own
     FollowItemChanges(items, current, jump, shownIndex = { state.currentPage }) { state.requestScrollToPage(it) }
 
@@ -93,7 +101,7 @@ fun PagerViewer(
     }
     val latestOnPastEnd by rememberUpdatedState(onPastEnd)
     val controller = remember(state) {
-        PagerController(state, { latestItems }, { latestCurrent }) { latestOnPastEnd(it) }
+        PagerController(state, { latestItems }, { latestCurrent }, { zoomers.values.toList() }) { latestOnPastEnd(it) }
     }
     LaunchedEffect(controller) { onController(controller) }
 
@@ -108,7 +116,18 @@ fun PagerViewer(
         when (val item = items[index]) {
             is ViewerItem.Transition -> Box(
                 Modifier.fillMaxSize().pointerInput(item) {
-                    detectTapGestures { onTap(tapActionFor(it.x, size.width.toFloat(), mode)) }
+                    detectTapGestures {
+                        onTap(
+                            tapActionFor(
+                                it.x,
+                                it.y,
+                                size.width.toFloat(),
+                                size.height.toFloat(),
+                                mode,
+                                navigation,
+                            ),
+                        )
+                    }
                 },
                 contentAlignment = Alignment.Center,
             ) {
@@ -120,14 +139,29 @@ fun PagerViewer(
                     PageContent(
                         page = page,
                         isCurrent = state.settledPage == index,
+                        half = (item.spread as? Spread.Single)?.half,
                         scale = scale,
                         cache = cache,
                         zoom = true,
-                        onTap = { x, width -> onTap(tapActionFor(x, width, mode)) },
+                        onTap = { at, size ->
+                            onTap(
+                                tapActionFor(
+                                    at.x,
+                                    at.y,
+                                    size.width.toFloat(),
+                                    size.height.toFloat(),
+                                    mode,
+                                    navigation,
+                                ),
+                            )
+                        },
                         onRetry = onRetry,
                         onSize = { sizes[page.pageKey] = it },
                         onSave = onSave,
                         onCopy = onCopy,
+                        onZoomer = { zoomer ->
+                            if (zoomer == null) zoomers.remove(page.pageKey) else zoomers[page.pageKey] = zoomer
+                        },
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -149,6 +183,7 @@ private class PagerController(
     private val state: PagerState,
     private val items: () -> List<ViewerItem>,
     private val current: () -> ReaderChapter,
+    private val zoomers: () -> List<PageZoomer>,
     private val onPastEnd: (forward: Boolean) -> Unit,
 ) : ViewerController {
     override suspend fun perform(action: ReaderAction) {
@@ -175,4 +210,7 @@ private class PagerController(
     override suspend fun goToPage(index: Int) {
         state.scrollToPage(items().itemOfPage(current(), index))
     }
+
+    // Both pages of a spread at once
+    override suspend fun zoom(action: ReaderAction): Float? = zoomers().map { it.zoom(action) }.firstOrNull()
 }

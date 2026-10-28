@@ -48,6 +48,7 @@ fun ReaderControls(
     // Null outside a window: no button
     isFullscreen: Boolean?,
     onToggleFullscreen: () -> Unit,
+    showPageNumber: Boolean = true,
 ) {
     val chapters = state.viewerChapters
     Box(Modifier.fillMaxSize()) {
@@ -111,7 +112,7 @@ fun ReaderControls(
                 }
             }
         }
-        if (!state.menuVisible && state.totalPages > 0) {
+        if (!state.menuVisible && state.totalPages > 0 && showPageNumber) {
             ReaderPageIndicator(
                 currentPage = state.currentPage,
                 totalPages = state.totalPages,

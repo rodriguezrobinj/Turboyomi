@@ -14,7 +14,7 @@ import tachiyomi.i18n.MR
 @Inject
 @SingleIn(AppScope::class)
 class ReaderPreferences(
-    preferenceStore: PreferenceStore,
+    private val preferenceStore: PreferenceStore,
 ) {
 
     // region General
@@ -94,6 +94,10 @@ class ReaderPreferences(
 
     val webtoonSidePadding: Preference<Int> = preferenceStore.getInt("webtoon_side_padding", WEBTOON_PADDING_MIN)
 
+    // desktop: one manga's own side padding, -1 while it follows webtoonSidePadding (spec 8e; the DB schema is Mihon's)
+    fun webtoonSidePaddingFor(mangaId: Long): Preference<Int> =
+        preferenceStore.getInt("pref_webtoon_side_padding_manga_$mangaId", -1)
+
     val readerHideThreshold: Preference<ReaderHideThreshold> = preferenceStore.getEnum(
         "reader_hide_threshold",
         ReaderHideThreshold.LOW,
@@ -112,6 +116,9 @@ class ReaderPreferences(
 
     // desktop: how far ↑ and ↓ scroll the webtoon, in percent of the window's height
     val webtoonScrollStep: Preference<Int> = preferenceStore.getInt("pref_webtoon_scroll_step", 15)
+
+    // desktop: how fast S scrolls the webtoon by itself, in percent of the window's height per second (spec 8a)
+    val webtoonAutoScrollSpeed: Preference<Int> = preferenceStore.getInt("pref_webtoon_autoscroll_speed", 10)
 
     val webtoonDisableZoomOut: Preference<Boolean> = preferenceStore.getBoolean("webtoon_disable_zoom_out", false)
 
@@ -299,6 +306,9 @@ class ReaderPreferences(
         const val WEBTOON_SCROLL_STEP_MIN = 5
         const val WEBTOON_SCROLL_STEP_MAX = 100
         const val WEBTOON_KEY_STEP = 5
+        const val WEBTOON_AUTOSCROLL_MIN = 2
+        const val WEBTOON_AUTOSCROLL_MAX = 50
+        const val WEBTOON_AUTOSCROLL_STEP = 2
 
         const val MILLI_CONVERSION = 100
 

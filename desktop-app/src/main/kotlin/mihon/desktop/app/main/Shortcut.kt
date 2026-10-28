@@ -19,6 +19,7 @@ enum class Shortcut(
     NextCategory(true),
     PreviousCategory(true),
     Fullscreen(true),
+    Help(true),
 }
 
 /** The window-wide shortcuts (spec 2a, section 3). Anything else stays with the focused component. */
@@ -31,5 +32,6 @@ fun shortcutFor(key: Key, ctrl: Boolean, alt: Boolean, shift: Boolean): Shortcut
     key == Key.Comma && ctrl && !alt -> Shortcut.Settings
     key == Key.A && ctrl && !alt && !shift -> Shortcut.SelectAll
     key == Key.Tab && ctrl && !alt -> if (shift) Shortcut.PreviousCategory else Shortcut.NextCategory
+    key == Key.F1 && !ctrl && !alt -> Shortcut.Help
     else -> null
 }

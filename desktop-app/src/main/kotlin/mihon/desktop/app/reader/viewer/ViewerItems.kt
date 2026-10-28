@@ -1,15 +1,19 @@
 package mihon.desktop.app.reader.viewer
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.runtime.staticCompositionLocalOf
 import eu.kanade.tachiyomi.ui.reader.model.ChapterTransition
 import eu.kanade.tachiyomi.ui.reader.model.ReaderChapter
 import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
 import eu.kanade.tachiyomi.ui.reader.model.ViewerChapters
 import mihon.desktop.app.reader.ReaderAction
 import mihon.desktop.app.reader.Spread
+import mihon.desktop.app.reader.TapNavigation
+import tachiyomi.domain.chapter.service.calculateChapterGap
 
 /**
  * What the viewers show, in order (Mihon's adapters): the last pages of the previous chapter once it's loaded, the
@@ -27,15 +31,29 @@ sealed interface ViewerItem {
 /** Mihon's: enough to see the way across, the neighbour becomes current before more would show. */
 private const val NEIGHBOUR_PAGES = 2
 
-fun viewerItems(chapters: ViewerChapters, spreads: List<Spread>): List<ViewerItem> {
+/**
+ * The items around the current chapter. Without [alwaysShowTransition] (Mihon's setting), a loaded neighbour with no
+ * missing chapter in between runs straight on, with no way across between them (spec 8d).
+ */
+fun viewerItems(
+    chapters: ViewerChapters,
+    spreads: List<Spread>,
+    alwaysShowTransition: Boolean = true,
+): List<ViewerItem> {
     val current = chapters.currChapter
     val pages = current.pages.orEmpty()
+    fun showsWayTo(neighbour: ReaderChapter?, higher: ReaderChapter?, lower: ReaderChapter?) =
+        alwaysShowTransition ||
+            neighbour?.pages == null ||
+            calculateChapterGap(higher!!.chapter, lower!!.chapter) > 0
     return buildList {
-        chapters.prevChapter?.pages?.takeLast(NEIGHBOUR_PAGES)?.forEach { add(it.single()) }
-        add(ViewerItem.Transition(ChapterTransition.Prev(current, chapters.prevChapter)))
+        val prev = chapters.prevChapter
+        val next = chapters.nextChapter
+        prev?.pages?.takeLast(NEIGHBOUR_PAGES)?.forEach { add(it.single()) }
+        if (showsWayTo(prev, current, prev)) add(ViewerItem.Transition(ChapterTransition.Prev(current, prev)))
         spreads.forEach { spread -> add(ViewerItem.Pages(spread, spread.pages.map(pages::get))) }
-        add(ViewerItem.Transition(ChapterTransition.Next(current, chapters.nextChapter)))
-        chapters.nextChapter?.pages?.take(NEIGHBOUR_PAGES)?.forEach { add(it.single()) }
+        if (showsWayTo(next, next, current)) add(ViewerItem.Transition(ChapterTransition.Next(current, next)))
+        next?.pages?.take(NEIGHBOUR_PAGES)?.forEach { add(it.single()) }
     }
 }
 
@@ -46,8 +64,14 @@ private fun ReaderPage.single() = ViewerItem.Pages(Spread.Single(index), listOf(
 fun rememberViewerItems(chapters: ViewerChapters, spreads: List<Spread>): List<ViewerItem> {
     val prev = chapters.prevChapter?.stateFlow?.collectAsState()?.value
     val next = chapters.nextChapter?.stateFlow?.collectAsState()?.value
-    return remember(chapters, spreads, prev, next) { viewerItems(chapters, spreads) }
+    val always = LocalViewerSettings.current.alwaysShowTransition
+    return remember(chapters, spreads, prev, next, always) { viewerItems(chapters, spreads, always) }
 }
+
+/** The reader's settings the viewers read (spec 8d): tap zones and whether chapters always get a way across. */
+data class ViewerSettings(val tapNavigation: TapNavigation = TapNavigation(), val alwaysShowTransition: Boolean = true)
+
+val LocalViewerSettings: ProvidableCompositionLocal<ViewerSettings> = staticCompositionLocalOf { ViewerSettings() }
 
 /**
  * Stays the same while the chapters around it change, so the list keeps the item in view: a page by its chapter and
@@ -83,8 +107,16 @@ fun scrollTargetAfterChange(
     chapter: ReaderChapter,
     jump: Boolean,
 ): Int? {
-    val shown = old.getOrNull(shownIndex)?.key()
+    val shownItem = old.getOrNull(shownIndex)
+    val shown = shownItem?.key()
     if (!jump && new.any { it.key() == shown }) return null
+    // The item shown changed shape (paired, or split in halves, once its size is known): stay on its first page
+    if (!jump && shownItem is ViewerItem.Pages) {
+        val page = shownItem.pages.first()
+        new.indexOfFirst { item ->
+            item is ViewerItem.Pages && item.pages.any { it.chapter == page.chapter && it.index == page.index }
+        }.takeIf { it >= 0 }?.let { return it }
+    }
     return new.itemOfPage(chapter, chapter.requestedPage)
 }
 
@@ -116,4 +148,13 @@ interface ViewerController {
     suspend fun perform(action: ReaderAction)
 
     suspend fun goToPage(index: Int)
+
+    /**
+     * Scrolls by itself, [speed] of the window's height per second read on every frame, until cancelled or stuck
+     * at the end. Webtoon only; the paged viewers do nothing.
+     */
+    suspend fun autoScroll(speed: () -> Float) {}
+
+    /** Paged: zooms the page or pages on screen and returns the new scale; null where there's nothing to zoom. */
+    suspend fun zoom(action: ReaderAction): Float? = null
 }
