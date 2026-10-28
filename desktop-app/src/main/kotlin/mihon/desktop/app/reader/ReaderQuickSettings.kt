@@ -13,6 +13,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -38,11 +39,15 @@ fun ReaderQuickSettings(
     onModeChange: (ReadingMode) -> Unit,
     onShiftChange: (Boolean) -> Unit,
     onDismissRequest: () -> Unit,
+    mangaId: Long? = null,
 ) {
     val scale by preferences.imageScaleType.collectAsState()
     val background by preferences.readerTheme.collectAsState()
     val dual by preferences.dualPageView.collectAsState()
-    val sidePadding by preferences.webtoonSidePadding.collectAsState()
+    val globalPadding by preferences.webtoonSidePadding.collectAsState()
+    val ownPaddingPreference = remember(mangaId) { mangaId?.let(preferences::webtoonSidePaddingFor) }
+    val ownPadding = ownPaddingPreference?.collectAsState()?.value ?: -1
+    val sidePadding = if (ownPadding >= 0) ownPadding else globalPadding
     val scrollStep by preferences.webtoonScrollStep.collectAsState()
     val autoScrollSpeed by preferences.webtoonAutoScrollSpeed.collectAsState()
     Dialog(onDismissRequest = onDismissRequest) {
@@ -92,9 +97,25 @@ fun ReaderQuickSettings(
                         valueRange = ReaderPreferences.WEBTOON_PADDING_MIN..ReaderPreferences.WEBTOON_PADDING_MAX,
                         title = stringResource(MR.strings.pref_webtoon_side_padding),
                         valueString = "$sidePadding %",
-                        onChange = preferences.webtoonSidePadding::set,
+                        onChange = {
+                            (ownPaddingPreference?.takeIf { ownPadding >= 0 } ?: preferences.webtoonSidePadding).set(it)
+                        },
                         titleStyle = MaterialTheme.typography.titleSmall,
                     )
+                    if (ownPaddingPreference != null) {
+                        FlowRow {
+                            Chip(MR.strings.desktop_side_padding_this_manga, selected = ownPadding >= 0) {
+                                // On: starts from the padding in use; off: back to the global one
+                                if (ownPadding >=
+                                    0
+                                ) {
+                                    ownPaddingPreference.delete()
+                                } else {
+                                    ownPaddingPreference.set(sidePadding)
+                                }
+                            }
+                        }
+                    }
                     BaseSliderItem(
                         value = scrollStep,
                         valueRange =
@@ -219,6 +240,7 @@ private fun WidePages(preferences: ReaderPreferences, webtoon: Boolean) {
     val rotateInvertOn by rotateInvert.collectAsState()
     val showPageNumber by preferences.showPageNumber.collectAsState()
     val alwaysShowTransition by preferences.alwaysShowChapterTransition.collectAsState()
+    val keepScreenOn by preferences.keepScreenOn.collectAsState()
     val navigation = if (webtoon) preferences.navigationModeWebtoon else preferences.navigationModePager
     val navigationInvert = if (webtoon) preferences.webtoonNavInverted else preferences.pagerNavInverted
     val navigationOn by navigation.collectAsState()
@@ -230,6 +252,7 @@ private fun WidePages(preferences: ReaderPreferences, webtoon: Boolean) {
         Chip(MR.strings.pref_always_show_chapter_transition, selected = alwaysShowTransition) {
             preferences.alwaysShowChapterTransition.set(!alwaysShowTransition)
         }
+        Chip(MR.strings.pref_keep_screen_on, selected = keepScreenOn) { preferences.keepScreenOn.set(!keepScreenOn) }
         Chip(MR.strings.pref_crop_borders, selected = cropOn) { crop.set(!cropOn) }
         Chip(MR.strings.pref_dual_page_split, selected = splitOn) {
             // Read before the write: the state may already hold the new value after it

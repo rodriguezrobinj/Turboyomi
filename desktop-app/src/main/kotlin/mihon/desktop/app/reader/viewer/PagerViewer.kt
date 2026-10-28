@@ -29,9 +29,6 @@ import eu.kanade.tachiyomi.ui.reader.model.ReaderChapter
 import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
 import eu.kanade.tachiyomi.ui.reader.model.ViewerChapters
 import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import mihon.desktop.app.reader.ImageScale
@@ -215,7 +212,5 @@ private class PagerController(
     }
 
     // Both pages of a spread at once
-    override suspend fun zoom(action: ReaderAction): Float? = coroutineScope {
-        zoomers().map { async { it.zoom(action) } }.awaitAll().firstOrNull()
-    }
+    override suspend fun zoom(action: ReaderAction): Float? = zoomers().map { it.zoom(action) }.firstOrNull()
 }

@@ -14,7 +14,7 @@ import tachiyomi.i18n.MR
 @Inject
 @SingleIn(AppScope::class)
 class ReaderPreferences(
-    preferenceStore: PreferenceStore,
+    private val preferenceStore: PreferenceStore,
 ) {
 
     // region General
@@ -93,6 +93,10 @@ class ReaderPreferences(
     val cropBordersWebtoon: Preference<Boolean> = preferenceStore.getBoolean("crop_borders_webtoon", false)
 
     val webtoonSidePadding: Preference<Int> = preferenceStore.getInt("webtoon_side_padding", WEBTOON_PADDING_MIN)
+
+    // desktop: one manga's own side padding, -1 while it follows webtoonSidePadding (spec 8e; the DB schema is Mihon's)
+    fun webtoonSidePaddingFor(mangaId: Long): Preference<Int> =
+        preferenceStore.getInt("pref_webtoon_side_padding_manga_$mangaId", -1)
 
     val readerHideThreshold: Preference<ReaderHideThreshold> = preferenceStore.getEnum(
         "reader_hide_threshold",

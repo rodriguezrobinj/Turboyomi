@@ -932,6 +932,7 @@
     <string name="desktop_autoscroll">Desplazamiento automático</string>
     <string name="desktop_webtoon_autoscroll_speed">Velocidad del desplazamiento automático (webtoon)</string>
     <string name="desktop_zoom">Zoom</string>
+    <string name="desktop_side_padding_this_manga">Solo para este manga</string>
     <string name="desktop_help_title">Atajos de teclado</string>
     <string name="desktop_help_app">Aplicación</string>
     <string name="desktop_help_reader">Lector</string>

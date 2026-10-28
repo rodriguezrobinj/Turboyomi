@@ -1158,6 +1158,7 @@
     <string name="desktop_autoscroll">Automatic scrolling</string>
     <string name="desktop_webtoon_autoscroll_speed">Automatic scrolling speed (webtoon)</string>
     <string name="desktop_zoom">Zoom</string>
+    <string name="desktop_side_padding_this_manga">Only for this manga</string>
     <string name="desktop_help_title">Keyboard shortcuts</string>
     <string name="desktop_help_app">App</string>
     <string name="desktop_help_reader">Reader</string>
