@@ -7,6 +7,7 @@ import eu.kanade.tachiyomi.source.model.SChapter
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.model.SMangaUpdate
 import eu.kanade.tachiyomi.source.online.HttpSource
+import kotlinx.coroutines.awaitCancellation
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -15,17 +16,19 @@ import okio.Buffer
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import javax.imageio.ImageIO
 
 /**
  * Serves a 600×900 PNG for every `.png` path, except the [failing] (HTTP 500), [corrupt] (not an image) and
- * [short] (600×100) ones.
+ * [short] (600×100) ones. The [slow] ones come after [SLOW_MILLIS].
  */
 class FakeImages : Dispatcher() {
     val failing: MutableSet<String> = ConcurrentHashMap.newKeySet()
     val corrupt: MutableSet<String> = ConcurrentHashMap.newKeySet()
     val short: MutableSet<String> = ConcurrentHashMap.newKeySet()
+    val slow: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
     private val png = png(600, 900)
 
@@ -49,9 +52,14 @@ class FakeImages : Dispatcher() {
             path.endsWith(".png") -> {
                 served.incrementAndGet()
                 MockResponse().setHeader("Content-Type", "image/png").setBody(Buffer().write(png))
+                    .apply { if (path in slow) setBodyDelay(SLOW_MILLIS, TimeUnit.MILLISECONDS) }
             }
             else -> MockResponse().setResponseCode(404)
         }
+    }
+
+    companion object {
+        const val SLOW_MILLIS = 2_000L
     }
 }
 
@@ -73,6 +81,9 @@ class FakeHttpSource(
 
     @Volatile
     var failPageList: Exception? = null
+
+    /** Chapter urls whose page list never comes, each set to true once it's asked for. */
+    val hangingPageLists = ConcurrentHashMap<String, Boolean>()
 
     override suspend fun getPopularManga(page: Int): MangasPage = MangasPage(emptyList(), false)
 
@@ -105,6 +116,7 @@ class FakeHttpSource(
             failPageList = null
             throw it
         }
+        if (hangingPageLists.replace(chapter.url, true) != null) awaitCancellation()
         return (0 until pageCount).map { Page(it, imageUrl = "$baseUrl${chapter.url}/$it.png") }
     }
 }

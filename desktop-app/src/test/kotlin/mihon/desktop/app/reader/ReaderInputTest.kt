@@ -52,6 +52,24 @@ class ReaderInputTest {
     }
 
     @Test
+    fun `ctrl with plus, minus and the arrows changes the webtoon's zoom and scroll step`() {
+        fun ctrl(key: Key, mode: ReadingMode = ReadingMode.WEBTOON) =
+            readerActionFor(key, shift = false, ctrl = true, alt = false, mode = mode)
+        ctrl(Key.Plus) shouldBe ReaderAction.ZoomIn
+        ctrl(Key.Equals) shouldBe ReaderAction.ZoomIn
+        ctrl(Key.NumPadAdd) shouldBe ReaderAction.ZoomIn
+        ctrl(Key.Minus) shouldBe ReaderAction.ZoomOut
+        ctrl(Key.NumPadSubtract) shouldBe ReaderAction.ZoomOut
+        ctrl(Key.DirectionUp, ReadingMode.CONTINUOUS_VERTICAL) shouldBe ReaderAction.ScrollStepUp
+        ctrl(Key.DirectionDown) shouldBe ReaderAction.ScrollStepDown
+        // Only webtoon has a side padding and a scroll step
+        ctrl(Key.Plus, ReadingMode.LEFT_TO_RIGHT) shouldBe null
+        ctrl(Key.DirectionUp, ReadingMode.VERTICAL) shouldBe null
+        // AltGr is Ctrl+Alt on Windows
+        readerActionFor(Key.Plus, shift = false, ctrl = true, alt = true, mode = ReadingMode.WEBTOON) shouldBe null
+    }
+
+    @Test
     fun `the side thirds turn pages in the reading direction and the middle toggles the controls`() {
         tapActionFor(50f, 900f, ReadingMode.LEFT_TO_RIGHT) shouldBe ReaderAction.PreviousPage
         tapActionFor(850f, 900f, ReadingMode.LEFT_TO_RIGHT) shouldBe ReaderAction.NextPage

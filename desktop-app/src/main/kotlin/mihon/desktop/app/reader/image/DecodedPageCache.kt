@@ -1,6 +1,10 @@
 package mihon.desktop.app.reader.image
 
+import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
+
 data class PageKey(val chapterId: Long, val index: Int)
+
+val ReaderPage.pageKey: PageKey get() = PageKey(chapter.chapter.id, index)
 
 /**
  * The decoded pages kept in memory (spec 2a §4): from [behind] before to [ahead] after the page being read. The

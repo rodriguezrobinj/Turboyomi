@@ -25,14 +25,18 @@ import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntSize
 import eu.kanade.presentation.reader.ChapterTransition
+import eu.kanade.tachiyomi.ui.reader.model.ReaderChapter
 import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
 import eu.kanade.tachiyomi.ui.reader.model.ViewerChapters
 import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import mihon.desktop.app.reader.ImageScale
 import mihon.desktop.app.reader.ReaderAction
 import mihon.desktop.app.reader.Spread
 import mihon.desktop.app.reader.image.DecodedPageCache
+import mihon.desktop.app.reader.image.PageKey
+import mihon.desktop.app.reader.image.pageKey
 import mihon.desktop.app.reader.inDisplayOrder
 import mihon.desktop.app.reader.pairPages
 import mihon.desktop.app.reader.tapActionFor
@@ -56,34 +60,41 @@ fun PagerViewer(
     onController: (ViewerController) -> Unit,
     onSave: (ReaderPage) -> Unit,
     onCopy: (ReaderPage) -> Unit,
+    jump: Int = 0,
 ) {
     val current = chapters.currChapter
     val pages = current.pages.orEmpty()
-    val sizes = remember(current) { mutableStateMapOf<Int, IntSize>() }
+    val sizes = remember { mutableStateMapOf<PageKey, IntSize>() }
     val spreads = if (dual && mode.direction == ReadingMode.Direction.Horizontal) {
-        pairPages(pages.size, { sizes[it]?.let { s -> s.width > s.height } ?: false }, shifted)
+        pairPages(pages.size, { sizes[pages[it].pageKey]?.let { s -> s.width > s.height } ?: false }, shifted)
     } else {
         pages.indices.map { Spread.Single(it) }
     }
-    val items = remember(chapters, spreads) { viewerItems(chapters, spreads) }
+    val items = rememberViewerItems(chapters, spreads)
     val latestItems by rememberUpdatedState(items)
-    val state = rememberPagerState(initialPage = items.itemOfPage(current.requestedPage)) { latestItems.size }
+    val latestCurrent by rememberUpdatedState(current)
+    val state = rememberPagerState(initialPage = items.itemOfPage(current, current.requestedPage)) { latestItems.size }
     val rightToLeft = mode == ReadingMode.RIGHT_TO_LEFT
+    // Also when pairs change as page sizes become known: the page being read is no longer an item of its own
+    FollowItemChanges(items, current, jump, shownIndex = { state.currentPage }) { state.requestScrollToPage(it) }
 
-    // Pairs change as page sizes become known: stay on the page being read
-    LaunchedEffect(items) {
-        val target = items.itemOfPage(current.requestedPage)
-        if (state.currentPage != target) state.scrollToPage(target)
-    }
     LaunchedEffect(state) {
-        snapshotFlow { state.settledPage }.collect { index ->
-            val item = latestItems.getOrNull(index) as? ViewerItem.Pages ?: return@collect
+        snapshotFlow {
+            // By key: the items may already be newer than the layout, and an index would point into them
+            val key = state.layoutInfo.visiblePagesInfo.firstOrNull { it.index == state.settledPage }?.key
+            latestItems.firstOrNull { it.key() == key } as? ViewerItem.Pages
+        }.distinctUntilChanged().collect { item ->
+            item ?: return@collect
             // The last page of a pair, so reaching the end of the chapter marks it read
-            onPageSelected(item.pages.last())
-            cache.retainAround(current.chapter.id, item.pages.last().index)
+            val page = item.pages.last()
+            onPageSelected(page)
+            cache.retainAround(page.chapter.chapter.id, page.index)
         }
     }
-    val controller = remember(state) { PagerController(state, { latestItems }, onPastEnd) }
+    val latestOnPastEnd by rememberUpdatedState(onPastEnd)
+    val controller = remember(state) {
+        PagerController(state, { latestItems }, { latestCurrent }) { latestOnPastEnd(it) }
+    }
     LaunchedEffect(controller) { onController(controller) }
 
     val scope = rememberCoroutineScope()
@@ -105,7 +116,7 @@ fun PagerViewer(
             }
             is ViewerItem.Pages -> Row(Modifier.fillMaxSize()) {
                 item.spread.inDisplayOrder(rightToLeft).forEach { pageIndex ->
-                    val page = pages[pageIndex]
+                    val page = item.pages.first { it.index == pageIndex }
                     PageContent(
                         page = page,
                         isCurrent = state.settledPage == index,
@@ -114,7 +125,7 @@ fun PagerViewer(
                         zoom = true,
                         onTap = { x, width -> onTap(tapActionFor(x, width, mode)) },
                         onRetry = onRetry,
-                        onSize = { sizes[pageIndex] = it },
+                        onSize = { sizes[page.pageKey] = it },
                         onSave = onSave,
                         onCopy = onCopy,
                         modifier = Modifier.weight(1f),
@@ -134,14 +145,10 @@ fun PagerViewer(
     }
 }
 
-private fun ViewerItem.key(): Any = when (this) {
-    is ViewerItem.Pages -> spread
-    is ViewerItem.Transition -> transition.javaClass.simpleName
-}
-
 private class PagerController(
     private val state: PagerState,
     private val items: () -> List<ViewerItem>,
+    private val current: () -> ReaderChapter,
     private val onPastEnd: (forward: Boolean) -> Unit,
 ) : ViewerController {
     override suspend fun perform(action: ReaderAction) {
@@ -152,13 +159,20 @@ private class PagerController(
                 if (state.targetPage < last) state.animateScrollToPage(state.targetPage + 1) else onPastEnd(true)
             ReaderAction.PreviousPage, ReaderAction.ScrollUp ->
                 if (state.targetPage > 0) state.animateScrollToPage(state.targetPage - 1) else onPastEnd(false)
-            ReaderAction.FirstPage -> state.scrollToPage(1.coerceAtMost(last))
-            ReaderAction.LastPage -> state.scrollToPage((last - 1).coerceAtLeast(0))
+            ReaderAction.FirstPage -> state.scrollToPage(items().itemOfPage(current(), 0))
+            ReaderAction.LastPage -> {
+                val chapter = current()
+                state.scrollToPage(
+                    items().indexOfLast {
+                        it is ViewerItem.Pages && it.chapter == chapter
+                    }.coerceAtLeast(0),
+                )
+            }
             else -> Unit
         }
     }
 
     override suspend fun goToPage(index: Int) {
-        state.scrollToPage(items().itemOfPage(index))
+        state.scrollToPage(items().itemOfPage(current(), index))
     }
 }

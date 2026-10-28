@@ -6,6 +6,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -16,6 +20,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -26,11 +31,14 @@ import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.isCtrlPressed
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -103,6 +111,8 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
     val dualView by preferences.dualPageView.collectAsState()
     var shifted by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
+    // What a Ctrl key or Ctrl+wheel just changed, and when: shown for a moment over the page
+    var notice by remember { mutableStateOf<Pair<String, Long>?>(null) }
     val context = LocalContext.current
     // Asks the source, so once per chapter rather than on every recomposition
     val chapterUrl = remember(state.currentChapter, state.source, state.initError) { viewModel.getChapterUrl() }
@@ -116,9 +126,27 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
         }
     }
 
+    fun adjust(action: ReaderAction) {
+        val padding = action == ReaderAction.ZoomIn || action == ReaderAction.ZoomOut
+        val preference = if (padding) preferences.webtoonSidePadding else preferences.webtoonScrollStep
+        val range = if (padding) {
+            ReaderPreferences.WEBTOON_PADDING_MIN..ReaderPreferences.WEBTOON_PADDING_MAX
+        } else {
+            ReaderPreferences.WEBTOON_SCROLL_STEP_MIN..ReaderPreferences.WEBTOON_SCROLL_STEP_MAX
+        }
+        // Zooming in narrows the padding
+        val sign = if (action == ReaderAction.ZoomOut || action == ReaderAction.ScrollStepUp) 1 else -1
+        val value = (preference.get() + sign * ReaderPreferences.WEBTOON_KEY_STEP).coerceIn(range)
+        preference.set(value)
+        val title = if (padding) MR.strings.pref_webtoon_side_padding else MR.strings.desktop_webtoon_scroll_step
+        notice = "${context.stringResource(title)}: $value %" to System.nanoTime()
+    }
+
     fun perform(action: ReaderAction) {
         when (action) {
             ReaderAction.ToggleMenu -> viewModel.showMenus(!state.menuVisible)
+            ReaderAction.ZoomIn, ReaderAction.ZoomOut, ReaderAction.ScrollStepUp, ReaderAction.ScrollStepDown ->
+                adjust(action)
             ReaderAction.NextChapter -> scope.launch { viewModel.loadNextChapter() }
             ReaderAction.PreviousChapter -> scope.launch { viewModel.loadPreviousChapter() }
             else -> scope.launch { controller?.perform(action) }
@@ -131,6 +159,16 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
             .background(ReaderBackground.fromPreference(background).color())
             .testTag(READER_TAG)
             .onPointerEvent(PointerEventType.Move) { lastMouseMove = System.nanoTime() }
+            // Before the webtoon list sees it, which would scroll
+            .onPointerEvent(PointerEventType.Scroll, PointerEventPass.Initial) { event ->
+                val delta = event.changes.first().scrollDelta.y
+                if (event.keyboardModifiers.isCtrlPressed && mode.type == ReadingMode.ViewerType.Webtoon &&
+                    delta != 0f
+                ) {
+                    adjust(if (delta < 0) ReaderAction.ZoomIn else ReaderAction.ZoomOut)
+                    event.changes.forEach { it.consume() }
+                }
+            }
             // A clicked control would keep the focus, and the keys with it, until the controls hide and drop it
             .onPointerEvent(PointerEventType.Release) { focus.requestFocus() }
             .focusRequester(focus)
@@ -164,7 +202,8 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
                 )
             }
             chapters == null -> LoadingScreen()
-            else -> key(chapters.currChapter, mode) {
+            // Not per chapter: the viewers go on from one chapter into the next (see viewerItems)
+            else -> key(mode) {
                 if (mode.type == ReadingMode.ViewerType.Webtoon) {
                     val sidePadding by preferences.webtoonSidePadding.collectAsState()
                     val scrollStep by preferences.webtoonScrollStep.collectAsState()
@@ -182,6 +221,7 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
                         onTap = ::perform,
                         onRetry = viewModel::retryPage,
                         onController = { controller = it },
+                        jump = state.chapterJumps,
                         onSave = { page -> savePage(context, state, page) },
                         onCopy = { page ->
                             scope.launch(Dispatchers.IO) {
@@ -208,6 +248,7 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
                         onTap = ::perform,
                         onRetry = viewModel::retryPage,
                         onController = { controller = it },
+                        jump = state.chapterJumps,
                         onSave = { page -> savePage(context, state, page) },
                         onCopy = { page ->
                             scope.launch(Dispatchers.IO) {
@@ -235,6 +276,23 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
             isFullscreen = window?.isFullscreen,
             onToggleFullscreen = { window?.toggleFullscreen() },
         )
+        notice?.let { (text, at) ->
+            LaunchedEffect(at) {
+                delay(1.5.seconds)
+                notice = null
+            }
+            Surface(
+                shape = MaterialTheme.shapes.medium,
+                color = MaterialTheme.colorScheme.inverseSurface,
+                modifier = Modifier.align(Alignment.TopCenter).padding(top = 80.dp),
+            ) {
+                Text(
+                    text,
+                    color = MaterialTheme.colorScheme.inverseOnSurface,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                )
+            }
+        }
         if (showSettings) {
             ReaderQuickSettings(
                 preferences = preferences,

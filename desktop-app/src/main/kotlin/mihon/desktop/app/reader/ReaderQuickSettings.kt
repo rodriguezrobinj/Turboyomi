@@ -18,10 +18,14 @@ import dev.icerock.moko.resources.StringResource
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
 import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
 import tachiyomi.i18n.MR
+import tachiyomi.presentation.core.components.BaseSliderItem
 import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.util.collectAsState
 
-/** The reader's quick settings (spec 2a §4): mode for this manga, scale, background and dual pages. */
+/**
+ * The reader's quick settings (spec 2a §4): mode for this manga, scale, background, dual pages, and the webtoon's
+ * side padding and scroll step.
+ */
 @Composable
 fun ReaderQuickSettings(
     preferences: ReaderPreferences,
@@ -34,6 +38,8 @@ fun ReaderQuickSettings(
     val scale by preferences.imageScaleType.collectAsState()
     val background by preferences.readerTheme.collectAsState()
     val dual by preferences.dualPageView.collectAsState()
+    val sidePadding by preferences.webtoonSidePadding.collectAsState()
+    val scrollStep by preferences.webtoonScrollStep.collectAsState()
     Dialog(onDismissRequest = onDismissRequest) {
         Surface(
             shape = MaterialTheme.shapes.extraLarge,
@@ -69,6 +75,29 @@ fun ReaderQuickSettings(
                             Chip(MR.strings.desktop_dual_page_shift, selected = shifted) { onShiftChange(!shifted) }
                         }
                     }
+                }
+                if (mode.type == ReadingMode.ViewerType.Webtoon) {
+                    BaseSliderItem(
+                        value = sidePadding,
+                        valueRange = ReaderPreferences.WEBTOON_PADDING_MIN..ReaderPreferences.WEBTOON_PADDING_MAX,
+                        title = stringResource(MR.strings.pref_webtoon_side_padding),
+                        valueString = "$sidePadding %",
+                        onChange = preferences.webtoonSidePadding::set,
+                        titleStyle = MaterialTheme.typography.titleSmall,
+                    )
+                    BaseSliderItem(
+                        value = scrollStep,
+                        valueRange =
+                        ReaderPreferences.WEBTOON_SCROLL_STEP_MIN..ReaderPreferences.WEBTOON_SCROLL_STEP_MAX,
+                        // Stops every 5 %, like the Ctrl keys: one per percent is a blur of 95 ticks
+                        steps =
+                        (ReaderPreferences.WEBTOON_SCROLL_STEP_MAX - ReaderPreferences.WEBTOON_SCROLL_STEP_MIN) /
+                            ReaderPreferences.WEBTOON_KEY_STEP - 1,
+                        title = stringResource(MR.strings.desktop_webtoon_scroll_step),
+                        valueString = "$scrollStep %",
+                        onChange = preferences.webtoonScrollStep::set,
+                        titleStyle = MaterialTheme.typography.titleSmall,
+                    )
                 }
             }
         }

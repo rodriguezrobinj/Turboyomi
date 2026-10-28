@@ -8,12 +8,17 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.withKeyDown
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.window.WindowState
 import cafe.adriel.voyager.navigator.Navigator
@@ -29,11 +34,14 @@ import mihon.desktop.app.main.ConnectWindowBack
 import mihon.desktop.app.platform.LocalWindowControls
 import mihon.desktop.app.platform.WindowControls
 import mihon.desktop.app.reader.viewer.WEBTOON_TAG
+import mihon.desktop.app.testing.FakeImages
 import mihon.desktop.app.testing.TestLibrary
 import mihon.desktop.app.testing.TestSources
 import mihon.desktop.app.testing.startTestApp
+import mihon.desktop.app.testing.str
 import org.junit.jupiter.api.Test
 import tachiyomi.domain.chapter.model.Chapter
+import tachiyomi.i18n.MR
 
 @OptIn(ExperimentalTestApi::class)
 class WebtoonAndDualTest {
@@ -145,6 +153,30 @@ class WebtoonAndDualTest {
     }
 
     @Test
+    fun `the previous chapter opens while the next one's page list never comes`() = runComposeUiTest {
+        val chapters = open(ReadingMode.WEBTOON, ReaderPreferences.DualPageView.NEVER, chapterIndex = 1)
+        TestSources.http.hangingPageLists[chapters[2].url] = false
+        // Slow pages after the first: End is still waiting for their sizes when P is pressed, as on a slow machine
+        val slow = (1 until 6).map { "${chapters[1].url}/$it.png" }
+        TestSources.http.images.slow += slow
+        try {
+            waitForTag("page 1 ready")
+            onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.MoveEnd) }
+            // Near the end the next chapter starts loading in the background, and hangs there
+            waitUntil(timeoutMillis = 10_000) { TestSources.http.hangingPageLists[chapters[2].url] == true }
+
+            onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.P) }
+            waitForTag("page 1 ready")
+            // Still there once End's wait for the slow pages is over: End doesn't follow the move to another chapter
+            Thread.sleep(FakeImages.SLOW_MILLIS * 2)
+            waitForIdle()
+            onNodeWithTag("page 1 ready").assertIsDisplayed()
+        } finally {
+            TestSources.http.images.slow -= slow.toSet()
+        }
+    }
+
+    @Test
     fun `quick presses of the down arrow add up instead of cutting each other short`() = runComposeUiTest {
         open(ReadingMode.WEBTOON, ReaderPreferences.DualPageView.NEVER)
         waitForTag("page 1 ready")
@@ -176,15 +208,110 @@ class WebtoonAndDualTest {
     }
 
     @Test
+    fun `the quick settings have the webtoon's side padding and scroll step`() = runComposeUiTest {
+        open(ReadingMode.WEBTOON, ReaderPreferences.DualPageView.NEVER)
+        waitForTag("page 1 ready")
+        onNodeWithTag(READER_TAG).performMouseInput { click(center) }
+        waitForTag(QUICK_SETTINGS_TAG)
+        onNodeWithTag(QUICK_SETTINGS_TAG).performClick()
+        onNodeWithText(str(MR.strings.pref_webtoon_side_padding)).assertExists()
+        onNodeWithText(str(MR.strings.desktop_webtoon_scroll_step)).assertExists()
+    }
+
+    @Test
+    fun `ctrl keys and ctrl wheel change the side padding and the scroll step and say the new value`() =
+        runComposeUiTest {
+            open(ReadingMode.WEBTOON, ReaderPreferences.DualPageView.NEVER)
+            val preferences = startTestApp().readerPreferences
+            preferences.webtoonSidePadding.set(10)
+            waitForTag("page 1 ready")
+
+            onNodeWithTag(READER_TAG).performKeyInput { withKeyDown(Key.CtrlLeft) { pressKey(Key.Plus) } }
+            waitUntil { preferences.webtoonSidePadding.get() == 5 }
+            onNodeWithText("${str(MR.strings.pref_webtoon_side_padding)}: 5 %").assertExists()
+
+            onNodeWithTag(READER_TAG).performKeyInput { withKeyDown(Key.CtrlLeft) { pressKey(Key.DirectionUp) } }
+            waitUntil { preferences.webtoonScrollStep.get() == 20 }
+
+            // The wheel down with Ctrl zooms out: more padding. Without Ctrl it only scrolls
+            onNodeWithTag(READER_TAG).performKeyInput { keyDown(Key.CtrlLeft) }
+            onNodeWithTag(READER_TAG).performMouseInput { scroll(1f) }
+            onNodeWithTag(READER_TAG).performKeyInput { keyUp(Key.CtrlLeft) }
+            waitUntil { preferences.webtoonSidePadding.get() == 10 }
+            onNodeWithTag(READER_TAG).performMouseInput { scroll(1f) }
+            waitForIdle()
+            preferences.webtoonSidePadding.get() shouldBe 10
+
+            // Never past the ends of the settings' range
+            onNodeWithTag(READER_TAG).performKeyInput {
+                withKeyDown(Key.CtrlLeft) { repeat(4) { pressKey(Key.Plus) } }
+            }
+            waitForIdle()
+            preferences.webtoonSidePadding.get() shouldBe ReaderPreferences.WEBTOON_PADDING_MIN
+        }
+
+    @Test
     fun `the end key stays on a short last page while the pages above it load`() = runComposeUiTest {
         val chapters = open(ReadingMode.WEBTOON, ReaderPreferences.DualPageView.NEVER)
         TestSources.images.short += "${chapters[0].url}/5.png"
         waitForTag("page 1 ready")
         onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.MoveEnd) }
 
-        // Page 5 comes into view above the short page 6 and grows as it loads: page 6 stays in view
-        waitForTag("page 5 ready")
+        // Pages above the short page 6 grow as they load, and the next chapter's pages come in under it: page 6
+        // stays in view
+        waitForTag("page 6 ready")
         waitForIdle()
+        onNodeWithTag("page 6 ready").assertIsDisplayed()
+    }
+
+    @Test
+    fun `webtoon reads on from the last page of a chapter into the next and the previous one stays above`() =
+        runComposeUiTest {
+            val chapters = open(ReadingMode.WEBTOON, ReaderPreferences.DualPageView.NEVER)
+            fun current() = runBlocking { startTestApp().getHistory.await(chapters[0].mangaId) }
+                .any { it.chapterId == chapters[0].id }
+            onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.MoveEnd) }
+            waitForTag("page 6 ready")
+
+            // The next chapter's first page loads under this one's last, past the way across
+            repeat(10) {
+                if (current()) return@repeat
+                onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.PageDown) }
+                waitForIdle()
+            }
+            waitUntil(timeoutMillis = 10_000) { current() }
+            onNodeWithTag("page 1 ready").assertIsDisplayed()
+
+            // Going back up shows the last page of the chapter just left, without a jump
+            repeat(3) {
+                onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.PageUp) }
+                waitForIdle()
+            }
+            waitForTag("page 6 ready")
+            onNodeWithTag("page 6 ready").assertIsDisplayed()
+        }
+
+    @Test
+    fun `paged reading turns from a chapter's last page to the next one's first and back`() = runComposeUiTest {
+        open(ReadingMode.LEFT_TO_RIGHT, ReaderPreferences.DualPageView.NEVER)
+        waitForTag("page 1 ready")
+        onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.MoveEnd) }
+        waitForTag("page 6 ready")
+
+        // The way across, then the next chapter's first page
+        repeat(2) {
+            onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.DirectionRight) }
+            waitForIdle()
+        }
+        waitForTag("page 1 ready")
+        onNodeWithTag("page 1 ready").assertIsDisplayed()
+
+        // And back: the way across, then the last page of the chapter before
+        repeat(2) {
+            onNodeWithTag(READER_TAG).performKeyInput { pressKey(Key.DirectionLeft) }
+            waitForIdle()
+        }
+        waitForTag("page 6 ready")
         onNodeWithTag("page 6 ready").assertIsDisplayed()
     }
 

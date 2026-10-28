@@ -37,6 +37,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -126,6 +127,10 @@ class ReaderViewModel(
     @Volatile
     private var pendingProgressChapter: ReaderChapter? = null
     private var pendingProgressSave: Job? = null
+
+    // The next chapter's background load, which a move to that chapter waits for instead of loading it twice
+    private var preloadJob: Job? = null
+    private var preloadChapter: ReaderChapter? = null
 
     init {
         viewModelScope.launch { init() }
@@ -220,7 +225,13 @@ class ReaderViewModel(
     }
 
     /** Loads [chapter] with [loader] and makes it the active one. Callers handle errors. */
-    private suspend fun loadChapter(loader: ChapterLoader, chapter: ReaderChapter): ViewerChapters {
+    private suspend fun loadChapter(
+        loader: ChapterLoader,
+        chapter: ReaderChapter,
+        jump: Boolean = false,
+    ): ViewerChapters {
+        // A move elsewhere cancels it: a slow source would hold the move up to the call timeout
+        if (chapter == preloadChapter) preloadJob?.join() else preloadJob?.cancelAndJoin()
         loader.loadChapter(chapter)
 
         val chapterPos = chapterList.indexOf(chapter)
@@ -234,7 +245,11 @@ class ReaderViewModel(
                 // Add new references first to avoid unnecessary recycling
                 newChapters.ref()
                 it.viewerChapters?.unref()
-                it.copy(viewerChapters = newChapters, bookmarked = chapter.chapter.bookmark)
+                it.copy(
+                    viewerChapters = newChapters,
+                    bookmarked = chapter.chapter.bookmark,
+                    chapterJumps = if (jump) it.chapterJumps + 1 else it.chapterJumps,
+                )
             }
         }
         chapterId = chapter.chapter.id
@@ -259,6 +274,27 @@ class ReaderViewModel(
         // Mihon: once a quarter of the chapter is read, the next downloaded chapters are queued ahead
         val pages = selectedChapter.pages ?: return
         if (page.number.toDouble() / pages.size > 0.25) downloadNextChapters()
+
+        // Mihon: near the end the next chapter loads, so the viewer shows its first pages after this one's last
+        if (pages.size - page.number < PRELOAD_RANGE && selectedChapter == state.value.currentChapter) {
+            state.value.viewerChapters?.nextChapter?.let(::preload)
+        }
+    }
+
+    private fun preload(chapter: ReaderChapter) {
+        val loader = loader ?: return
+        if (chapter.state != ReaderChapter.State.Wait || preloadJob?.isActive == true) return
+        logcat { "Preloading ${chapter.chapter.url}" }
+        preloadChapter = chapter
+        preloadJob = viewModelScope.launch(Dispatchers.IO) {
+            try {
+                loader.loadChapter(chapter)
+            } catch (e: Throwable) {
+                if (e is CancellationException) throw e
+                // Left in its error state: moving on to the chapter loads it again and shows the error there
+                logcat(LogPriority.ERROR, e)
+            }
+        }
     }
 
     // desktop: Mihon's, ported for downloads (spec 4b §3 C)
@@ -353,7 +389,7 @@ class ReaderViewModel(
         }
     }
 
-    private suspend fun loadAdjacent(chapter: ReaderChapter) {
+    private suspend fun loadAdjacent(chapter: ReaderChapter, jump: Boolean) {
         val loader = loader ?: return
         mutableState.update { it.copy(isLoadingAdjacentChapter = true) }
         try {
@@ -363,7 +399,7 @@ class ReaderViewModel(
                 updateHistory()
                 restartReadTimer()
             }
-            withContext(Dispatchers.IO) { loadChapter(loader, chapter) }
+            withContext(Dispatchers.IO) { loadChapter(loader, chapter, jump) }
         } catch (e: Throwable) {
             if (e is CancellationException) throw e
             logcat(LogPriority.ERROR, e)
@@ -373,19 +409,21 @@ class ReaderViewModel(
     }
 
     /**
-     * Moves to the next chapter. A viewer passes the chapter it shows as [from]: a request it makes after that chapter
-     * stopped being the current one (a wheel turn while the next one replaces it) would skip a chapter.
+     * Moves to the next chapter. A viewer going on past the end passes the chapter it shows as [from]: a request it
+     * makes after that chapter stopped being the current one (a wheel turn while the next one replaces it) would skip
+     * a chapter, and the viewer stays where it is, on the way across. Without [from] (the chapter buttons and keys)
+     * the viewer jumps to the chapter's page.
      */
     suspend fun loadNextChapter(from: ReaderChapter? = null) {
         if (from != null && from != state.value.currentChapter) return
         val nextChapter = state.value.viewerChapters?.nextChapter ?: return
-        loadAdjacent(nextChapter)
+        loadAdjacent(nextChapter, jump = from == null)
     }
 
     suspend fun loadPreviousChapter(from: ReaderChapter? = null) {
         if (from != null && from != state.value.currentChapter) return
         val prevChapter = state.value.viewerChapters?.prevChapter ?: return
-        loadAdjacent(prevChapter)
+        loadAdjacent(prevChapter, jump = from == null)
     }
 
     /** Downloads a page that failed again. */
@@ -568,6 +606,8 @@ class ReaderViewModel(
         val isLoadingAdjacentChapter: Boolean = false,
         val currentPage: Int = -1,
         val menuVisible: Boolean = false,
+        // desktop: counts the moves to another chapter the viewer has to jump for (see loadNextChapter)
+        val chapterJumps: Int = 0,
     ) {
         val currentChapter: ReaderChapter?
             get() = viewerChapters?.currChapter
@@ -579,3 +619,6 @@ class ReaderViewModel(
 
 // desktop: spec 2a §4 groups the progress writes every 500 ms (Mihon: 2 s)
 private val PROGRESS_SAVE_DELAY = 500.milliseconds
+
+// Mihon: the next chapter loads when fewer pages than this are left
+private const val PRELOAD_RANGE = 5
