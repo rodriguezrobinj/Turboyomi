@@ -36,6 +36,7 @@ import kotlinx.coroutines.launch
 import mihon.app.di.AppGraph
 import mihon.desktop.app.browser.EmbeddedBrowserConsent
 import mihon.desktop.app.platform.AppMessages
+import mihon.desktop.app.platform.ThemedTitleBar
 import mihon.desktop.app.update.UpdateDialog
 import mihon.desktop.core.cef.CefRuntime
 
@@ -53,6 +54,7 @@ fun AppProviders(graph: AppGraph, content: @Composable () -> Unit) {
         LocalViewModelStoreOwner provides rootViewModels,
     ) {
         TachiyomiTheme {
+            ThemedTitleBar()
             // CMP's right-click menu has its own light style; draw it with the theme's colors
             val colors = MaterialTheme.colorScheme
             val contextMenu = remember(colors) {
