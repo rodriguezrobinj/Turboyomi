@@ -156,10 +156,13 @@ class BackupRestoreTest {
         val file = File(dir, "uno.tachibk")
         TestBackups.write(file, Backup(backupManga = (1..50).map { manga("/uno/$it", "Uno $it") }))
 
-        graph.backupJob.restore(file, RestoreOptions()) shouldBe true
-        graph.backupJob.running.value shouldBe BackupJob.Operation.Restore
-        graph.backupJob.restore(file, RestoreOptions()) shouldBe false
-        graph.backupJob.create(File(dir, "otro.tachibk"), BackupOptions()) shouldBe false
+        // Holding the job's lock keeps the restore from finishing before the checks
+        synchronized(graph.backupJob) {
+            graph.backupJob.restore(file, RestoreOptions()) shouldBe true
+            graph.backupJob.running.value shouldBe BackupJob.Operation.Restore
+            graph.backupJob.restore(file, RestoreOptions()) shouldBe false
+            graph.backupJob.create(File(dir, "otro.tachibk"), BackupOptions()) shouldBe false
+        }
         graph.backupJob.awaitIdle()
 
         graph.backupJob.running.value shouldBe null
