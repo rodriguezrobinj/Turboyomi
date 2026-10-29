@@ -75,7 +75,9 @@ class DataScreensTest {
     fun `clearing the chapter cache empties it`() = runComposeUiTest {
         val graph = startTestApp()
         val (_, chapters) = runBlocking { TestLibrary.httpManga(graph) }
-        graph.chapterCache.putPageListToCache(chapters[0], listOf(Page(0, imageUrl = "https://example.org/0.png")))
+        runBlocking {
+            graph.chapterCache.putPageList(chapters[0], listOf(Page(0, imageUrl = "https://example.org/0.png")))
+        }
         setContent {
             AppProviders(graph) { Navigator(SettingsDataScreen) { DefaultNavigatorScreenTransition(it) } }
         }
@@ -84,7 +86,7 @@ class DataScreensTest {
         onNodeWithText(str(MR.strings.pref_clear_chapter_cache)).performScrollTo().performClick()
 
         waitUntil(timeoutMillis = 10_000) {
-            runCatching { graph.chapterCache.getPageListFromCache(chapters[0]) }.getOrNull().isNullOrEmpty()
+            runBlocking { graph.chapterCache.getPageList(chapters[0]) }.isNullOrEmpty()
         }
     }
 

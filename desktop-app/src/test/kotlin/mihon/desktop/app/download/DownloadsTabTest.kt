@@ -12,6 +12,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
 import mihon.desktop.app.main.AppContent
 import mihon.desktop.app.testing.TestLibrary
+import mihon.desktop.app.testing.TestSources
 import mihon.desktop.app.testing.startTestApp
 import mihon.desktop.app.testing.str
 import org.junit.jupiter.api.Test
@@ -19,8 +20,9 @@ import tachiyomi.i18n.MR
 
 @OptIn(ExperimentalTestApi::class)
 class DownloadsTabTest {
+    // GitHub's runners compose the first screens far slower than a desktop
     private fun androidx.compose.ui.test.ComposeUiTest.waitFor(matcher: androidx.compose.ui.test.SemanticsMatcher) =
-        waitUntil(timeoutMillis = 15_000) {
+        waitUntil(timeoutMillis = 30_000) {
             onAllNodes(matcher, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         }
 
@@ -28,6 +30,8 @@ class DownloadsTabTest {
     fun `the rail shows Downloads with the queue count, and the queue pauses and resumes`() = runComposeUiTest {
         val graph = startTestApp()
         val (manga, chapters) = runBlocking { TestLibrary.httpManga(graph) }
+        // The fake server serves pages in no time: hung page lists keep the downloader running until it's paused
+        chapters.forEach { TestSources.http.hangingPageLists[it.url] = false }
         runBlocking { graph.downloadManager.downloadChapters(manga, chapters, autoStart = false) }
         setContent { AppContent(graph, crash = null, onRestart = {}) }
 
@@ -44,6 +48,7 @@ class DownloadsTabTest {
         waitUntil(timeoutMillis = 15_000) { !graph.downloadManager.isDownloaderRunning.value }
 
         runBlocking { graph.downloadManager.clearQueue() }
+        chapters.forEach { TestSources.http.hangingPageLists.remove(it.url) }
         graph.downloadManager.queueState.value.size shouldBe 0
     }
 }

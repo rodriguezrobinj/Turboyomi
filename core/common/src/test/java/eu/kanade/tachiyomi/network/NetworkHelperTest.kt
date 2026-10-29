@@ -4,10 +4,14 @@ import android.content.Context
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.jupiter.api.Test
@@ -64,5 +68,25 @@ class NetworkHelperTest {
         // Mihon ships the whole OkHttp bundle; extensions reference brotli and zstd directly
         Class.forName("okhttp3.brotli.BrotliInterceptor")
         Class.forName("okhttp3.zstd.Zstd")
+    }
+
+    private fun loggedHeaders(redact: Boolean): String {
+        val server = MockWebServer()
+        server.enqueue(MockResponse().setBody("ok"))
+        server.start()
+        val lines = mutableListOf<String>()
+        val client = OkHttpClient.Builder()
+            .addNetworkInterceptor(httpLoggingInterceptor(redact) { lines += it })
+            .build()
+        val request = Request.Builder().url(server.url("/")).header("Authorization", "secreto").build()
+        client.newCall(request).execute().close()
+        server.shutdown()
+        return lines.joinToString("\n")
+    }
+
+    @Test
+    fun `verbose logging hides the authorization header when asked to`() {
+        loggedHeaders(redact = true) shouldNotContain "secreto"
+        loggedHeaders(redact = false) shouldContain "secreto"
     }
 }

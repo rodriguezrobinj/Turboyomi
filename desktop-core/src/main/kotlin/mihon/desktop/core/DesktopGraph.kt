@@ -3,6 +3,7 @@ package mihon.desktop.core
 import android.content.Context
 import eu.kanade.tachiyomi.network.JavaScriptEngine
 import eu.kanade.tachiyomi.network.NetworkHelper
+import eu.kanade.tachiyomi.network.NetworkPreferences
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.protobuf.ProtoBuf
 import mihon.desktop.core.cef.CefInstaller
@@ -25,6 +26,7 @@ interface DesktopGraph {
     val protoBuf: ProtoBuf
     val xml: XML
     val networkHelper: NetworkHelper
+    val networkPreferences: NetworkPreferences
     val javaScriptEngine: JavaScriptEngine
     val preferenceStore: PreferenceStore
     val database: Database

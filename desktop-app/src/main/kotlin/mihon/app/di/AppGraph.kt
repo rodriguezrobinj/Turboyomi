@@ -11,7 +11,6 @@ import eu.kanade.domain.track.store.DelayedTrackingStore
 import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.tachiyomi.data.backup.BackupJob
 import eu.kanade.tachiyomi.data.backup.BackupNotifier
-import eu.kanade.tachiyomi.data.cache.ChapterCache
 import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.data.download.DownloadCache
 import eu.kanade.tachiyomi.data.download.DownloadManager
@@ -19,6 +18,8 @@ import eu.kanade.tachiyomi.data.library.LibraryUpdateJob
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.extension.ExtensionManager
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
+import eu.kanade.tachiyomi.util.CrashLogUtil
+import mihon.data.cache.ChapterCache
 import mihon.desktop.app.track.PendingLogins
 import mihon.desktop.app.track.TrackLoginHandler
 import mihon.desktop.app.tray.TrayPreferences
@@ -30,6 +31,7 @@ import tachiyomi.domain.category.interactor.ResetCategoryFlags
 import tachiyomi.domain.download.service.DownloadPreferences
 import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.domain.manga.interactor.GetFavorites
+import tachiyomi.domain.manga.interactor.ResetViewerFlags
 import tachiyomi.domain.storage.service.StorageManager
 import tachiyomi.domain.storage.service.StoragePreferences
 import tachiyomi.domain.track.interactor.UpsertTrack
@@ -57,6 +59,8 @@ interface AppGraph : DesktopGraph, ViewModelGraph {
     val downloadManager: DownloadManager
     val downloadPreferences: DownloadPreferences
     val downloadCache: DownloadCache
+    val crashLogUtil: CrashLogUtil
+    val resetViewerFlags: ResetViewerFlags
     val backupPreferences: BackupPreferences
     val getFavorites: GetFavorites
     val backupJob: BackupJob

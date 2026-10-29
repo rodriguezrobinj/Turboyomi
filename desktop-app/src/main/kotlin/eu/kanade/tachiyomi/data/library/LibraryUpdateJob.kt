@@ -192,7 +192,7 @@ class LibraryUpdateJob(
             TrayNotifier.send(errorsNotice(context, failed.size))
             AppMessages.show(
                 context.pluralStringResource(MR.plurals.notification_update_error, failed.size, failed.size),
-                context.stringResource(MR.strings.action_open_log),
+                context.stringResource(MR.strings.desktop_open_log),
             ) { runCatching { Desktop.getDesktop().open(file) } }
         }
     }
@@ -251,6 +251,7 @@ class LibraryUpdateJob(
         val semaphore = Semaphore(5)
         coroutineScope {
             queue.groupBy { it.manga.source }.values
+                .sortedByDescending { it.size }
                 .map { inSource ->
                     async {
                         semaphore.withPermit {

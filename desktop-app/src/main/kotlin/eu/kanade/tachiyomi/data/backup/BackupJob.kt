@@ -127,7 +127,7 @@ class BackupJob(
             try {
                 block()
             } finally {
-                _running.value = null
+                synchronized(this@BackupJob) { _running.value = null }
             }
         }.also { job = it }
     }

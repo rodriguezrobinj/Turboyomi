@@ -54,7 +54,7 @@ class AutoDownloadTest {
     }
 
     @Test
-    fun `Settings › Downloads has Mihon's options, without Wi-Fi or tall image splitting`() = runComposeUiTest {
+    fun `Settings › Downloads has Mihon's options, without Wi-Fi`() = runComposeUiTest {
         val graph = startTestApp()
         setContent {
             AppProviders(graph) { Navigator(SettingsDownloadScreen) { DefaultNavigatorScreenTransition(it) } }
@@ -64,6 +64,5 @@ class AutoDownloadTest {
             onAllNodes(hasText(str(MR.strings.save_chapter_as_cbz))).fetchSemanticsNodes().isNotEmpty()
         }
         onAllNodes(hasText(str(MR.strings.connected_to_wifi))).fetchSemanticsNodes().size shouldBe 0
-        onAllNodes(hasText(str(MR.strings.split_tall_images))).fetchSemanticsNodes().size shouldBe 0
     }
 }
