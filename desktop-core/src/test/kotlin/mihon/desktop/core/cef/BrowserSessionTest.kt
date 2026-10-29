@@ -6,6 +6,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import mihon.desktop.core.DesktopGraph
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -29,10 +30,11 @@ import kotlin.time.Duration.Companion.seconds
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class BrowserSessionTest {
     private val server = MockWebServer()
+    private lateinit var graph: DesktopGraph
 
     @BeforeAll
     fun start() {
-        startWithRealCef()
+        graph = startWithRealCef()
         server.dispatcher = object : Dispatcher() {
             override fun dispatch(request: RecordedRequest): MockResponse = MockResponse()
                 .setHeader("Content-Type", "text/html; charset=utf-8")
@@ -99,6 +101,14 @@ class BrowserSessionTest {
                 }
             }
         }
+
+    // A source without its own user agent sends the app's: if it isn't the browser's own, Cloudflare never passes it
+    @Test
+    fun `the app's default user agent is the browser's own`(): Unit = shown("/otra") { session, _ ->
+        withTimeout(30.seconds) { session.title.first { it == "Otra" } }
+        val page = generateSequence { server.takeRequest(5, TimeUnit.SECONDS) }.first { it.path == "/otra" }
+        page.getHeader("User-Agent") shouldBe graph.networkHelper.defaultUserAgentProvider()
+    }
 
     @Test
     fun `a link that opens a new window loads it in the same browser`() {

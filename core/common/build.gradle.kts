@@ -19,10 +19,11 @@ sourceSets {
         kotlin {
             srcDir("src/desktop/kotlin")
             // Android-only, or with a desktop copy of the same relative path in src/desktop (NetworkHelper, the
-            // WebView interceptors and WebViewUtil), so only src/main is filtered.
+            // WebView interceptors, WebViewUtil and NetworkPreferences), so only src/main is filtered.
             // Local val: a script-level one would drag the script object into the configuration cache.
             val androidOnly = setOf(
                 "eu/kanade/tachiyomi/network/NetworkHelper.kt",
+                "eu/kanade/tachiyomi/network/NetworkPreferences.kt",
                 "eu/kanade/tachiyomi/network/interceptor/CloudflareInterceptor.kt",
                 "eu/kanade/tachiyomi/network/interceptor/WebViewInterceptor.kt",
                 "eu/kanade/tachiyomi/util/system/WebViewUtil.kt",
