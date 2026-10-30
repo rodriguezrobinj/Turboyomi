@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.metro)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.apollo)
+    // The JVM side of the plugin the root puts on the classpath (spec 11e §2)
+    id("com.mikepenz.aboutlibraries.plugin")
     application
 }
 
@@ -53,6 +55,7 @@ dependencies {
     implementation(projects.icons.materialSymbols)
     implementation(projects.icons.customMaterialSymbols)
     implementation(projects.icons.simpleIcons)
+    implementation(libs.aboutLibraries.compose)
     implementation(libs.compose.animation)
     implementation(libs.compose.animationGraphics)
     implementation(libs.compose.ui.util)
@@ -102,6 +105,20 @@ tasks.test {
 // The tracker keys the developer registered (spec 5b-2 §1), when the git-ignored file is there
 tasks.processResources {
     from(layout.projectDirectory.file("../tracker-keys.properties"))
+}
+
+// The licenses screen's list (spec 11e §2): on the JVM the plugin only exports it, so it goes into the resources here
+val aboutLibrariesDir = layout.buildDirectory.dir("generated/aboutlibraries")
+aboutLibraries {
+    export {
+        outputFile = aboutLibrariesDir.map { it.file("aboutlibraries.json") }
+    }
+}
+sourceSets.main {
+    resources.srcDir(aboutLibrariesDir)
+}
+tasks.processResources {
+    dependsOn("exportLibraryDefinitions")
 }
 
 apollo {

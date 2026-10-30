@@ -132,6 +132,8 @@ fun startTestApp(): TestAppGraph {
     }
     DesktopApp.graph = graph
     graph.startStorage() // as Main does
+    // UI tests start on the library; OnboardingTest turns this off for itself
+    graph.basePreferences.shownOnboardingFlow.set(true)
     started = graph
     return graph
 }
