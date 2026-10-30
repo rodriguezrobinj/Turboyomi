@@ -1055,4 +1055,5 @@
     <string name="transition_animation_stack_right">Apilar (derecha)</string>
     <string name="transition_animation_stack_up">Apilar (arriba)</string>
     <string name="desktop_support_mihon_note">%1$s es un fork de Mihon. Estas donaciones van al equipo de Mihon, que hace la app sobre la que está construido.</string>
+    <string name="desktop_connected_to_wifi_or_cable">Solo con Wi-Fi o cable (sin datos móviles)</string>
 </resources>

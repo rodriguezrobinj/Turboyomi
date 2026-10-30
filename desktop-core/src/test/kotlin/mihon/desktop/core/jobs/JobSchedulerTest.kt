@@ -21,8 +21,9 @@ class JobSchedulerTest {
 
     private fun job(
         interval: Duration? = 12.hours,
+        canRun: () -> Boolean = { true },
         run: suspend () -> Unit = {},
-    ) = PeriodicJob("Update", { interval }, last, run)
+    ) = PeriodicJob("Update", { interval }, last, canRun, run)
 
     @Test
     fun `a job whose interval has passed runs, and its last run is saved before it starts`(): Unit = runBlocking {
@@ -34,6 +35,21 @@ class JobSchedulerTest {
 
         withTimeout(5.seconds) { seenLastRun.await() } shouldBe time
     }
+
+    @Test
+    fun `a due job waits while it can't run, without touching its last run, and runs once it can`(): Unit =
+        runBlocking {
+            var allowed = false
+            val scheduler = JobScheduler(listOf(job(canRun = { allowed }))) { time }
+
+            coroutineScope { scheduler.check(this).shouldBeEmpty() }
+            last.get() shouldBe 0L
+
+            allowed = true
+            // The next check, within RESUME_GAP so it isn't taken for a wake from sleep
+            time += 1.minutes.inWholeMilliseconds
+            coroutineScope { scheduler.check(this) shouldContainExactly listOf("Update") }
+        }
 
     @Test
     fun `a job that ran less than an interval ago doesn't run`(): Unit = runBlocking {

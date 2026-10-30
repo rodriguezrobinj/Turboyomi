@@ -30,11 +30,13 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import logcat.LogPriority
 import mihon.core.metro.AppCoroutineScope
+import mihon.desktop.app.library.UpdateRestrictions
 import mihon.desktop.app.platform.AppMessages
 import mihon.desktop.app.tray.TrayNotifier
 import mihon.desktop.app.tray.errorsNotice
 import mihon.desktop.app.tray.newChaptersNotice
 import mihon.desktop.core.AppDirs
+import mihon.desktop.core.DeviceState
 import mihon.desktop.core.jobs.PeriodicJob
 import mihon.domain.chapter.interactor.FilterChaptersForDownload
 import mihon.domain.source.interactor.UpdateMangaFromRemote
@@ -116,6 +118,14 @@ class LibraryUpdateJob(
         name = "LibraryUpdate",
         interval = { libraryPreferences.autoUpdateInterval.get().takeIf { it > 0 }?.hours },
         lastRun = libraryPreferences.lastUpdatedTimestamp,
+        // Mihon's device restrictions, only for the automatic update (spec 11f §2)
+        canRun = {
+            UpdateRestrictions.met(
+                libraryPreferences.autoUpdateDeviceRestrictions.get(),
+                DeviceState::internet,
+                DeviceState::onAcPower,
+            )
+        },
         // desktop: never during a restore, which is rewriting the library (spec 5a §3 E)
         run = {
             backupJob.awaitRestore()
