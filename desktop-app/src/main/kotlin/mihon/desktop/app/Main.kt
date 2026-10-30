@@ -51,6 +51,7 @@ import mihon.desktop.app.local.startStorage
 import mihon.desktop.app.main.AppContent
 import mihon.desktop.app.main.AppEvents
 import mihon.desktop.app.main.AppProviders
+import mihon.desktop.app.main.DeepLinks
 import mihon.desktop.app.main.shortcutFor
 import mihon.desktop.app.platform.AppMessages
 import mihon.desktop.app.platform.ExitHooks
@@ -123,10 +124,13 @@ fun main(args: Array<String>) {
     // OAuth redirects (spec 5b-2 §3 A): a second instance's, and this start's own, wait here until the graph exists
     val loginUrls = Channel<String>(Channel.UNLIMITED)
     LoginUrls.route(args.toList()) { loginUrls.trySend(it) }
+    // Repo links, backups and manga links (spec 11c §2): AppContent opens them once the window is up
+    DeepLinks.route(args.toList())
     // A second launch forwards its arguments here; accept() blocks, so it runs on IO, never on the UI thread
     val bringToFront = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     instance.listen(CoroutineScope(SupervisorJob() + Dispatchers.IO)) { forwarded ->
         LoginUrls.route(forwarded) { loginUrls.trySend(it) }
+        DeepLinks.route(forwarded)
         bringToFront.tryEmit(Unit)
     }
 

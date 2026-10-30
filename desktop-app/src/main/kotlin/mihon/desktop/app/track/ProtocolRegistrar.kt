@@ -3,14 +3,16 @@ package mihon.desktop.app.track
 import com.sun.jna.platform.win32.Advapi32Util
 import com.sun.jna.platform.win32.WinReg
 import logcat.LogPriority
+import mihon.desktop.app.main.DeepLinks
 import tachiyomi.core.common.util.system.logcat
 import java.io.File
 import java.lang.management.ManagementFactory
 
 /**
  * Registers turboyomi:// and app.turboyomi:// for this user (HKCU, no admin rights) so the browser can hand an
- * OAuth redirect back to the app (spec 5b-2 §1). Written on every start, so it points at the app that ran last: the
- * exe once packaged, the JVM with its classpath during development.
+ * OAuth redirect back to the app (spec 5b-2 §1), and Mihon's tachiyomi://, mihon:// and .tachibk files (spec 11c §2).
+ * Written on every start, so it points at the app that ran last: the exe once packaged, the JVM with its classpath
+ * during development.
  */
 object ProtocolRegistrar {
     /** Null until [register] runs; false makes Settings › Tracking warn (spec 5b-2 §4). */
@@ -36,13 +38,25 @@ object ProtocolRegistrar {
             return false.also { registered = it }
         }
         return try {
-            TrackLoginHandler.SCHEMES.forEach { scheme ->
+            (TrackLoginHandler.SCHEMES + DeepLinks.SCHEMES).forEach { scheme ->
                 val key = "$root\\$scheme"
                 Advapi32Util.registryCreateKey(WinReg.HKEY_CURRENT_USER, "$key\\shell\\open\\command")
                 Advapi32Util.registrySetStringValue(WinReg.HKEY_CURRENT_USER, key, "", "URL:Turboyomi")
                 Advapi32Util.registrySetStringValue(WinReg.HKEY_CURRENT_USER, key, "URL Protocol", "")
                 Advapi32Util.registrySetStringValue(WinReg.HKEY_CURRENT_USER, "$key\\shell\\open\\command", "", command)
             }
+            // Double-clicking a backup opens its restore
+            val progId = "$root\\$BACKUP_PROG_ID"
+            Advapi32Util.registryCreateKey(WinReg.HKEY_CURRENT_USER, "$progId\\shell\\open\\command")
+            Advapi32Util.registrySetStringValue(WinReg.HKEY_CURRENT_USER, progId, "", "Turboyomi backup")
+            Advapi32Util.registrySetStringValue(WinReg.HKEY_CURRENT_USER, "$progId\\shell\\open\\command", "", command)
+            Advapi32Util.registryCreateKey(WinReg.HKEY_CURRENT_USER, "$root\\$BACKUP_EXTENSION")
+            Advapi32Util.registrySetStringValue(
+                WinReg.HKEY_CURRENT_USER,
+                "$root\\$BACKUP_EXTENSION",
+                "",
+                BACKUP_PROG_ID,
+            )
             true
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e) { "Couldn't register the turboyomi:// protocol" }
@@ -75,6 +89,9 @@ object ProtocolRegistrar {
     }
 
     private val JVM_LAUNCHERS = setOf("java.exe", "javaw.exe", "java")
+
+    const val BACKUP_EXTENSION = ".tachibk"
+    const val BACKUP_PROG_ID = "Turboyomi.Backup"
 
     /** The executable always quoted, arguments quoted when they hold spaces, and the url as "%1". */
     fun command(executable: String, arguments: List<String>): String =

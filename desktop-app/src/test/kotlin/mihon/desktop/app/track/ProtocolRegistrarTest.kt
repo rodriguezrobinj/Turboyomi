@@ -15,20 +15,28 @@ class ProtocolRegistrarTest {
     }
 
     @Test
-    fun `both schemes are registered as url protocols under the given root`() {
+    fun `every scheme is registered as a url protocol, and backups open with the app`() {
         val root = "Software\\TurboyomiTest-${System.nanoTime()}"
+        val schemes = listOf("turboyomi", "app.turboyomi", "tachiyomi", "mihon")
         try {
             ProtocolRegistrar.register(kotlin.io.path.createTempFile("launch", ".args").toFile(), root) shouldBe true
 
-            listOf("turboyomi", "app.turboyomi").forEach { scheme ->
+            schemes.forEach { scheme ->
                 val key = "$root\\$scheme"
                 Advapi32Util.registryValueExists(WinReg.HKEY_CURRENT_USER, key, "URL Protocol") shouldBe true
                 Advapi32Util.registryGetStringValue(WinReg.HKEY_CURRENT_USER, "$key\\shell\\open\\command", "")
                     .endsWith("\"%1\"") shouldBe true
             }
+            Advapi32Util.registryGetStringValue(WinReg.HKEY_CURRENT_USER, "$root\\.tachibk", "") shouldBe
+                "Turboyomi.Backup"
+            Advapi32Util.registryGetStringValue(
+                WinReg.HKEY_CURRENT_USER,
+                "$root\\Turboyomi.Backup\\shell\\open\\command",
+                "",
+            ).endsWith("\"%1\"") shouldBe true
         } finally {
             // JNA deletes one key at a time, children first
-            listOf("turboyomi", "app.turboyomi").forEach { scheme ->
+            (schemes + listOf("Turboyomi.Backup", ".tachibk")).forEach { scheme ->
                 listOf("shell\\open\\command", "shell\\open", "shell", "").forEach { sub ->
                     val key = listOf(root, scheme, sub).filter { it.isNotEmpty() }.joinToString("\\")
                     runCatching { Advapi32Util.registryDeleteKey(WinReg.HKEY_CURRENT_USER, key) }

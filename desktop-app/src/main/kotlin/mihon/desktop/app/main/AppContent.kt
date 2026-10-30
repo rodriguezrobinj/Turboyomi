@@ -27,10 +27,13 @@ import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.TabNavigator
 import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 import eu.kanade.presentation.components.AppStateBanners
+import eu.kanade.presentation.more.settings.screen.browse.ExtensionStoresScreen
+import eu.kanade.presentation.more.settings.screen.data.RestoreBackupScreen
 import eu.kanade.presentation.theme.TachiyomiTheme
 import eu.kanade.presentation.util.DefaultNavigatorScreenTransition
 import eu.kanade.presentation.util.LocalBackPress
 import eu.kanade.tachiyomi.ui.browse.source.globalsearch.GlobalSearchScreen
+import eu.kanade.tachiyomi.ui.deeplink.DeepLinkScreen
 import eu.kanade.tachiyomi.ui.updates.UpdatesTab
 import kotlinx.coroutines.launch
 import mihon.app.di.AppGraph
@@ -113,6 +116,19 @@ fun AppContent(graph: AppGraph, crash: Throwable?, onRestart: () -> Unit) {
                             // screen is on top (Voyager only composes the top screen)
                             LaunchedEffect(navigator) {
                                 launch { AppEvents.globalSearch.collect { navigator.push(GlobalSearchScreen()) } }
+                                // MainActivity.handleIntentAction (spec 11c §2)
+                                launch {
+                                    DeepLinks.links.collect { link ->
+                                        navigator.popUntilRoot()
+                                        navigator.push(
+                                            when (link) {
+                                                is DeepLinks.Link.AddRepo -> ExtensionStoresScreen(link.url)
+                                                is DeepLinks.Link.RestoreBackup -> RestoreBackupScreen(link.path)
+                                                is DeepLinks.Link.Search -> DeepLinkScreen(link.query)
+                                            },
+                                        )
+                                    }
+                                }
                                 launch {
                                     AppEvents.updatesRequests.collect {
                                         navigator.popUntilRoot()
