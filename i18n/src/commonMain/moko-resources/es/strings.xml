@@ -1054,4 +1054,5 @@
     <string name="transition_animation_stack_left">Apilar (izquierda)</string>
     <string name="transition_animation_stack_right">Apilar (derecha)</string>
     <string name="transition_animation_stack_up">Apilar (arriba)</string>
+    <string name="desktop_connected_to_wifi_or_cable">Solo con Wi-Fi o cable (sin datos móviles)</string>
 </resources>

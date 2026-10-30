@@ -1185,4 +1185,5 @@
     <string name="desktop_move_down">Move down</string>
     <string name="desktop_archive_reader_unavailable">The archive reader couldn\'t load</string>
     <string name="desktop_downloads_finished">Downloads finished</string>
+    <string name="desktop_connected_to_wifi_or_cable">Only on Wi-Fi or cable (no mobile data)</string>
 </resources>
