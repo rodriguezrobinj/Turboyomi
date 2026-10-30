@@ -235,9 +235,15 @@ val appImage by tasks.registering(Exec::class) {
     inputs.dir(packagingDir.map { it.dir("runtime") })
     outputs.dir(image)
     doFirst {
-        image.get().asFile.deleteRecursively()
+        // A running Turboyomi.exe keeps its image's files open: deleting would remove only the others, and that app
+        // would then fail on every class it hadn't loaded yet. Renaming fails as a whole instead
+        val dir = image.get().asFile
+        val old = dir.resolveSibling("image.old")
+        old.deleteRecursively()
+        check(!dir.exists() || dir.renameTo(old)) { "$dir is in use: close the Turboyomi.exe that runs from it" }
+        old.deleteRecursively()
         commandLine(
-            args.get() + listOf("--type", "app-image", "--dest", image.get().asFile.path),
+            args.get() + listOf("--type", "app-image", "--dest", dir.path),
         )
     }
 }
