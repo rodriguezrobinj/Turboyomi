@@ -27,12 +27,15 @@ class PeriodicJob(
  * open or in the tray; a missed run happens at the first check after the app comes back.
  */
 class JobScheduler(
-    private val jobs: List<PeriodicJob>,
+    val jobs: List<PeriodicJob>,
     private val now: () -> Long = System::currentTimeMillis,
 ) {
     @Volatile
     private var lastCheck: Long? = null
     private val running: MutableSet<String> = ConcurrentHashMap.newKeySet()
+
+    /** For the debug screen's job list (spec 11a §2). */
+    fun isRunning(name: String): Boolean = name in running
 
     fun start(scope: CoroutineScope): Job = scope.launch {
         while (isActive) {

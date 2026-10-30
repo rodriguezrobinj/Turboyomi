@@ -11,11 +11,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
 import eu.kanade.presentation.more.settings.Preference
 import eu.kanade.presentation.more.settings.screen.SearchableSettings
+import eu.kanade.presentation.more.settings.screen.advanced.ClearDatabaseScreen
 import eu.kanade.tachiyomi.network.PREF_DOH_360
 import eu.kanade.tachiyomi.network.PREF_DOH_ADGUARD
 import eu.kanade.tachiyomi.network.PREF_DOH_ALIDNS
@@ -110,7 +112,7 @@ object AdvancedSettingsScreen : SearchableSettings {
                     }
                 },
             ),
-            dataGroup(context),
+            dataGroup(context, navigator),
             networkGroup(context),
             libraryGroup(context),
             embeddedBrowser(context),
@@ -118,7 +120,7 @@ object AdvancedSettingsScreen : SearchableSettings {
     }
 
     @Composable
-    private fun dataGroup(context: Context) = Preference.PreferenceGroup(
+    private fun dataGroup(context: Context, navigator: Navigator) = Preference.PreferenceGroup(
         title = stringResource(MR.strings.label_data),
         preferenceItems = listOf(
             Preference.PreferenceItem.TextPreference(
@@ -128,6 +130,11 @@ object AdvancedSettingsScreen : SearchableSettings {
                     context.appGraph.downloadCache.invalidateCache()
                     context.toast(MR.strings.download_cache_invalidated)
                 },
+            ),
+            Preference.PreferenceItem.TextPreference(
+                title = stringResource(MR.strings.pref_clear_database),
+                subtitle = stringResource(MR.strings.pref_clear_database_summary),
+                onClick = { navigator.push(ClearDatabaseScreen()) },
             ),
         ),
     )

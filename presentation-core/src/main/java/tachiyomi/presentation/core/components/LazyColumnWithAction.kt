@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -14,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import tachiyomi.presentation.core.util.keyboardScrollable
 
 @Composable
 fun LazyColumnWithAction(
@@ -29,8 +31,11 @@ fun LazyColumnWithAction(
             .padding(contentPadding)
             .fillMaxSize(),
     ) {
+        // desktop: arrows, Page Up/Down, Home and End scroll the list (spec 11a)
+        val state = rememberLazyListState()
         LazyColumn(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).keyboardScrollable(state),
+            state = state,
             content = content,
         )
 
