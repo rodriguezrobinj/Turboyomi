@@ -45,6 +45,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import logcat.LogPriority
 import mihon.desktop.app.browser.EmbeddedBrowserWindow
 import mihon.desktop.app.image.DesktopImageLoader
@@ -54,6 +55,7 @@ import mihon.desktop.app.main.AppEvents
 import mihon.desktop.app.main.AppProviders
 import mihon.desktop.app.main.DeepLinks
 import mihon.desktop.app.main.shortcutFor
+import mihon.desktop.app.main.skipOnboardingForExistingUsers
 import mihon.desktop.app.platform.AppMessages
 import mihon.desktop.app.platform.ExitHooks
 import mihon.desktop.app.platform.LocalWindowControls
@@ -147,6 +149,7 @@ fun main(args: Array<String>) {
     DesktopApp.graph = graph
     // Before the first string the window shows (spec 11d §2)
     AppLanguage.apply(graph.uiPreferences.appLanguage.get())
+    runBlocking { skipOnboardingForExistingUsers(graph) }
     DesktopLogging.setVerbose(graph.networkPreferences.verboseLogging.get())
     AppMessages.install()
     DesktopImageLoader.install(graph)
