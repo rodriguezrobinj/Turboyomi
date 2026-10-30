@@ -41,6 +41,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -61,6 +62,7 @@ import mihon.desktop.app.security.AppLock
 import mihon.desktop.app.security.AppSecurity
 import mihon.desktop.app.security.SecureScreen
 import mihon.desktop.app.security.UnlockScreen
+import mihon.desktop.app.settings.AppLanguage
 import mihon.desktop.app.startup.MIN_HEIGHT
 import mihon.desktop.app.startup.MIN_WIDTH
 import mihon.desktop.app.startup.SavedWindow
@@ -143,6 +145,8 @@ fun main(args: Array<String>) {
         Startup.fatal(e.message ?: e.toString(), dirs.logs)
     }
     DesktopApp.graph = graph
+    // Before the first string the window shows (spec 11d §2)
+    AppLanguage.apply(graph.uiPreferences.appLanguage.get())
     DesktopLogging.setVerbose(graph.networkPreferences.verboseLogging.get())
     AppMessages.install()
     DesktopImageLoader.install(graph)
@@ -278,6 +282,13 @@ fun main(args: Array<String>) {
                     ).collect { SecureScreen.apply(window, it) }
                 }
                 LaunchedEffect(Unit) { AppEvents.fullscreen.collect { windowControls.toggleFullscreen() } }
+                // A new app language redraws the window from scratch, as Android recreates the activity (spec 11d §2)
+                LaunchedEffect(Unit) {
+                    graph.uiPreferences.appLanguage.changes().drop(1).distinctUntilChanged().collect {
+                        AppLanguage.apply(it)
+                        restarts++
+                    }
+                }
                 LaunchedEffect(Unit) {
                     bringToFront.collect {
                         windowVisible = true
