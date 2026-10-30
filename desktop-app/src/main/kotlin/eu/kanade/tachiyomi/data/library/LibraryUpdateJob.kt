@@ -5,6 +5,7 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import eu.kanade.presentation.util.formattedMessage
+import eu.kanade.tachiyomi.core.security.SecurityPreferences
 import eu.kanade.tachiyomi.data.backup.BackupJob
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.source.UnmeteredSource
@@ -83,6 +84,7 @@ class LibraryUpdateJob(
     private val downloadManager: DownloadManager,
     private val filterChaptersForDownload: FilterChaptersForDownload,
     private val backupJob: BackupJob,
+    private val securityPreferences: SecurityPreferences,
     @AppCoroutineScope private val scope: CoroutineScope,
 ) {
     /** [done] of [total] manga; [current] are the titles being fetched right now. */
@@ -186,7 +188,11 @@ class LibraryUpdateJob(
         }
 
         if (hasDownloads.get()) downloadManager.startDownloads()
-        if (newUpdates.isNotEmpty()) TrayNotifier.send(newChaptersNotice(context, newUpdates))
+        if (newUpdates.isNotEmpty()) {
+            TrayNotifier.send(
+                newChaptersNotice(context, newUpdates, securityPreferences.hideNotificationContent.get()),
+            )
+        }
         if (failed.isNotEmpty()) {
             val file = writeErrorFile(failed)
             TrayNotifier.send(errorsNotice(context, failed.size))

@@ -39,10 +39,17 @@ object TrayNotifier {
     }
 }
 
-/** "14 new chapters", then the first three titles and "and N more". */
-fun newChaptersNotice(context: Context, updates: List<Pair<Manga, List<Chapter>>>): Notice {
+/**
+ * "14 new chapters", then the first three titles and "and N more". [hideContent]: Mihon's "hide notification content",
+ * only the count (spec 11b §2).
+ */
+fun newChaptersNotice(
+    context: Context,
+    updates: List<Pair<Manga, List<Chapter>>>,
+    hideContent: Boolean = false,
+): Notice {
     val chapters = updates.sumOf { it.second.size }
-    val titles = updates.map { it.first.title }
+    val titles = if (hideContent) emptyList() else updates.map { it.first.title }
     val lines = buildList {
         add(context.pluralStringResource(MR.plurals.notification_chapters_generic, chapters, chapters))
         addAll(titles.take(SHOWN_TITLES))

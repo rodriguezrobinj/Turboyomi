@@ -17,6 +17,7 @@ import eu.kanade.presentation.more.settings.screen.SettingsDataScreen
 import eu.kanade.presentation.more.settings.screen.SettingsDownloadScreen
 import eu.kanade.presentation.more.settings.screen.SettingsLibraryScreen
 import eu.kanade.presentation.more.settings.screen.SettingsSearchScreen
+import eu.kanade.presentation.more.settings.screen.SettingsSecurityScreen
 import eu.kanade.presentation.more.settings.screen.SettingsTrackingScreen
 import eu.kanade.presentation.more.settings.widget.TextPreferenceWidget
 import eu.kanade.presentation.util.Tab
@@ -31,6 +32,7 @@ import mihon.icons.materialsymbols.rounded.Info
 import mihon.icons.materialsymbols.rounded.Palette
 import mihon.icons.materialsymbols.rounded.QueryStats
 import mihon.icons.materialsymbols.rounded.Search
+import mihon.icons.materialsymbols.rounded.Security
 import mihon.icons.materialsymbols.rounded.Settings
 import mihon.icons.materialsymbols.rounded.Storage
 import mihon.icons.materialsymbols.rounded.Sync
@@ -63,6 +65,7 @@ data object SettingsTab : Tab {
         Triple(MR.strings.pref_category_downloads, MaterialSymbols.Rounded.Download, SettingsDownloadScreen),
         Triple(MR.strings.pref_category_tracking, MaterialSymbols.Rounded.Sync, SettingsTrackingScreen),
         Triple(MR.strings.label_data_storage, MaterialSymbols.Rounded.Storage, SettingsDataScreen),
+        Triple(MR.strings.pref_category_security, MaterialSymbols.Rounded.Security, SettingsSecurityScreen),
         Triple(MR.strings.pref_category_advanced, MaterialSymbols.Rounded.Code, AdvancedSettingsScreen),
         Triple(MR.strings.pref_category_about, MaterialSymbols.Rounded.Info, AboutScreen),
     )

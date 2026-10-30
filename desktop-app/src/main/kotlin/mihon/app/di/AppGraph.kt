@@ -9,6 +9,7 @@ import eu.kanade.domain.track.service.DelayedTrackingJob
 import eu.kanade.domain.track.service.TrackPreferences
 import eu.kanade.domain.track.store.DelayedTrackingStore
 import eu.kanade.domain.ui.UiPreferences
+import eu.kanade.tachiyomi.core.security.SecurityPreferences
 import eu.kanade.tachiyomi.data.backup.BackupJob
 import eu.kanade.tachiyomi.data.backup.BackupNotifier
 import eu.kanade.tachiyomi.data.cache.CoverCache
@@ -77,4 +78,5 @@ interface AppGraph : DesktopGraph, ViewModelGraph {
     val delayedTrackingJob: DelayedTrackingJob
     val trackLoginHandler: TrackLoginHandler
     val pendingLogins: PendingLogins
+    val securityPreferences: SecurityPreferences
 }

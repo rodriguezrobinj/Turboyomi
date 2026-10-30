@@ -4,6 +4,7 @@ import android.content.Context
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
+import eu.kanade.tachiyomi.core.security.SecurityPreferences
 import eu.kanade.tachiyomi.data.download.model.Download
 import mihon.desktop.app.tray.Notice
 import mihon.desktop.app.tray.TrayNotifier
@@ -17,7 +18,10 @@ import tachiyomi.i18n.MR
  */
 @Inject
 @SingleIn(AppScope::class)
-class DownloadNotifier(private val context: Context) {
+class DownloadNotifier(
+    private val context: Context,
+    private val securityPreferences: SecurityPreferences,
+) {
     @Volatile
     private var downloaded = false
 
@@ -56,7 +60,9 @@ class DownloadNotifier(private val context: Context) {
         lastError = now
         TrayNotifier.send(
             Notice(
-                title = mangaTitle?.plus(": $chapter") ?: title,
+                // Mihon's "hide notification content" (spec 11b §2): no title or chapter
+                title = mangaTitle?.takeUnless { securityPreferences.hideNotificationContent.get() }
+                    ?.plus(": $chapter") ?: title,
                 message = error ?: context.stringResource(MR.strings.download_notifier_unknown_error),
                 isError = true,
                 opensUpdates = false,
