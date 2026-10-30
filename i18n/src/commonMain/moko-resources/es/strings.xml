@@ -1054,4 +1054,5 @@
     <string name="transition_animation_stack_left">Apilar (izquierda)</string>
     <string name="transition_animation_stack_right">Apilar (derecha)</string>
     <string name="transition_animation_stack_up">Apilar (arriba)</string>
+    <string name="desktop_support_mihon_note">%1$s es un fork de Mihon. Estas donaciones van al equipo de Mihon, que hace la app sobre la que está construido.</string>
 </resources>

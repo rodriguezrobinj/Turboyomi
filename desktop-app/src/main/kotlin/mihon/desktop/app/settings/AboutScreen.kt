@@ -4,18 +4,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import eu.kanade.presentation.more.settings.Preference
 import eu.kanade.presentation.more.settings.screen.SearchableSettings
+import eu.kanade.presentation.more.settings.screen.about.OpenSourceLicensesScreen
 import eu.kanade.tachiyomi.util.system.openInBrowser
 import kotlinx.coroutines.launch
 import mihon.app.di.appGraph
 import mihon.desktop.app.main.ShortcutHelp
 import mihon.desktop.app.update.AppReleases
 import mihon.desktop.core.DesktopBuildInfo
+import mihon.feature.support.SupportUsScreen
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
 
-/** Mihon's About, cut to what the desktop has (spec 6b §2): version, update check, the repo and its licenses. */
+/** Mihon's About, cut to what the desktop has (spec 6b §2): version, update check, the repo, its licenses and Mihon's Support us. */
 object AboutScreen : SearchableSettings {
     private const val REPO_URL = "https://github.com/${AppReleases.REPO}"
 
@@ -28,6 +32,7 @@ object AboutScreen : SearchableSettings {
         val context = LocalContext.current
         val scope = rememberCoroutineScope()
         val graph = context.appGraph
+        val navigator = LocalNavigator.currentOrThrow
         return listOf(
             Preference.PreferenceItem.TextPreference(
                 title = stringResource(MR.strings.version),
@@ -51,10 +56,20 @@ object AboutScreen : SearchableSettings {
                 subtitle = REPO_URL,
                 onClick = { context.openInBrowser(REPO_URL) },
             ),
-            // desktop: no aboutlibraries here; NOTICE lists the bundled code and its licenses
             Preference.PreferenceItem.TextPreference(
                 title = stringResource(MR.strings.licenses),
+                onClick = { navigator.push(OpenSourceLicensesScreen()) },
+            ),
+            // NOTICE covers what isn't a dependency: the code taken from Suwayomi, the RAR samples (spec 11e §2)
+            Preference.PreferenceItem.TextPreference(
+                title = "NOTICE",
+                subtitle = "$REPO_URL/blob/master/NOTICE",
                 onClick = { context.openInBrowser("$REPO_URL/blob/master/NOTICE") },
+            ),
+            // Mihon's Support us, which lives in its More tab (spec 11e §2)
+            Preference.PreferenceItem.TextPreference(
+                title = stringResource(MR.strings.label_support_us),
+                onClick = { navigator.push(SupportUsScreen()) },
             ),
         )
     }

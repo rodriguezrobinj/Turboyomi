@@ -34,6 +34,7 @@ import eu.kanade.presentation.util.DefaultNavigatorScreenTransition
 import eu.kanade.presentation.util.LocalBackPress
 import eu.kanade.tachiyomi.ui.browse.source.globalsearch.GlobalSearchScreen
 import eu.kanade.tachiyomi.ui.deeplink.DeepLinkScreen
+import eu.kanade.tachiyomi.ui.more.OnboardingScreen
 import eu.kanade.tachiyomi.ui.updates.UpdatesTab
 import kotlinx.coroutines.launch
 import mihon.app.di.AppGraph
@@ -115,6 +116,12 @@ fun AppContent(graph: AppGraph, crash: Throwable?, onRestart: () -> Unit) {
                             // Shortcuts that navigate are collected here, at the root, which stays composed whatever
                             // screen is on top (Voyager only composes the top screen)
                             LaunchedEffect(navigator) {
+                                // MainActivity.ShowOnboarding (spec 11e §2)
+                                if (!graph.basePreferences.shownOnboardingFlow.get() &&
+                                    navigator.lastItem !is OnboardingScreen
+                                ) {
+                                    navigator.push(OnboardingScreen())
+                                }
                                 launch { AppEvents.globalSearch.collect { navigator.push(GlobalSearchScreen()) } }
                                 // MainActivity.handleIntentAction (spec 11c §2)
                                 launch {
