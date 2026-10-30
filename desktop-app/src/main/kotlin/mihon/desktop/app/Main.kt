@@ -142,14 +142,16 @@ fun main(args: Array<String>) {
         CoroutineScope(Dispatchers.IO).launch { graph.chapterCache.clear() }
     }
     // Periodic jobs while the app is open or in the tray (parent spec §5.1)
-    JobScheduler(
+    val jobScheduler = JobScheduler(
         listOf(
             graph.libraryUpdateJob.periodicJob(),
             graph.backupJob.periodicJob(),
             graph.delayedTrackingJob.periodicJob(),
             graph.appUpdater.periodicJob(),
         ),
-    ).start(CoroutineScope(SupervisorJob() + Dispatchers.Default))
+    )
+    DesktopApp.jobScheduler = jobScheduler
+    jobScheduler.start(CoroutineScope(SupervisorJob() + Dispatchers.Default))
     val windowStore = WindowStateStore(graph.preferenceStore)
     // Each screen's work area: its bounds without the taskbar, so a default-sized window never hides under it
     val screens = GraphicsEnvironment.getLocalGraphicsEnvironment().screenDevices.map { device ->
