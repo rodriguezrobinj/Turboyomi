@@ -164,6 +164,7 @@ fun ReaderContent(viewModel: ReaderViewModel, onClose: () -> Unit) {
         rotateInvert = if (webtoon) rotateWebtoonInvert else rotatePagedInvert,
     )
     val cache = remember(decodeOptions) { DecodedPageCache() }
+    DisposableEffect(cache) { onDispose(cache::close) }
     val showPageNumber by preferences.showPageNumber.collectAsState()
     val alwaysShowTransition by preferences.alwaysShowChapterTransition.collectAsState()
     val navigationMode by (if (webtoon) preferences.navigationModeWebtoon else preferences.navigationModePager)

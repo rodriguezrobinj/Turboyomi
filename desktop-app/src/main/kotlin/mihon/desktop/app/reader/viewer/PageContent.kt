@@ -96,10 +96,15 @@ fun PageContent(
         produceState<Result<DecodedPage>?>(cache.get(key)?.let(Result.Companion::success), status) {
             if (value?.isSuccess == true || status != Page.State.Ready) return@produceState
             val stream = page.stream ?: return@produceState
+            // Into the cache on the IO thread: a page scrolled past mid-decode is still the cache's to close
             value = withContext(Dispatchers.IO) {
-                runCatching { PageDecoder.decode(stream().use { it.readBytes() }, options) }
-            }.onSuccess { cache.put(key, it) }
+                runCatching { cache.put(key, PageDecoder.decode(stream().use { it.readBytes() }, options)) }
+            }
         }
+    }
+    DisposableEffect(cache, key) {
+        cache.show(key)
+        onDispose { cache.hide(key) }
     }
 
     // The page's width, for the click zones of zoomable's onTap, which only gives the offset
