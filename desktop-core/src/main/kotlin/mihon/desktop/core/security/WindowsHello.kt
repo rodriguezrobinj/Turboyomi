@@ -17,12 +17,16 @@ import tachiyomi.core.common.util.system.logcat
  * current Windows user. Blocking calls, for an IO thread; any COM failure counts as unavailable or not verified.
  */
 object WindowsHello {
-    fun isAvailable(): Boolean = call("check availability") {
+    fun isAvailable(): Boolean = call("check availability") { availability() == AVAILABLE }
+
+    /** UserConsentVerifierAvailability (0 available, 1-4 why not); throws when WinRT fails. */
+    internal fun availability(): Int {
+        roInitialize()
         val statics = activationFactory(IID_STATICS)
         try {
             val operation = PointerByReference()
             succeeded(statics.invoke(STATICS_CHECK_AVAILABILITY, operation)) // CheckAvailabilityAsync
-            asyncIntResult(ComObject(operation.value)) == AVAILABLE
+            return asyncIntResult(ComObject(operation.value))
         } finally {
             statics.release()
         }
@@ -44,13 +48,17 @@ object WindowsHello {
     }
 
     private fun call(what: String, block: () -> Boolean): Boolean = try {
-        val init = Combase.INSTANCE.RoInitialize(RO_INIT_MULTITHREADED)
-        // A thread already in another apartment can still make these calls
-        if (init < 0 && init != RPC_E_CHANGED_MODE) error("RoInitialize 0x%08x".format(init))
+        roInitialize()
         block()
     } catch (e: Throwable) {
         logcat(LogPriority.WARN, e) { "Windows Hello: couldn't $what" }
         false
+    }
+
+    private fun roInitialize() {
+        val init = Combase.INSTANCE.RoInitialize(RO_INIT_MULTITHREADED)
+        // A thread already in another apartment can still make these calls
+        if (init < 0 && init != RPC_E_CHANGED_MODE) error("RoInitialize 0x%08x".format(init))
     }
 
     private fun activationFactory(iid: GUID): ComObject {
