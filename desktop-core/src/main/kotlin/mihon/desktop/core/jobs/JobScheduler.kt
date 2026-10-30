@@ -19,6 +19,8 @@ class PeriodicJob(
     val interval: () -> Duration?,
     /** Epoch milliseconds of the last start; the scheduler saves it before running, like Mihon's update worker. */
     val lastRun: Preference<Long>,
+    /** False holds a due job until a later check, like WorkManager's constraints (spec 11f §2). */
+    val canRun: () -> Boolean = { true },
     val run: suspend () -> Unit,
 )
 
@@ -54,7 +56,7 @@ class JobScheduler(
 
         val due = jobs.filter { job ->
             val interval = job.interval() ?: return@filter false
-            job.name !in running && time - job.lastRun.get() >= interval.inWholeMilliseconds
+            job.name !in running && time - job.lastRun.get() >= interval.inWholeMilliseconds && job.canRun()
         }
         due.forEach { job ->
             running += job.name

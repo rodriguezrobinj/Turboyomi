@@ -22,6 +22,9 @@ import kotlinx.coroutines.launch
 import mihon.app.di.appGraph
 import tachiyomi.domain.category.model.Category
 import tachiyomi.domain.library.service.LibraryPreferences
+import tachiyomi.domain.library.service.LibraryPreferences.Companion.DEVICE_CHARGING
+import tachiyomi.domain.library.service.LibraryPreferences.Companion.DEVICE_NETWORK_NOT_METERED
+import tachiyomi.domain.library.service.LibraryPreferences.Companion.DEVICE_ONLY_ON_WIFI
 import tachiyomi.domain.library.service.LibraryPreferences.Companion.MANGA_HAS_UNREAD
 import tachiyomi.domain.library.service.LibraryPreferences.Companion.MANGA_NON_COMPLETED
 import tachiyomi.domain.library.service.LibraryPreferences.Companion.MANGA_NON_READ
@@ -111,6 +114,7 @@ object SettingsLibraryScreen : SearchableSettings {
         val trayPreferences = remember { context.appGraph.trayPreferences }
 
         val autoUpdateIntervalPref = libraryPreferences.autoUpdateInterval
+        val autoUpdateInterval by autoUpdateIntervalPref.collectAsState()
         val autoUpdateCategoriesPref = libraryPreferences.updateCategories
         val autoUpdateCategoriesExcludePref = libraryPreferences.updateCategoriesExclude
 
@@ -150,7 +154,19 @@ object SettingsLibraryScreen : SearchableSettings {
                     title = stringResource(MR.strings.pref_library_update_interval),
                     // desktop: the scheduler reads the interval at every check, there's no task to set up
                 ),
-                // desktop: no device restrictions (Wi-Fi, metered network, charging) on desktop
+                Preference.PreferenceItem.MultiSelectListPreference(
+                    preference = libraryPreferences.autoUpdateDeviceRestrictions,
+                    entries = mapOf(
+                        // desktop: Mihon's "Wi-Fi" means no mobile data, so a cable counts too (spec 11f §2)
+                        DEVICE_ONLY_ON_WIFI to stringResource(MR.strings.desktop_connected_to_wifi_or_cable),
+                        DEVICE_NETWORK_NOT_METERED to stringResource(MR.strings.network_not_metered),
+                        DEVICE_CHARGING to stringResource(MR.strings.charging),
+                    ),
+                    title = stringResource(MR.strings.pref_library_update_restriction),
+                    subtitle = stringResource(MR.strings.restrictions),
+                    visible = autoUpdateInterval > 0,
+                    // desktop: the scheduler asks the restrictions at every check, there's no task to set up
+                ),
                 Preference.PreferenceItem.TextPreference(
                     title = stringResource(MR.strings.categories),
                     subtitle = getCategoriesLabel(
