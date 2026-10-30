@@ -1,7 +1,10 @@
 package mihon.desktop.app
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -9,6 +12,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isAltPressed
@@ -35,6 +40,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import logcat.LogPriority
@@ -43,11 +50,16 @@ import mihon.desktop.app.image.DesktopImageLoader
 import mihon.desktop.app.local.startStorage
 import mihon.desktop.app.main.AppContent
 import mihon.desktop.app.main.AppEvents
+import mihon.desktop.app.main.AppProviders
 import mihon.desktop.app.main.shortcutFor
 import mihon.desktop.app.platform.AppMessages
 import mihon.desktop.app.platform.ExitHooks
 import mihon.desktop.app.platform.LocalWindowControls
 import mihon.desktop.app.platform.WindowControls
+import mihon.desktop.app.security.AppLock
+import mihon.desktop.app.security.AppSecurity
+import mihon.desktop.app.security.SecureScreen
+import mihon.desktop.app.security.UnlockScreen
 import mihon.desktop.app.startup.MIN_HEIGHT
 import mihon.desktop.app.startup.MIN_WIDTH
 import mihon.desktop.app.startup.SavedWindow
@@ -152,6 +164,9 @@ fun main(args: Array<String>) {
     )
     DesktopApp.jobScheduler = jobScheduler
     jobScheduler.start(CoroutineScope(SupervisorJob() + Dispatchers.Default))
+    // Mihon's app lock and secure screen (spec 11b §2)
+    val appLock = AppLock(graph.securityPreferences, isAvailable = { AppSecurity.helloAvailable })
+    appLock.onStart()
     val windowStore = WindowStateStore(graph.preferenceStore)
     // Each screen's work area: its bounds without the taskbar, so a default-sized window never hides under it
     val screens = GraphicsEnvironment.getLocalGraphicsEnvironment().screenDevices.map { device ->
@@ -234,11 +249,30 @@ fun main(args: Array<String>) {
                 title = AppDirs.APP_NAME,
                 // desktop: the app's own icon (spec 6a §2)
                 icon = painterResource("turboyomi.svg"),
-                onPreviewKeyEvent = { event -> handleShortcut(event, beforeFocusedComponent = true, scrollScope) },
-                onKeyEvent = { event -> handleShortcut(event, beforeFocusedComponent = false, scrollScope) },
+                // While locked, keys go only to the unlock screen
+                onPreviewKeyEvent = { event ->
+                    !appLock.locked.value && handleShortcut(event, beforeFocusedComponent = true, scrollScope)
+                },
+                onKeyEvent = { event ->
+                    !appLock.locked.value && handleShortcut(event, beforeFocusedComponent = false, scrollScope)
+                },
             ) {
                 window.minimumSize = Dimension(MIN_WIDTH, MIN_HEIGHT)
                 windowControls.window = window
+                AppSecurity.window = window
+                // Minimized or in the tray is Android's background, where "lock when idle" counts from
+                LaunchedEffect(Unit) {
+                    snapshotFlow { !windowVisible || windowState.isMinimized }
+                        .drop(1)
+                        .collect { background -> if (background) appLock.onBackground() else appLock.onForeground() }
+                }
+                LaunchedEffect(Unit) {
+                    combine(
+                        graph.securityPreferences.secureScreen.changes(),
+                        graph.basePreferences.incognitoMode.changes(),
+                        SecureScreen::isSecure,
+                    ).collect { SecureScreen.apply(window, it) }
+                }
                 LaunchedEffect(Unit) { AppEvents.fullscreen.collect { windowControls.toggleFullscreen() } }
                 LaunchedEffect(Unit) {
                     bringToFront.collect {
@@ -256,10 +290,25 @@ fun main(args: Array<String>) {
                     }
                 }
                 CompositionLocalProvider(LocalWindowControls provides windowControls) {
-                    key(restarts) {
-                        AppContent(graph, crash) {
-                            crash = null
-                            restarts++
+                    // The unlock screen covers the app, which stays composed and keeps its screens (spec 11b §2)
+                    Box(Modifier.fillMaxSize()) {
+                        key(restarts) {
+                            AppContent(graph, crash) {
+                                crash = null
+                                restarts++
+                            }
+                        }
+                        val locked by appLock.locked.collectAsState()
+                        if (locked) {
+                            AppProviders(graph) {
+                                UnlockScreen {
+                                    appLock.unlock {
+                                        AppSecurity.verify(
+                                            graph.context.stringResource(MR.strings.unlock_app_title, AppDirs.APP_NAME),
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
