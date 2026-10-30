@@ -25,6 +25,9 @@ class UiPreferences(
     preferenceStore: PreferenceStore,
 ) {
 
+    // desktop: Android keeps the app language itself (AppCompatDelegate); empty follows Windows (spec 11d §2)
+    val appLanguage: Preference<String> = preferenceStore.getString("desktop_app_language", "")
+
     val themeMode: Preference<ThemeMode> = preferenceStore.getEnum("pref_theme_mode_key", ThemeMode.SYSTEM)
 
     val appTheme: Preference<AppTheme> = preferenceStore.getEnum(

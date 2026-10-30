@@ -13,6 +13,7 @@ import eu.kanade.domain.ui.model.TabletUiMode
 import eu.kanade.domain.ui.model.ThemeMode
 import eu.kanade.domain.ui.model.TimeFormat
 import eu.kanade.presentation.more.settings.Preference
+import eu.kanade.presentation.more.settings.screen.appearance.AppLanguageScreen
 import eu.kanade.presentation.more.settings.widget.AppThemeModePreferenceWidget
 import eu.kanade.presentation.more.settings.widget.AppThemePreferenceWidget
 import eu.kanade.presentation.util.rememberIs24HourSystem
@@ -109,7 +110,11 @@ object SettingsAppearanceScreen : SearchableSettings {
         return Preference.PreferenceGroup(
             title = stringResource(MR.strings.pref_category_display),
             preferenceItems = listOf(
-                // desktop: no app language (follows Windows) nor tablet UI mode (the window width decides)
+                Preference.PreferenceItem.TextPreference(
+                    title = stringResource(MR.strings.pref_app_language),
+                    onClick = { navigator.push(AppLanguageScreen()) },
+                ),
+                // desktop: no tablet UI mode (the window width decides)
                 Preference.PreferenceItem.ListPreference(
                     preference = uiPreferences.dateFormat,
                     entries = DateFormats
