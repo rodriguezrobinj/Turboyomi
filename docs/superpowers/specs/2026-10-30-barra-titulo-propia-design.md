@@ -43,8 +43,9 @@ diseños de ajuste del botón maximizar.
   mover y cerrar la ventana bloqueada o tras un fallo. Va dentro de su propio `AppProviders`, como `UnlockScreen`. En
   pantalla completa (`windowControls.isFullscreen`) no se dibuja. `CustomTitleBar` deja pasar los mensajes sin tocarlos
   si la ventana no tiene `WS_CAPTION`, que es como la deja `BorderlessFullscreen`.
-- **Fuera de alcance:** la ventana del navegador integrado conserva la barra de Windows. Tampoco hay línea de borde
-  arriba: Windows 10 dibuja 1 px de borde a los lados y abajo, y arriba queda la barra. Si el lienzo de Skia se recrea
+- **Ventana del navegador integrado:** lleva la misma barra (`AppTitleBar`, que instala `CustomTitleBar` en su ventana y
+  dibuja `WindowTitleBar`). Cada ventana tiene su propia instancia de `CustomTitleBar` con su geometría.
+- **Fuera de alcance:** no hay línea de borde arriba: Windows 10 dibuja 1 px de borde a los lados y abajo, y arriba queda la barra. Si el lienzo de Skia se recrea
   (cambio de renderizador), la barra deja de arrastrar hasta reiniciar; los botones siguen funcionando.
 
 ## 3. Pruebas
