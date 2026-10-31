@@ -1187,4 +1187,7 @@
     <string name="desktop_downloads_finished">Downloads finished</string>
     <string name="desktop_support_mihon_note">%1$s is a fork of Mihon. These donations go to the Mihon team, who make the app it is built on.</string>
     <string name="desktop_connected_to_wifi_or_cable">Only on Wi-Fi or cable (no mobile data)</string>
+    <string name="desktop_window_minimize">Minimize</string>
+    <string name="desktop_window_maximize">Maximize</string>
+    <string name="desktop_window_restore">Restore down</string>
 </resources>
