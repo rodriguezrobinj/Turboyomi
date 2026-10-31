@@ -10,9 +10,9 @@ En Windows 11 no cambia nada: la barra nativa ya toma el color del tema (`Themed
 diseños de ajuste del botón maximizar.
 
 ## 2. Diseño
-- **Cuándo:** solo si Windows rechaza `DWMWA_CAPTION_COLOR`. `TitleBarColors.apply` pasa a devolver si Windows aceptó
-  el color. Si no lo aceptó, se instala la barra propia. Así se detecta lo que falta y no se compara un número de
-  versión.
+- **Cuándo:** solo si `os.name` es `Windows 10`. Desde el JDK 18 Windows 11 se llama `Windows 11`, y es la primera
+  versión que acepta `DWMWA_CAPTION_COLOR`. Probar el atributo en vivo no sirve: `ThemedTitleBar` lo pone a la vez y un
+  valor de prueba podría pisar el color del tema.
 - **Marco nativo sin barra** (`mihon.desktop.app.platform.CustomTitleBar`, JNA): se reemplaza el procedimiento de la
   ventana (`SetWindowLongPtr(GWLP_WNDPROC)`), que reenvía todo al original de AWT salvo:
   - `WM_NCCALCSIZE`: llama al original y devuelve la parte de arriba del área cliente a donde estaba. Desaparece la
@@ -50,7 +50,7 @@ diseños de ajuste del botón maximizar.
 ## 3. Pruebas
 - `TitleBarHitTest`: bordes y esquinas sin maximizar, sin franja de borde maximizada, barra, botones y contenido.
 - `WindowTitleBarTest` (Compose): cada botón llama a su acción, maximizar cambia a restaurar según el estado, y la
-  barra no aparece en pantalla completa.
+  geometría publicada coincide con la barra y sus botones.
 - A mano en Windows 10 (skill `verificacion-visual`, perfil aislado): color en tema claro y oscuro, arrastrar, Aero
   Snap a un lado, doble clic, clic derecho en la barra, cambio de tamaño por los cuatro bordes y esquinas, maximizar y
   restaurar sin contenido cortado, pantalla completa y vuelta, y la ventana inactiva.
