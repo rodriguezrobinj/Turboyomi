@@ -45,7 +45,7 @@ jobs:
         # block the packages; it runs reliably on a desktop
         continue-on-error: true
         run: ./gradlew :desktop-core:cefTest
-      - run: ./gradlew :desktop-app:packageMsi :desktop-app:packageZip
+      - run: ./gradlew :desktop-app:packageMsi :desktop-app:packageZip -Paot=true
       - uses: actions/upload-artifact@v4
         with:
           name: turboyomi

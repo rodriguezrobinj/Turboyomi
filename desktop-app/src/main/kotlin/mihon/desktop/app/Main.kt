@@ -15,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
@@ -41,6 +42,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -99,6 +101,7 @@ import java.awt.Rectangle
 import java.awt.Toolkit
 import kotlin.io.path.createTempDirectory
 import kotlin.system.exitProcess
+import kotlin.time.Duration.Companion.seconds
 
 fun main(args: Array<String>) {
     // Packaging's check (spec 6a §2): fresh data, no window, before the migration and the single-instance lock
@@ -273,6 +276,15 @@ fun main(args: Array<String>) {
             ) {
                 window.minimumSize = Dimension(MIN_WIDTH, MIN_HEIGHT)
                 windowControls.window = window
+                // Packaging's AOT cache run (spec 10c): the first screen, then the normal exit, at which the JVM writes
+                // down the classes it loaded and how the code ran
+                if ("--aot-train" in args) {
+                    LaunchedEffect(Unit) {
+                        withFrameNanos {}
+                        delay(10.seconds)
+                        exit()
+                    }
+                }
                 AppSecurity.window = window
                 // Minimized or in the tray is Android's background, where "lock when idle" counts from
                 LaunchedEffect(Unit) {
