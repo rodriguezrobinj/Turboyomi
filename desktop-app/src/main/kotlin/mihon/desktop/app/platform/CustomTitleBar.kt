@@ -12,31 +12,23 @@ import tachiyomi.core.common.util.system.logcat
 import java.awt.Window
 
 /**
- * The window's frame without Windows' title bar, under the app's own [WindowTitleBar]: Windows 10 only paints its bar
+ * A window's frame without Windows' title bar, under the app's own [WindowTitleBar]: Windows 10 only paints its bar
  * black or white. The window keeps its borders, shadow, Aero Snap and system menu, and the bar's area answers Windows
  * as a title bar would, so Windows still moves, snaps and maximizes the window from it.
  */
-object CustomTitleBar {
-    /** Windows 11 paints its own bar in the theme's colors ([TitleBarColors]); the JDK names it apart since 18. */
-    val needed: Boolean = System.getProperty("os.name") == "Windows 10"
-
+class CustomTitleBar private constructor(private val frame: WinDef.HWND) {
     /** Where the app's bar is, set by its layout. Read on AWT's toolkit thread, where the window procedures run. */
     @Volatile
     var geometry: TitleBarGeometry? = null
 
-    // JNA frees a callback nothing references, and Windows would call into freed code
-    private val procedures = mutableListOf<WinUser.WindowProc>()
-
-    fun install(window: Window) {
-        if (!window.isDisplayable) return
-        val frame = WinDef.HWND(Native.getWindowPointer(window))
-        subclass(frame) { original, hwnd, msg, wParam, lParam -> frameProcedure(original, hwnd, msg, wParam, lParam) }
+    private fun install() {
+        subclass(frame, ::frameProcedure)
         // Compose's canvas is a child window over the whole client area: Windows asks it, not the frame, about the mouse
         User32.INSTANCE.EnumChildWindows(
             frame,
             { child, _ ->
                 subclass(child) { original, hwnd, msg, wParam, lParam ->
-                    if (msg == WM_NCHITTEST && hasCaption(frame) && hit(frame, lParam) != HTCLIENT) {
+                    if (msg == WM_NCHITTEST && hasCaption(frame) && hit(lParam) != HTCLIENT) {
                         // Windows then asks the frame underneath
                         WinDef.LRESULT(HTTRANSPARENT)
                     } else {
@@ -80,31 +72,13 @@ object CustomTitleBar {
             }
             msg == WM_NCHITTEST -> {
                 val result = user32.CallWindowProc(original, hwnd, msg, wParam, lParam)
-                if (result.toInt() == HTCLIENT) WinDef.LRESULT(hit(hwnd, lParam).toLong()) else result
+                if (result.toInt() == HTCLIENT) WinDef.LRESULT(hit(lParam).toLong()) else result
             }
             else -> user32.CallWindowProc(original, hwnd, msg, wParam, lParam)
         }
     }
 
-    private fun subclass(
-        hwnd: WinDef.HWND,
-        procedure: (Pointer, WinDef.HWND, Int, WinDef.WPARAM, WinDef.LPARAM) -> WinDef.LRESULT,
-    ) {
-        // Read first: AWT's thread may call the new procedure as soon as it's set
-        val original = user32.GetWindowLongPtr(hwnd, GWLP_WNDPROC)
-        val callback = WinUser.WindowProc { h, msg, wParam, lParam ->
-            try {
-                procedure(original, h, msg, wParam, lParam)
-            } catch (e: Throwable) {
-                logcat(LogPriority.ERROR, e) { "Title bar window procedure failed" }
-                user32.CallWindowProc(original, h, msg, wParam, lParam)
-            }
-        }
-        procedures += callback
-        user32.SetWindowLongPtr(hwnd, GWLP_WNDPROC, callback)
-    }
-
-    private fun hit(frame: WinDef.HWND, lParam: WinDef.LPARAM): Int {
+    private fun hit(lParam: WinDef.LPARAM): Int {
         // Screen coordinates, signed: a second monitor can be left of or above the first
         val packed = lParam.toLong().toInt()
         val point = WinDef.POINT(packed.toShort().toInt(), (packed shr 16).toShort().toInt())
@@ -113,16 +87,65 @@ object CustomTitleBar {
         return titleBarHit(point.x, point.y, client.right, geometry, border(frame), user32.IsZoomed(frame))
     }
 
-    private fun hasCaption(hwnd: WinDef.HWND) =
-        User32.INSTANCE.GetWindowLong(hwnd, WinUser.GWL_STYLE) and WS_CAPTION == WS_CAPTION
+    companion object {
+        /** Windows 11 paints its own bar in the theme's colors ([TitleBarColors]); the JDK names it apart since 18. */
+        val needed: Boolean = System.getProperty("os.name") == "Windows 10"
 
-    /** The frame's thickness at the window's DPI: what Windows' own bar would resize from. */
-    private fun border(hwnd: WinDef.HWND): Int {
-        val dpi = user32.GetDpiForWindow(hwnd)
-        return user32.GetSystemMetricsForDpi(SM_CYFRAME, dpi) + user32.GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi)
+        // JNA frees a callback nothing references, and Windows would call into freed code.
+        // shortcut: a closed window's callbacks stay (a few objects per browser window), drop them on WM_NCDESTROY if
+        // windows ever open by the hundred
+        private val procedures = mutableListOf<WinUser.WindowProc>()
+
+        /** Takes Windows' bar off [window]; null where Windows paints its own in the theme's colors. */
+        fun install(window: Window): CustomTitleBar? {
+            if (!needed || !window.isDisplayable) return null
+            return CustomTitleBar(WinDef.HWND(Native.getWindowPointer(window))).also { it.install() }
+        }
+
+        private fun subclass(
+            hwnd: WinDef.HWND,
+            procedure: (Pointer, WinDef.HWND, Int, WinDef.WPARAM, WinDef.LPARAM) -> WinDef.LRESULT,
+        ) {
+            // Read first: AWT's thread may call the new procedure as soon as it's set
+            val original = user32.GetWindowLongPtr(hwnd, GWLP_WNDPROC)
+            val callback = WinUser.WindowProc { h, msg, wParam, lParam ->
+                try {
+                    procedure(original, h, msg, wParam, lParam)
+                } catch (e: Throwable) {
+                    logcat(LogPriority.ERROR, e) { "Title bar window procedure failed" }
+                    user32.CallWindowProc(original, h, msg, wParam, lParam)
+                }
+            }
+            procedures += callback
+            user32.SetWindowLongPtr(hwnd, GWLP_WNDPROC, callback)
+        }
+
+        private fun hasCaption(hwnd: WinDef.HWND) =
+            User32.INSTANCE.GetWindowLong(hwnd, WinUser.GWL_STYLE) and WS_CAPTION == WS_CAPTION
+
+        /** The frame's thickness at the window's DPI: what Windows' own bar would resize from. */
+        private fun border(hwnd: WinDef.HWND): Int {
+            val dpi = user32.GetDpiForWindow(hwnd)
+            return user32.GetSystemMetricsForDpi(SM_CYFRAME, dpi) +
+                user32.GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi)
+        }
+
+        private val user32 get() = User32Frame.INSTANCE
+
+        private const val GWLP_WNDPROC = -4
+        private const val WM_NCCALCSIZE = 0x0083
+        private const val WM_NCHITTEST = 0x0084
+        private const val HTTRANSPARENT = -1L
+        private const val WS_CAPTION = 0x00C00000
+        private const val RECT_TOP = 4L
+        private const val SM_CYFRAME = 33
+        private const val SM_CXPADDEDBORDER = 92
+        private const val SWP_NOSIZE = 0x0001
+        private const val SWP_NOMOVE = 0x0002
+        private const val SWP_NOZORDER = 0x0004
+        private const val SWP_NOACTIVATE = 0x0010
+        private const val SWP_FRAMECHANGED = 0x0020
     }
-
-    private val user32 get() = User32Frame.INSTANCE
 
     @Suppress("FunctionName")
     private interface User32Frame : StdCallLibrary {
@@ -144,18 +167,4 @@ object CustomTitleBar {
             val INSTANCE: User32Frame = Native.load("user32", User32Frame::class.java, W32APIOptions.DEFAULT_OPTIONS)
         }
     }
-
-    private const val GWLP_WNDPROC = -4
-    private const val WM_NCCALCSIZE = 0x0083
-    private const val WM_NCHITTEST = 0x0084
-    private const val HTTRANSPARENT = -1L
-    private const val WS_CAPTION = 0x00C00000
-    private const val RECT_TOP = 4L
-    private const val SM_CYFRAME = 33
-    private const val SM_CXPADDEDBORDER = 92
-    private const val SWP_NOSIZE = 0x0001
-    private const val SWP_NOMOVE = 0x0002
-    private const val SWP_NOZORDER = 0x0004
-    private const val SWP_NOACTIVATE = 0x0010
-    private const val SWP_FRAMECHANGED = 0x0020
 }

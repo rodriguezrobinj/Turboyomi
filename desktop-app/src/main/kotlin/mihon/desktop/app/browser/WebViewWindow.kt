@@ -2,6 +2,7 @@ package mihon.desktop.app.browser
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +34,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import mihon.app.di.AppGraph
 import mihon.desktop.app.main.AppProviders
+import mihon.desktop.app.platform.AppTitleBar
 import mihon.desktop.app.startup.MIN_HEIGHT
 import mihon.desktop.app.startup.MIN_WIDTH
 import mihon.desktop.core.AppDirs
@@ -55,15 +57,19 @@ import java.awt.Dimension
 @Composable
 fun EmbeddedBrowserWindow(graph: AppGraph) {
     val request = EmbeddedBrowser.window ?: return
+    val state = rememberWindowState(size = DpSize(1100.dp, 800.dp))
     Window(
         onCloseRequest = EmbeddedBrowser::close,
-        state = rememberWindowState(size = DpSize(1100.dp, 800.dp)),
+        state = state,
         title = AppDirs.APP_NAME,
     ) {
         window.minimumSize = Dimension(MIN_WIDTH, MIN_HEIGHT)
         LaunchedEffect(request) { window.toFront() }
         AppProviders(graph) {
-            Surface(Modifier.fillMaxSize()) { WebViewContent(request) }
+            Column(Modifier.fillMaxSize()) {
+                AppTitleBar(state)
+                Surface(Modifier.weight(1f).fillMaxWidth()) { WebViewContent(request) }
+            }
         }
     }
 }

@@ -15,7 +15,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
@@ -24,7 +23,6 @@ import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -61,11 +59,10 @@ import mihon.desktop.app.main.DeepLinks
 import mihon.desktop.app.main.shortcutFor
 import mihon.desktop.app.main.skipOnboardingForExistingUsers
 import mihon.desktop.app.platform.AppMessages
-import mihon.desktop.app.platform.CustomTitleBar
+import mihon.desktop.app.platform.AppTitleBar
 import mihon.desktop.app.platform.ExitHooks
 import mihon.desktop.app.platform.LocalWindowControls
 import mihon.desktop.app.platform.WindowControls
-import mihon.desktop.app.platform.WindowTitleBar
 import mihon.desktop.app.security.AppLock
 import mihon.desktop.app.security.AppSecurity
 import mihon.desktop.app.security.SecureScreen
@@ -100,7 +97,6 @@ import java.awt.Dimension
 import java.awt.GraphicsEnvironment
 import java.awt.Rectangle
 import java.awt.Toolkit
-import java.awt.event.WindowEvent
 import kotlin.io.path.createTempDirectory
 import kotlin.system.exitProcess
 
@@ -292,16 +288,6 @@ fun main(args: Array<String>) {
                     ).collect { SecureScreen.apply(window, it) }
                 }
                 LaunchedEffect(Unit) { AppEvents.fullscreen.collect { windowControls.toggleFullscreen() } }
-                // Windows 10 paints its title bar black or white: the app draws its own (spec "barra de título propia")
-                var ownTitleBar by remember { mutableStateOf(false) }
-                LaunchedEffect(Unit) {
-                    if (CustomTitleBar.needed) {
-                        // After a frame, Compose's canvas has the native window install changes too
-                        withFrameNanos { }
-                        CustomTitleBar.install(window)
-                        ownTitleBar = true
-                    }
-                }
                 // A new app language redraws the window from scratch, as Android recreates the activity (spec 11d §2)
                 LaunchedEffect(Unit) {
                     graph.uiPreferences.appLanguage.changes().drop(1).distinctUntilChanged().collect {
@@ -327,28 +313,7 @@ fun main(args: Array<String>) {
                 CompositionLocalProvider(LocalWindowControls provides windowControls) {
                     Column(Modifier.fillMaxSize()) {
                         // Above the unlock and crash screens: the window can still be moved and closed
-                        if (ownTitleBar && !windowControls.isFullscreen) {
-                            AppProviders(graph) {
-                                WindowTitleBar(
-                                    title = AppDirs.APP_NAME,
-                                    icon = painterResource("turboyomi.svg"),
-                                    active = LocalWindowInfo.current.isWindowFocused,
-                                    maximized = windowState.placement == WindowPlacement.Maximized,
-                                    onMinimize = { windowState.isMinimized = true },
-                                    onToggleMaximize = {
-                                        windowState.placement =
-                                            if (windowState.placement == WindowPlacement.Maximized) {
-                                                WindowPlacement.Floating
-                                            } else {
-                                                WindowPlacement.Maximized
-                                            }
-                                    },
-                                    // The close button's way: onCloseRequest decides between the tray and exiting
-                                    onClose = { window.dispatchEvent(WindowEvent(window, WindowEvent.WINDOW_CLOSING)) },
-                                    onGeometry = { CustomTitleBar.geometry = it },
-                                )
-                            }
-                        }
+                        AppProviders(graph) { AppTitleBar(windowState, visible = !windowControls.isFullscreen) }
                         // The unlock screen covers the app, which stays composed and keeps its screens (spec 11b §2)
                         Box(Modifier.weight(1f).fillMaxWidth()) {
                             key(restarts) {

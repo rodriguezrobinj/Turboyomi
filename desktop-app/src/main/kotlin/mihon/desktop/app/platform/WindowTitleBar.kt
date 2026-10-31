@@ -16,8 +16,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -29,13 +33,54 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.FrameWindowScope
+import androidx.compose.ui.window.WindowPlacement
+import androidx.compose.ui.window.WindowState
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
+import java.awt.event.WindowEvent
+
+/**
+ * The app's own title bar on this window where Windows can't paint its own in the theme's colors (Windows 10, spec
+ * "barra de título propia"); nothing elsewhere. Goes at the window's top, inside the app's theme.
+ */
+@Composable
+fun FrameWindowScope.AppTitleBar(state: WindowState, visible: Boolean = true) {
+    var bar by remember { mutableStateOf<CustomTitleBar?>(null) }
+    LaunchedEffect(Unit) {
+        if (CustomTitleBar.needed) {
+            // After a frame, Compose's canvas has the native window install changes too
+            withFrameNanos { }
+            bar = CustomTitleBar.install(window)
+        }
+    }
+    val installed = bar ?: return
+    if (!visible) return
+    WindowTitleBar(
+        title = window.title,
+        icon = painterResource("turboyomi.svg"),
+        active = LocalWindowInfo.current.isWindowFocused,
+        maximized = state.placement == WindowPlacement.Maximized,
+        onMinimize = { state.isMinimized = true },
+        onToggleMaximize = {
+            state.placement = if (state.placement == WindowPlacement.Maximized) {
+                WindowPlacement.Floating
+            } else {
+                WindowPlacement.Maximized
+            }
+        },
+        // The close button's way: the window's onCloseRequest decides what closing does
+        onClose = { window.dispatchEvent(WindowEvent(window, WindowEvent.WINDOW_CLOSING)) },
+        onGeometry = { installed.geometry = it },
+    )
+}
 
 /**
  * The window's title bar where Windows can't paint its own in the theme's colors (Windows 10, see [CustomTitleBar]):
