@@ -79,7 +79,9 @@ fun WindowTitleBar(
                 drawLine(it, Offset(0f, center.y), Offset(size.width, center.y), glyphStroke)
             }
             CaptionButton(
-                stringResource(if (maximized) MR.strings.desktop_window_restore else MR.strings.desktop_window_maximize),
+                stringResource(
+                    if (maximized) MR.strings.desktop_window_restore else MR.strings.desktop_window_maximize,
+                ),
                 content,
                 hover,
                 content,
