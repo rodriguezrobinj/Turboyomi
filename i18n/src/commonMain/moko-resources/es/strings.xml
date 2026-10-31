@@ -997,6 +997,9 @@
     <string name="desktop_move_down">Bajar</string>
     <string name="desktop_archive_reader_unavailable">No se pudo cargar el lector de archivos</string>
     <string name="desktop_downloads_finished">Descargas terminadas</string>
+    <string name="desktop_window_minimize">Minimizar</string>
+    <string name="desktop_window_maximize">Maximizar</string>
+    <string name="desktop_window_restore">Restaurar</string>
 
     <!-- Desktop: Mihon strings with no Spanish translation upstream yet; drop each one when Weblate adds it -->
     <string name="considering">Considerando</string>
