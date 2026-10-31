@@ -1,3 +1,5 @@
+import java.util.concurrent.TimeUnit
+
 plugins {
     alias(mihonx.plugins.kotlin.jvm)
     alias(mihonx.plugins.spotless)
@@ -17,6 +19,8 @@ application {
     applicationDefaultJvmArgs = listOf(
         "--add-exports=java.desktop/sun.awt=ALL-UNNAMED",
         "--add-exports=java.desktop/sun.awt.windows=ALL-UNNAMED",
+        // JNA's native calls: JDK 25 warns without it, and a later JDK will refuse them
+        "--enable-native-access=ALL-UNNAMED",
     )
 }
 
@@ -171,7 +175,7 @@ val iconIco by tasks.registering(JavaExec::class) {
 
 // Packaging (spec 6a §2): the app's jars, a runtime cut down with jlink, and jpackage's image of them
 val packagingDir = layout.buildDirectory.dir("packaging")
-val jdkHome = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(23) }
+val jdkHome = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
     .map { it.metadata.installationPath.asFile }
 
 // The same rule as :desktop-core:generateBuildInfo: the last v* tag, 0.1.0 without one
@@ -207,7 +211,7 @@ val jlinkRuntime by tasks.registering(Exec::class) {
         // unnamed, so jdeps doesn't try to resolve their module graph (JCEF requires jogl, asm's packages are split).
         // jdeps takes no argfile: relative names keep the command line under Windows' limit
         val jdeps = ProcessBuilder(
-            jdk.get().resolve("bin/jdeps.exe").path, "--ignore-missing-deps", "--multi-release", "23",
+            jdk.get().resolve("bin/jdeps.exe").path, "--ignore-missing-deps", "--multi-release", "25",
             "--print-module-deps", "--recursive", "--class-path", jars.joinToString(";"), mainJar.get(),
         ).directory(input.get().asFile).redirectErrorStream(true).start()
         val deps = jdeps.inputStream.bufferedReader().readText().trim().lines().last()
@@ -240,27 +244,66 @@ val jpackageArgs = jdkHome.zip(packagingDir) { jdk, packaging ->
         // The same as applicationDefaultJvmArgs (spec 2b)
         "--java-options", "--add-exports=java.desktop/sun.awt=ALL-UNNAMED",
         "--java-options", "--add-exports=java.desktop/sun.awt.windows=ALL-UNNAMED",
+        "--java-options", "--enable-native-access=ALL-UNNAMED",
     )
 }.zip(tasks.jar.flatMap { it.archiveFileName }) { args, jar -> args + listOf("--main-jar", jar) }
     .zip(appVersion) { args, version -> args + listOf("--app-version", version) }
+
+// Startup's AOT cache (spec 10c), with -Paot=true (CI): training runs the app several times slower, about 10 minutes
+// on a desktop, so local images skip it
+val aotCache = providers.gradleProperty("aot").map { it.toBoolean() }.orElse(false)
 
 val appImage by tasks.registering(Exec::class) {
     dependsOn(appJars, jlinkRuntime, iconIco)
     val image = packagingDir.map { it.dir("image") }
     val args = jpackageArgs
+    val aot = aotCache
     inputs.dir(packagingDir.map { it.dir("input") })
     inputs.dir(packagingDir.map { it.dir("runtime") })
+    inputs.property("aot", aot)
     outputs.dir(image)
     doFirst {
         // A running Turboyomi.exe keeps its image's files open: deleting would remove only the others, and that app
         // would then fail on every class it hadn't loaded yet. Renaming fails as a whole instead
         val dir = image.get().asFile
         val old = dir.resolveSibling("image.old")
-        old.deleteRecursively()
+
+        // JDK 25's jpackage copies the launcher read-only, which Java can't delete on Windows
+        fun File.deleteAll() = walk().forEach { it.setWritable(true) }.let { deleteRecursively() }
+        check(old.deleteAll()) { "Couldn't delete $old" }
         check(!dir.exists() || dir.renameTo(old)) { "$dir is in use: close the Turboyomi.exe that runs from it" }
-        old.deleteRecursively()
+        old.deleteAll()
         commandLine(
             args.get() + listOf("--type", "app-image", "--dest", dir.path),
+        )
+    }
+    // A start of the new image up to its first screen, on fresh data (--aot-train), records the classes it loads and
+    // how its code runs; at its exit the JVM assembles them into a cache the launcher maps on every start. The JVM
+    // ignores the cache when the jars changed, and finds it wherever the image is installed
+    val work = temporaryDir
+    doLast {
+        if (!aot.get()) return@doLast
+        val app = image.get().asFile.resolve("Turboyomi")
+        val cache = app.resolve("app/turboyomi.aot")
+        val home = work.resolve("turboyomi-perfil-aot").apply { deleteRecursively() }
+        val log = work.resolve("aot-train.log")
+        val train = ProcessBuilder(app.resolve("Turboyomi.exe").path, "--aot-train")
+            .redirectErrorStream(true).redirectOutput(log)
+        train.environment()["TURBOYOMI_HOME"] = home.path
+        train.environment()["JAVA_TOOL_OPTIONS"] = "-XX:AOTCacheOutput=${cache.path}"
+        val process = train.start()
+        if (!process.waitFor(30, TimeUnit.MINUTES)) {
+            process.descendants().forEach { it.destroyForcibly() }
+            process.destroyForcibly()
+        }
+        check(process.waitFor() == 0 && cache.isFile) { "The image's --aot-train run failed:\n${log.readText()}" }
+        home.deleteRecursively()
+        val cfg = app.resolve("app/Turboyomi.cfg")
+        cfg.writeText(
+            cfg.readText().replace(
+                "[JavaOptions]",
+                "[JavaOptions]\r\njava-options=-XX:AOTCache=\$APPDIR\\turboyomi.aot",
+            ),
         )
     }
 }
@@ -281,13 +324,24 @@ val wixBin = providers.environmentVariable("LOCALAPPDATA").map { "$it/Programs/W
     }
 
 val packageMsi by tasks.registering(Exec::class) {
-    dependsOn(appJars, jlinkRuntime, iconIco)
-    val args = jpackageArgs
+    dependsOn(appImage)
+    // The image itself, with its AOT cache and the launcher's option for it
+    val image = packagingDir.map { it.dir("image/Turboyomi") }
+    val args = jdkHome.zip(appVersion) { jdk, version ->
+        listOf(
+            jdk.resolve("bin/jpackage.exe").path,
+            "--name",
+            "Turboyomi",
+            "--vendor",
+            "Turboyomi",
+            "--app-version",
+            version,
+        )
+    }
     val out = packagingDir
     val wix = wixBin
     val resources = layout.projectDirectory.dir("packaging/msi")
-    inputs.dir(packagingDir.map { it.dir("input") })
-    inputs.dir(packagingDir.map { it.dir("runtime") })
+    inputs.dir(image)
     inputs.dir(resources)
     outputs.file(out.zip(appVersion) { dir, version -> dir.file("Turboyomi-$version.msi") })
     doFirst {
@@ -300,7 +354,8 @@ val packageMsi by tasks.registering(Exec::class) {
         // jpackage's own temp folder (%TEMP%) keeps WiX under MAX_PATH; one inside this project would not
         commandLine(
             args.get() + listOf(
-                "--type", "msi", "--win-per-user-install", "--win-menu", "--win-shortcut",
+                "--type", "msi", "--app-image", image.get().asFile.path,
+                "--win-per-user-install", "--win-menu", "--win-shortcut",
                 // Relative to %LOCALAPPDATA%: jpackage's default, %LOCALAPPDATA%\Turboyomi, is the app's own local data
                 "--install-dir", "Programs\\Turboyomi", "--win-menu-group", "Turboyomi",
                 // Fixed, so a newer MSI replaces the installed one (spec 6a §3 B)

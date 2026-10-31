@@ -1,5 +1,5 @@
 name: setup-turboyomi
-description: JDK 23, Gradle, WiX 3.14 and the tracker keys, as the packaging tasks expect them (spec 6b §2)
+description: JDK 23 (Gradle's) and 25 (the packaged runtime's), Gradle, WiX 3.14 and the tracker keys, as the packaging tasks expect them (spec 6b §2)
 inputs:
   tracker-keys:
     description: The tracker-keys.properties contents; empty builds without the OAuth trackers
@@ -11,7 +11,10 @@ runs:
     - uses: actions/setup-java@v4
       with:
         distribution: temurin
-        java-version: 23
+        # The last one is JAVA_HOME, where Gradle runs; gradle.properties points the toolchains at JAVA_HOME_25_X64
+        java-version: |
+          25
+          23
     - uses: gradle/actions/setup-gradle@v4
     - name: WiX 3.14
       shell: bash
