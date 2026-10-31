@@ -336,11 +336,12 @@ fun main(args: Array<String>) {
                                     maximized = windowState.placement == WindowPlacement.Maximized,
                                     onMinimize = { windowState.isMinimized = true },
                                     onToggleMaximize = {
-                                        windowState.placement = if (windowState.placement == WindowPlacement.Maximized) {
-                                            WindowPlacement.Floating
-                                        } else {
-                                            WindowPlacement.Maximized
-                                        }
+                                        windowState.placement =
+                                            if (windowState.placement == WindowPlacement.Maximized) {
+                                                WindowPlacement.Floating
+                                            } else {
+                                                WindowPlacement.Maximized
+                                            }
                                     },
                                     // The close button's way: onCloseRequest decides between the tray and exiting
                                     onClose = { window.dispatchEvent(WindowEvent(window, WindowEvent.WINDOW_CLOSING)) },
