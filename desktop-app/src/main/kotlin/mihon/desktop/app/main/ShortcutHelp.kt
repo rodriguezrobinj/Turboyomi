@@ -68,6 +68,7 @@ object ShortcutHelp {
             setOf(Shortcut.NextCategory, Shortcut.PreviousCategory),
         ),
         ShortcutRow(MR.strings.desktop_help_keys_back, MR.strings.desktop_help_back, setOf(Shortcut.Back)),
+        ShortcutRow(MR.strings.desktop_help_keys_forward, MR.strings.desktop_help_forward, setOf(Shortcut.Forward)),
         // Subproyecto 7's keys: no Shortcut of their own
         ShortcutRow(MR.strings.desktop_help_keys_scroll_lists, MR.strings.desktop_help_scroll_lists),
     )

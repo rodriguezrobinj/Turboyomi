@@ -52,6 +52,7 @@ import kotlinx.coroutines.launch
 import logcat.LogPriority
 import mihon.app.di.appGraph
 import mihon.desktop.app.platform.FileDialogs
+import mihon.desktop.app.platform.IconTooltip
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.automirroredrounded.Help
 import tachiyomi.core.common.i18n.stringResource
@@ -78,11 +79,13 @@ object SettingsDataScreen : SearchableSettings {
     @Composable
     override fun RowScope.AppBarAction() {
         val uriHandler = LocalUriHandler.current
-        IconButton(onClick = { uriHandler.openUri(HELP_URL) }) {
-            Icon(
-                imageVector = MaterialSymbols.AutoMirroredRounded.Help,
-                contentDescription = stringResource(MR.strings.tracking_guide),
-            )
+        IconTooltip(stringResource(MR.strings.tracking_guide)) {
+            IconButton(onClick = { uriHandler.openUri(HELP_URL) }) {
+                Icon(
+                    imageVector = MaterialSymbols.AutoMirroredRounded.Help,
+                    contentDescription = stringResource(MR.strings.tracking_guide),
+                )
+            }
         }
     }
 

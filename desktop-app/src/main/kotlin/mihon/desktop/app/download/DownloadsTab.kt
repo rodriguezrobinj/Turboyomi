@@ -31,6 +31,7 @@ import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.AppBarActions
 import eu.kanade.presentation.util.Tab
 import eu.kanade.tachiyomi.data.download.model.Download
+import mihon.desktop.app.platform.IconTooltip
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.DragHandle
 import mihon.icons.materialsymbols.rounded.MoreVert
@@ -181,11 +182,13 @@ private fun DownloadRow(download: Download, dragHandle: @Composable () -> Unit, 
                 }
             }
         }
-        IconButton(onClick = { menu = true }) {
-            Icon(
-                MaterialSymbols.Rounded.MoreVert,
-                contentDescription = stringResource(MR.strings.action_menu_overflow_description),
-            )
+        IconTooltip(stringResource(MR.strings.action_menu_overflow_description)) {
+            IconButton(onClick = { menu = true }) {
+                Icon(
+                    MaterialSymbols.Rounded.MoreVert,
+                    contentDescription = stringResource(MR.strings.action_menu_overflow_description),
+                )
+            }
         }
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
             listOf(

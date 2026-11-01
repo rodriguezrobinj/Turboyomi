@@ -17,12 +17,19 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerButton
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
+import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.TabNavigator
 import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
@@ -39,6 +46,7 @@ import eu.kanade.tachiyomi.ui.updates.UpdatesTab
 import kotlinx.coroutines.launch
 import mihon.app.di.AppGraph
 import mihon.desktop.app.browser.EmbeddedBrowserConsent
+import mihon.desktop.app.local.LocalDropArea
 import mihon.desktop.app.platform.AppMessages
 import mihon.desktop.app.platform.ThemedTitleBar
 import mihon.desktop.app.update.UpdateDialog
@@ -107,12 +115,13 @@ fun AppContent(graph: AppGraph, crash: Throwable?, onRestart: () -> Unit) {
             // desktop: Mihon's banners over the whole window (MainActivity)
             Column(Modifier.fillMaxSize()) {
                 AppStateBanners(downloadedOnlyMode = downloadedOnly, incognitoMode = incognito, indexing = indexing)
-                Box(Modifier.weight(1f).fillMaxWidth()) {
+                Box(Modifier.weight(1f).fillMaxWidth().mouseBackForward()) {
                     // The tabs' navigator sits above the screens' navigator, so it stays composed while a screen covers
                     // HomeScreen; inside HomeScreen it lost every tab's state (pager page, scroll) on the way back.
                     // Voyager's default TabDisposable would drop that state too, and the tabs live as long as the app.
                     TabNavigator(HomeScreen.tabs.first(), tabDisposable = {}) { tabNavigator ->
                         Navigator(HomeScreen) { navigator ->
+                            val forward = remember { ForwardHistory<Screen>() }
                             // Shortcuts that navigate are collected here, at the root, which stays composed whatever
                             // screen is on top (Voyager only composes the top screen)
                             LaunchedEffect(navigator) {
@@ -123,6 +132,9 @@ fun AppContent(graph: AppGraph, crash: Throwable?, onRestart: () -> Unit) {
                                     navigator.push(OnboardingScreen())
                                 }
                                 launch { AppEvents.globalSearch.collect { navigator.push(GlobalSearchScreen()) } }
+                                // The mouse's forward button and Alt+Right (spec 12 §2)
+                                launch { snapshotFlow { navigator.items }.collect(forward::onStackChanged) }
+                                launch { AppEvents.forward.collect { forward.next()?.let(navigator::push) } }
                                 // MainActivity.handleIntentAction (spec 11c §2)
                                 launch {
                                     DeepLinks.links.collect { link ->
@@ -149,7 +161,7 @@ fun AppContent(graph: AppGraph, crash: Throwable?, onRestart: () -> Unit) {
                             }
                             // Like Mihon's SettingsScreen: settings screens draw their up arrow from LocalBackPress
                             CompositionLocalProvider(LocalBackPress provides navigator::pop) {
-                                DefaultNavigatorScreenTransition(navigator)
+                                LocalDropArea(graph, navigator) { DefaultNavigatorScreenTransition(navigator) }
                             }
                         }
                     }
@@ -165,5 +177,15 @@ fun AppContent(graph: AppGraph, crash: Throwable?, onRestart: () -> Unit) {
                 }
             }
         }
+    }
+}
+
+/** The mouse's side buttons go back and forward like Alt+Left and Alt+Right (spec 12 §2), before any screen sees them. */
+@OptIn(ExperimentalComposeUiApi::class)
+private fun Modifier.mouseBackForward() = onPointerEvent(PointerEventType.Press, PointerEventPass.Initial) { event ->
+    when (event.button) {
+        PointerButton.Back -> AppEvents.send(Shortcut.Back)
+        PointerButton.Forward -> AppEvents.send(Shortcut.Forward)
+        else -> {}
     }
 }

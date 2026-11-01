@@ -26,6 +26,7 @@ import eu.kanade.tachiyomi.data.track.EnhancedTracker
 import eu.kanade.tachiyomi.data.track.Tracker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import mihon.desktop.app.platform.IconTooltip
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.Check
 import mihon.icons.materialsymbols.rounded.Refresh
@@ -84,25 +85,27 @@ fun TrackingPreferenceWidget(
             }
             if (isLoggedIn) {
                 if (tracker !is EnhancedTracker) {
-                    IconButton(
-                        enabled = !isRefreshing,
-                        onClick = {
-                            scope.launch { tracker.refreshUser() }
-                        },
-                    ) {
-                        if (!isRefreshing) {
-                            Icon(
-                                imageVector = MaterialSymbols.Rounded.Refresh,
-                                modifier = Modifier
-                                    .padding(4.dp)
-                                    .size(32.dp),
-                                contentDescription = stringResource(MR.strings.refresh_tracker_profile),
-                            )
-                        } else {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                strokeWidth = 2.dp,
-                            )
+                    IconTooltip(stringResource(MR.strings.refresh_tracker_profile)) {
+                        IconButton(
+                            enabled = !isRefreshing,
+                            onClick = {
+                                scope.launch { tracker.refreshUser() }
+                            },
+                        ) {
+                            if (!isRefreshing) {
+                                Icon(
+                                    imageVector = MaterialSymbols.Rounded.Refresh,
+                                    modifier = Modifier
+                                        .padding(4.dp)
+                                        .size(32.dp),
+                                    contentDescription = stringResource(MR.strings.refresh_tracker_profile),
+                                )
+                            } else {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    strokeWidth = 2.dp,
+                                )
+                            }
                         }
                     }
                 }

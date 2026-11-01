@@ -50,6 +50,7 @@ import eu.kanade.tachiyomi.ui.browse.extension.ExtensionUiModel
 import eu.kanade.tachiyomi.ui.browse.extension.ExtensionsViewModel
 import eu.kanade.tachiyomi.util.system.LocaleHelper
 import eu.kanade.tachiyomi.util.system.copyToClipboard
+import mihon.desktop.app.platform.IconTooltip
 import mihon.domain.extension.model.ExtensionStore
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.Close
@@ -452,11 +453,13 @@ private fun ExtensionItemActions(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (!installStep.isCompleted()) {
-            IconButton(onClick = { onClickItemCancel(extension) }) {
-                Icon(
-                    imageVector = MaterialSymbols.Rounded.Close,
-                    contentDescription = stringResource(MR.strings.action_cancel),
-                )
+            IconTooltip(stringResource(MR.strings.action_cancel)) {
+                IconButton(onClick = { onClickItemCancel(extension) }) {
+                    Icon(
+                        imageVector = MaterialSymbols.Rounded.Close,
+                        contentDescription = stringResource(MR.strings.action_cancel),
+                    )
+                }
             }
             return@Row
         }
@@ -474,8 +477,10 @@ private fun ExtensionItemActions(
             }
         }
         secondaryAction?.let { (icon, label) ->
-            IconButton(onClick = { onClickItemSecondaryAction(extension) }) {
-                Icon(imageVector = icon, contentDescription = stringResource(label))
+            IconTooltip(stringResource(label)) {
+                IconButton(onClick = { onClickItemSecondaryAction(extension) }) {
+                    Icon(imageVector = icon, contentDescription = stringResource(label))
+                }
             }
         }
 
@@ -488,8 +493,10 @@ private fun ExtensionItemActions(
             else -> null
         }
         action?.let { (icon, label) ->
-            IconButton(onClick = { onClickItemAction(extension) }) {
-                Icon(imageVector = icon, contentDescription = stringResource(label))
+            IconTooltip(stringResource(label)) {
+                IconButton(onClick = { onClickItemAction(extension) }) {
+                    Icon(imageVector = icon, contentDescription = stringResource(label))
+                }
             }
         }
     }

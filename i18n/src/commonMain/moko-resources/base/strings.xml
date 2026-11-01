@@ -1146,8 +1146,10 @@
     <string name="desktop_help_select_all">Select everything in the library</string>
     <string name="desktop_help_keys_categories">Ctrl + Tab · Ctrl + Shift + Tab</string>
     <string name="desktop_help_categories">Next / previous library category</string>
-    <string name="desktop_help_keys_back">Alt + ← · Esc</string>
+    <string name="desktop_help_keys_back">Alt + ← · Esc · Mouse back button</string>
     <string name="desktop_help_back">Go back</string>
+    <string name="desktop_help_keys_forward">Alt + → · Mouse forward button</string>
+    <string name="desktop_help_forward">Reopen the screen you went back from</string>
     <string name="desktop_help_keys_scroll_lists">Page Up · Page Down · Home · End · ↑ ↓ · Space</string>
     <string name="desktop_help_scroll_lists">Scroll lists and grids</string>
     <string name="desktop_help_keys_turn_paged">→ ← · ↓ ↑ · Page Down · Page Up · Space · Shift + Space</string>
@@ -1190,4 +1192,8 @@
     <string name="desktop_window_minimize">Minimize</string>
     <string name="desktop_window_maximize">Maximize</string>
     <string name="desktop_window_restore">Restore down</string>
+    <string name="desktop_local_drop_copying">Copying to the local source…</string>
+    <string name="desktop_local_drop_added">Added to the local source: %1$s</string>
+    <string name="desktop_local_drop_unsupported">Not a folder or a chapter archive (zip, cbz, rar, cbr, 7z, cb7, tar, cbt): %1$s</string>
+    <string name="desktop_local_drop_failed">Couldn\'t copy to the local source: %1$s</string>
 </resources>

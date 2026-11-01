@@ -30,6 +30,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import eu.kanade.presentation.components.DropdownMenu
 import eu.kanade.tachiyomi.data.download.model.Download
+import mihon.desktop.app.platform.IconTooltip
 import mihon.icons.custommaterialsymbols.CustomMaterialSymbols
 import mihon.icons.custommaterialsymbols.rounded.DownloadArrow
 import mihon.icons.custommaterialsymbols.rounded.DownloadCircle
@@ -56,29 +57,39 @@ fun ChapterDownloadIndicator(
     onClick: (ChapterDownloadAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    when (val downloadState = downloadStateProvider()) {
-        Download.State.NOT_DOWNLOADED -> NotDownloadedIndicator(
-            enabled = enabled,
-            modifier = modifier,
-            onClick = onClick,
-        )
-        Download.State.QUEUE, Download.State.DOWNLOADING -> DownloadingIndicator(
-            enabled = enabled,
-            modifier = modifier,
-            downloadState = downloadState,
-            downloadProgressProvider = downloadProgressProvider,
-            onClick = onClick,
-        )
-        Download.State.DOWNLOADED -> DownloadedIndicator(
-            enabled = enabled,
-            modifier = modifier,
-            onClick = onClick,
-        )
-        Download.State.ERROR -> ErrorIndicator(
-            enabled = enabled,
-            modifier = modifier,
-            onClick = onClick,
-        )
+    val downloadState = downloadStateProvider()
+    // desktop: what the icon stands for, on hover (spec 12 §4)
+    val tooltip = when (downloadState) {
+        Download.State.NOT_DOWNLOADED -> MR.strings.manga_download
+        Download.State.QUEUE, Download.State.DOWNLOADING -> MR.strings.ext_downloading
+        Download.State.DOWNLOADED -> MR.strings.label_downloaded
+        Download.State.ERROR -> MR.strings.chapter_error
+    }
+    IconTooltip(stringResource(tooltip)) {
+        when (downloadState) {
+            Download.State.NOT_DOWNLOADED -> NotDownloadedIndicator(
+                enabled = enabled,
+                modifier = modifier,
+                onClick = onClick,
+            )
+            Download.State.QUEUE, Download.State.DOWNLOADING -> DownloadingIndicator(
+                enabled = enabled,
+                modifier = modifier,
+                downloadState = downloadState,
+                downloadProgressProvider = downloadProgressProvider,
+                onClick = onClick,
+            )
+            Download.State.DOWNLOADED -> DownloadedIndicator(
+                enabled = enabled,
+                modifier = modifier,
+                onClick = onClick,
+            )
+            Download.State.ERROR -> ErrorIndicator(
+                enabled = enabled,
+                modifier = modifier,
+                onClick = onClick,
+            )
+        }
     }
 }
 

@@ -50,6 +50,7 @@ import eu.kanade.tachiyomi.source.ConfigurableSource
 import eu.kanade.tachiyomi.ui.browse.extension.details.ExtensionDetailsViewModel
 import eu.kanade.tachiyomi.util.system.LocaleHelper
 import eu.kanade.tachiyomi.util.system.copyToClipboard
+import mihon.desktop.app.platform.IconTooltip
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.Eyeglasses2
 import mihon.icons.materialsymbols.rounded.Settings
@@ -419,12 +420,14 @@ private fun SourceSwitchPreference(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (source.source is ConfigurableSource) {
-                    IconButton(onClick = { onClickSourcePreferences(source.source.id) }) {
-                        Icon(
-                            imageVector = MaterialSymbols.Rounded.Settings,
-                            contentDescription = stringResource(MR.strings.label_settings),
-                            tint = MaterialTheme.colorScheme.onSurface,
-                        )
+                    IconTooltip(stringResource(MR.strings.label_settings)) {
+                        IconButton(onClick = { onClickSourcePreferences(source.source.id) }) {
+                            Icon(
+                                imageVector = MaterialSymbols.Rounded.Settings,
+                                contentDescription = stringResource(MR.strings.label_settings),
+                                tint = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
                     }
                 }
 

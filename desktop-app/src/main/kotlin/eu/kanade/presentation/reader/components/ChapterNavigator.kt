@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import eu.kanade.presentation.theme.TachiyomiPreviewTheme
 import eu.kanade.presentation.util.isTabletUi
+import mihon.desktop.app.platform.IconTooltip
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.SkipNext
 import mihon.icons.materialsymbols.rounded.SkipPrevious
@@ -147,17 +148,21 @@ fun HorizontalChapterNavigator(
                 .padding(horizontal = mainAxisPadding),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            FilledIconButton(
-                enabled = if (isRtl) enabledNext else enabledPrevious,
-                onClick = if (isRtl) onNextChapter else onPreviousChapter,
-                colors = buttonColor,
+            IconTooltip(
+                stringResource(if (isRtl) MR.strings.action_next_chapter else MR.strings.action_previous_chapter),
             ) {
-                Icon(
-                    imageVector = MaterialSymbols.Rounded.SkipPrevious,
-                    contentDescription = stringResource(
-                        if (isRtl) MR.strings.action_next_chapter else MR.strings.action_previous_chapter,
-                    ),
-                )
+                FilledIconButton(
+                    enabled = if (isRtl) enabledNext else enabledPrevious,
+                    onClick = if (isRtl) onNextChapter else onPreviousChapter,
+                    colors = buttonColor,
+                ) {
+                    Icon(
+                        imageVector = MaterialSymbols.Rounded.SkipPrevious,
+                        contentDescription = stringResource(
+                            if (isRtl) MR.strings.action_next_chapter else MR.strings.action_previous_chapter,
+                        ),
+                    )
+                }
             }
 
             if (hasSlider) {
@@ -195,17 +200,21 @@ fun HorizontalChapterNavigator(
                 Spacer(Modifier.weight(1f))
             }
 
-            FilledIconButton(
-                enabled = if (isRtl) enabledPrevious else enabledNext,
-                onClick = if (isRtl) onPreviousChapter else onNextChapter,
-                colors = buttonColor,
+            IconTooltip(
+                stringResource(if (isRtl) MR.strings.action_previous_chapter else MR.strings.action_next_chapter),
             ) {
-                Icon(
-                    imageVector = MaterialSymbols.Rounded.SkipNext,
-                    contentDescription = stringResource(
-                        if (isRtl) MR.strings.action_previous_chapter else MR.strings.action_next_chapter,
-                    ),
-                )
+                FilledIconButton(
+                    enabled = if (isRtl) enabledPrevious else enabledNext,
+                    onClick = if (isRtl) onPreviousChapter else onNextChapter,
+                    colors = buttonColor,
+                ) {
+                    Icon(
+                        imageVector = MaterialSymbols.Rounded.SkipNext,
+                        contentDescription = stringResource(
+                            if (isRtl) MR.strings.action_previous_chapter else MR.strings.action_next_chapter,
+                        ),
+                    )
+                }
             }
         }
     }

@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import mihon.desktop.app.platform.IconTooltip
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.ArrowDownward
 import mihon.icons.materialsymbols.rounded.ArrowUpward
@@ -57,29 +58,37 @@ fun ReorderableCollectionItemScope.CategoryListItem(
                 text = category.name,
                 modifier = Modifier.weight(1f),
             )
-            IconButton(onClick = { onMoveUp?.invoke() }, enabled = onMoveUp != null) {
-                Icon(
-                    imageVector = MaterialSymbols.Rounded.ArrowUpward,
-                    contentDescription = stringResource(MR.strings.desktop_move_up),
-                )
+            IconTooltip(stringResource(MR.strings.desktop_move_up)) {
+                IconButton(onClick = { onMoveUp?.invoke() }, enabled = onMoveUp != null) {
+                    Icon(
+                        imageVector = MaterialSymbols.Rounded.ArrowUpward,
+                        contentDescription = stringResource(MR.strings.desktop_move_up),
+                    )
+                }
             }
-            IconButton(onClick = { onMoveDown?.invoke() }, enabled = onMoveDown != null) {
-                Icon(
-                    imageVector = MaterialSymbols.Rounded.ArrowDownward,
-                    contentDescription = stringResource(MR.strings.desktop_move_down),
-                )
+            IconTooltip(stringResource(MR.strings.desktop_move_down)) {
+                IconButton(onClick = { onMoveDown?.invoke() }, enabled = onMoveDown != null) {
+                    Icon(
+                        imageVector = MaterialSymbols.Rounded.ArrowDownward,
+                        contentDescription = stringResource(MR.strings.desktop_move_down),
+                    )
+                }
             }
-            IconButton(onClick = onRename) {
-                Icon(
-                    imageVector = MaterialSymbols.Rounded.Edit,
-                    contentDescription = stringResource(MR.strings.action_rename_category),
-                )
+            IconTooltip(stringResource(MR.strings.action_rename_category)) {
+                IconButton(onClick = onRename) {
+                    Icon(
+                        imageVector = MaterialSymbols.Rounded.Edit,
+                        contentDescription = stringResource(MR.strings.action_rename_category),
+                    )
+                }
             }
-            IconButton(onClick = onDelete) {
-                Icon(
-                    imageVector = MaterialSymbols.Rounded.Delete,
-                    contentDescription = stringResource(MR.strings.action_delete),
-                )
+            IconTooltip(stringResource(MR.strings.action_delete)) {
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        imageVector = MaterialSymbols.Rounded.Delete,
+                        contentDescription = stringResource(MR.strings.action_delete),
+                    )
+                }
             }
         }
     }
