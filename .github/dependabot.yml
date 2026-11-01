@@ -17,6 +17,11 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+      # 0.x minors break: with 0.27 core:common no longer resolves its MR strings, so moko comes with Mihon (sync-upstream)
+      - dependency-name: "dev.icerock.moko:*"
+        update-types: ["version-update:semver-minor"]
+      - dependency-name: "dev.icerock.mobile.multiplatform-resources"
+        update-types: ["version-update:semver-minor"]
     groups:
       gradle:
         patterns: ["*"]
