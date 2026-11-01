@@ -1202,6 +1202,7 @@
     <string name="desktop_auto_update_extensions">Update extensions automatically</string>
     <string name="desktop_auto_update_extensions_summary">Installs new versions without asking, every 12 hours. A version signed by another key stays unloaded until you trust it.</string>
     <string name="desktop_extensions_auto_updated">Extensions updated</string>
+    <string name="desktop_update_size_warning">Updating many entries from the same source at once can slow it down or get you blocked by it for a while.</string>
     <string name="desktop_local_drop_copying">Copying to the local source…</string>
     <string name="desktop_local_drop_added">Added to the local source: %1$s</string>
     <string name="desktop_local_drop_unsupported">Not added: %1$s. Drop folders or chapter files (zip, cbz, rar, cbr, 7z, cb7, tar, cbt, epub) from outside the local source.</string>

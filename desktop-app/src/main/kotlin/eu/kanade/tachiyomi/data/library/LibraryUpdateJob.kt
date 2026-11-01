@@ -286,14 +286,14 @@ class LibraryUpdateJob(
         }
     }
 
-    // desktop: an in-app message with a link instead of Mihon's warning notification
+    // desktop: an in-app message with a link instead of Mihon's warning notification, without its battery and tap
     private suspend fun warnIfQueueTooBig(queue: List<LibraryManga>) {
         val maxFromSource = queue.groupBy { it.manga.source }
             .filter { (sourceId, _) -> sourceManager.get(sourceId) !is UnmeteredSource }
             .maxOfOrNull { it.value.size } ?: 0
         if (maxFromSource <= MANGA_PER_SOURCE_QUEUE_WARNING_THRESHOLD) return
         AppMessages.show(
-            context.stringResource(MR.strings.notification_size_warning),
+            context.stringResource(MR.strings.desktop_update_size_warning),
             context.stringResource(MR.strings.desktop_learn_more),
         ) { context.openInBrowser(HELP_WARNING_URL) }
     }
