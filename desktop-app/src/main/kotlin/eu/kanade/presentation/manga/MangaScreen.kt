@@ -423,10 +423,8 @@ private fun MangaScreenSmallImpl(
                         contentType = MangaScreenItem.CHAPTER_HEADER,
                     ) {
                         ChapterHeader(
-                            enabled = !isAnySelected,
                             chapterCount = chapters.size,
                             missingChapterCount = state.missingChapterCount,
-                            onClick = onFilterClicked,
                         )
                     }
 
@@ -651,10 +649,8 @@ fun MangaScreenLargeImpl(
                                 contentType = MangaScreenItem.CHAPTER_HEADER,
                             ) {
                                 ChapterHeader(
-                                    enabled = !isAnySelected,
                                     chapterCount = chapters.size,
                                     missingChapterCount = state.missingChapterCount,
-                                    onClick = onFilterButtonClicked,
                                 )
                             }
 
