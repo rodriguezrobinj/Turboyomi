@@ -1,5 +1,6 @@
 package mihon.desktop.app.reader.image
 
+import androidx.compose.ui.graphics.asSkiaBitmap
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
@@ -9,6 +10,10 @@ import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import javax.imageio.IIOImage
 import javax.imageio.ImageIO
+import javax.imageio.ImageTypeSpecifier
+import javax.imageio.ImageWriter
+import javax.imageio.metadata.IIOMetadata
+import javax.imageio.metadata.IIOMetadataNode
 
 class PageDecoderTest {
     private fun png(
@@ -85,6 +90,54 @@ class PageDecoderTest {
         val still = PageDecoder.decode(gif(2000, 2000, frames = 17)).shouldBeInstanceOf<DecodedPage.Still>()
         still.width shouldBe 2000
     }
+
+    @Test
+    fun `a frame that only redraws part of the picture keeps the rest of the frame before it`() {
+        val red = BufferedImage(10, 10, BufferedImage.TYPE_INT_RGB).apply {
+            for (x in 0 until 10) for (y in 0 until 10) setRGB(x, y, 0xFF0000)
+        }
+        val blue = BufferedImage(2, 2, BufferedImage.TYPE_INT_RGB).apply {
+            for (x in 0 until 2) for (y in 0 until 2) setRGB(x, y, 0x0000FF)
+        }
+        val gif = ByteArrayOutputStream().also { out ->
+            val writer = ImageIO.getImageWritersByFormatName("gif").next()
+            ImageIO.createImageOutputStream(out).use { stream ->
+                writer.output = stream
+                writer.prepareWriteSequence(null)
+                // Each frame left in place for the next, which only draws its 2×2 patch at (4, 4)
+                listOf(red to 0, blue to 4, blue to 6).forEach { (image, at) ->
+                    writer.writeToSequence(IIOImage(image, null, kept(writer, image, at)), null)
+                }
+                writer.endWriteSequence()
+            }
+            writer.dispose()
+        }.toByteArray()
+
+        val page = PageDecoder.decode(gif).shouldBeInstanceOf<DecodedPage.Animated>()
+        val last = page.frames.last().asSkiaBitmap()
+        last.getColor(0, 0) shouldBe 0xFFFF0000.toInt()
+        last.getColor(4, 4) shouldBe 0xFF0000FF.toInt()
+        last.getColor(6, 6) shouldBe 0xFF0000FF.toInt()
+    }
+
+    // A GIF frame drawn at (at, at) and not disposed of, so the next frame draws over it
+    private fun kept(writer: ImageWriter, image: BufferedImage, at: Int): IIOMetadata =
+        writer.getDefaultImageMetadata(ImageTypeSpecifier(image), null).apply {
+            val format = nativeMetadataFormatName
+            val root = getAsTree(format) as IIOMetadataNode
+            (root.getElementsByTagName("ImageDescriptor").item(0) as IIOMetadataNode).apply {
+                setAttribute("imageLeftPosition", "$at")
+                setAttribute("imageTopPosition", "$at")
+            }
+            val control = root.getElementsByTagName("GraphicControlExtension").item(0) as? IIOMetadataNode
+                ?: IIOMetadataNode("GraphicControlExtension").also(root::appendChild)
+            control.setAttribute("disposalMethod", "doNotDispose")
+            control.setAttribute("userInputFlag", "FALSE")
+            control.setAttribute("transparentColorFlag", "FALSE")
+            control.setAttribute("delayTime", "10")
+            control.setAttribute("transparentColorIndex", "0")
+            setFromTree(format, root)
+        }
 
     private fun gif(width: Int, height: Int, frames: Int): ByteArray = ByteArrayOutputStream().also { out ->
         val writer = ImageIO.getImageWritersByFormatName("gif").next()

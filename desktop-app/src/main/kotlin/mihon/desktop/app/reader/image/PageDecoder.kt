@@ -118,17 +118,21 @@ object PageDecoder {
     }
 
     private fun animated(codec: Codec): DecodedPage.Animated {
-        val frames = (0 until codec.frameCount).map { index ->
-            Bitmap().also {
-                it.allocPixels(codec.imageInfo)
-                codec.readPixels(it, index)
-            }.asComposeImageBitmap()
+        val info = codec.framesInfo
+        val frames = mutableListOf<Bitmap>()
+        for (index in info.indices) {
+            // A frame drawn over an earlier one starts from a copy of it: alone, Skia would decode that one again,
+            // and the one before it, for every frame
+            val required = info[index].requiredFrame
+            val bitmap = frames.getOrNull(required)?.makeClone() ?: Bitmap().apply { allocPixels(codec.imageInfo) }
+            codec.readPixels(bitmap, index, required)
+            frames += bitmap
         }
         return DecodedPage.Animated(
             codec.width,
             codec.height,
-            frames,
-            codec.framesInfo.map { it.duration.coerceAtLeast(MIN_FRAME_MS) },
+            frames.map { it.asComposeImageBitmap() },
+            info.map { it.duration.coerceAtLeast(MIN_FRAME_MS) },
         )
     }
 

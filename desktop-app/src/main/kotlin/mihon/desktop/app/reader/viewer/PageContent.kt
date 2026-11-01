@@ -96,8 +96,8 @@ fun PageContent(
         produceState<Result<DecodedPage>?>(cache.get(key)?.let(Result.Companion::success), status) {
             if (value?.isSuccess == true || status != Page.State.Ready) return@produceState
             val stream = page.stream ?: return@produceState
-            // Into the cache on the IO thread: a page scrolled past mid-decode is still the cache's to close
-            value = withContext(Dispatchers.IO) {
+            // Into the cache off the UI thread: a page scrolled past mid-decode is still the cache's to close
+            value = withContext(DecodeDispatcher) {
                 runCatching { cache.put(key, PageDecoder.decode(stream().use { it.readBytes() }, options)) }
             }
         }
@@ -251,6 +251,9 @@ fun DecodedPageImage(page: DecodedPage, contentScale: ContentScale, modifier: Mo
 fun interface PageZoomer {
     fun zoom(action: ReaderAction): Float
 }
+
+// Decoding is CPU work, and a page can take hundreds of MB: a fast scroll mustn't decode every page it passes at once
+private val DecodeDispatcher = Dispatchers.Default.limitedParallelism(2)
 
 private const val MAX_ZOOM = 5f
 
