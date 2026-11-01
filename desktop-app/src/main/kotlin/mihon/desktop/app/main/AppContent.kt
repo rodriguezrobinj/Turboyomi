@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -95,7 +96,13 @@ fun AppContent(graph: AppGraph, crash: Throwable?, onRestart: () -> Unit) {
             val snackbar = remember { SnackbarHostState() }
             LaunchedEffect(Unit) {
                 AppMessages.messages.collect {
-                    val result = snackbar.showSnackbar(it.text, actionLabel = it.actionLabel)
+                    // A message with a button would otherwise stay until clicked, and hold back every one after it
+                    val result = snackbar.showSnackbar(
+                        it.text,
+                        actionLabel = it.actionLabel,
+                        withDismissAction = it.actionLabel != null,
+                        duration = if (it.actionLabel == null) SnackbarDuration.Short else SnackbarDuration.Long,
+                    )
                     if (result == SnackbarResult.ActionPerformed) it.onAction?.invoke()
                 }
             }

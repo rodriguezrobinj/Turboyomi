@@ -1012,6 +1012,7 @@
     <string name="desktop_auto_update_extensions">Actualizar extensiones automáticamente</string>
     <string name="desktop_auto_update_extensions_summary">Instala las versiones nuevas sin preguntar, cada 12 horas. Una versión firmada con otra clave queda sin cargar hasta que la confíes.</string>
     <string name="desktop_extensions_auto_updated">Extensiones actualizadas</string>
+    <string name="desktop_update_size_warning">Actualizar muchas series de una misma fuente a la vez puede hacer que vaya lenta o que te bloquee durante un tiempo.</string>
     <string name="desktop_local_drop_copying">Copiando a la fuente local…</string>
     <string name="desktop_local_drop_added">Añadido a la fuente local: %1$s</string>
     <string name="desktop_local_drop_unsupported">No añadido: %1$s. Suelta carpetas o archivos de capítulo (zip, cbz, rar, cbr, 7z, cb7, tar, cbt, epub) de fuera de la fuente local.</string>
