@@ -38,7 +38,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import mihon.app.di.appGraph
-import mihon.desktop.app.library.LibraryUpdateProgress
 import mihon.desktop.app.main.AppEvents
 import mihon.desktop.app.reader.ReaderScreen
 import mihon.feature.migration.config.MigrationConfigScreen
@@ -110,40 +109,36 @@ data object LibraryTab : Tab {
                     defaultCategoryTitle = stringResource(MR.strings.label_default),
                     page = state.coercedActiveCategoryIndex,
                 )
-                // desktop: the running update's progress under the toolbar (spec 3a §3 G)
-                Column {
-                    LibraryToolbar(
-                        hasActiveFilters = state.hasActiveFilters,
-                        selectedCount = state.selection.size,
-                        title = title,
-                        onClickUnselectAll = viewModel::clearSelection,
-                        onClickSelectAll = viewModel::selectAll,
-                        onClickInvertSelection = viewModel::invertSelection,
-                        onClickFilter = viewModel::showSettingsDialog,
-                        onClickRefresh = { scope.launch { onClickRefresh(state.activeCategory) } },
-                        onClickGlobalUpdate = { scope.launch { onClickRefresh(null) } },
-                        onClickOpenRandomManga = {
-                            scope.launch {
-                                val randomItem = viewModel.getRandomLibraryItemForCurrentCategory()
-                                if (randomItem != null) {
-                                    navigator.push(MangaScreen(randomItem.libraryManga.manga.id))
-                                } else {
-                                    snackbarHostState.showSnackbar(
-                                        context.stringResource(MR.strings.information_no_entries_found),
-                                    )
-                                }
+                LibraryToolbar(
+                    hasActiveFilters = state.hasActiveFilters,
+                    selectedCount = state.selection.size,
+                    title = title,
+                    onClickUnselectAll = viewModel::clearSelection,
+                    onClickSelectAll = viewModel::selectAll,
+                    onClickInvertSelection = viewModel::invertSelection,
+                    onClickFilter = viewModel::showSettingsDialog,
+                    onClickRefresh = { scope.launch { onClickRefresh(state.activeCategory) } },
+                    onClickGlobalUpdate = { scope.launch { onClickRefresh(null) } },
+                    onClickOpenRandomManga = {
+                        scope.launch {
+                            val randomItem = viewModel.getRandomLibraryItemForCurrentCategory()
+                            if (randomItem != null) {
+                                navigator.push(MangaScreen(randomItem.libraryManga.manga.id))
+                            } else {
+                                snackbarHostState.showSnackbar(
+                                    context.stringResource(MR.strings.information_no_entries_found),
+                                )
                             }
-                        },
-                        searchQuery = state.searchQuery,
-                        onSearchQueryChange = viewModel::search,
-                        // For scroll overlay when no tab
-                        scrollBehavior = scrollBehavior.takeIf { !state.showCategoryTabs },
-                        onClickEditCategories = { navigator.push(CategoryScreen()) },
-                        onClickDownloadedOnly = { context.appGraph.basePreferences.downloadedOnly.toggle() },
-                        onClickIncognito = { context.appGraph.basePreferences.incognitoMode.toggle() },
-                    )
-                    LibraryUpdateProgress(updateJob)
-                }
+                        }
+                    },
+                    searchQuery = state.searchQuery,
+                    onSearchQueryChange = viewModel::search,
+                    // For scroll overlay when no tab
+                    scrollBehavior = scrollBehavior.takeIf { !state.showCategoryTabs },
+                    onClickEditCategories = { navigator.push(CategoryScreen()) },
+                    onClickDownloadedOnly = { context.appGraph.basePreferences.downloadedOnly.toggle() },
+                    onClickIncognito = { context.appGraph.basePreferences.incognitoMode.toggle() },
+                )
             },
             bottomBar = {
                 LibraryBottomActionMenu(

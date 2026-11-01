@@ -33,7 +33,7 @@ class LibraryTabTest {
     }
 
     @Test
-    fun `a running update shows its progress with Cancel, which stops it`() = runComposeUiTest {
+    fun `a running update shows its progress on the rail, whose menu's Cancel stops it`() = runComposeUiTest {
         val graph = startTestApp()
         val category = runBlocking { TestLibrary.category(graph) }
         runBlocking { TestLibrary.libraryManga(graph, category) }
@@ -46,15 +46,16 @@ class LibraryTabTest {
             onAllNodes(hasText(str(MR.strings.label_library))).fetchSemanticsNodes().isNotEmpty()
         }
         graph.libraryUpdateJob.start(category)
+        // On the navigation rail, done/total, so the screen under the toolbar doesn't move
+        waitUntil(timeoutMillis = 10_000) { onAllNodes(hasText("0/1")).fetchSemanticsNodes().isNotEmpty() }
+
+        onNodeWithText("0/1").performClick()
         waitUntil(timeoutMillis = 10_000) {
             onAllNodes(hasText(str(MR.strings.action_cancel))).fetchSemanticsNodes().isNotEmpty()
         }
-
         onNodeWithText(str(MR.strings.action_cancel)).performClick()
         gate.complete(Unit)
-        waitUntil(timeoutMillis = 10_000) {
-            onAllNodes(hasText(str(MR.strings.action_cancel))).fetchSemanticsNodes().isEmpty()
-        }
+        waitUntil(timeoutMillis = 10_000) { onAllNodes(hasText("0/1")).fetchSemanticsNodes().isEmpty() }
         TestSources.updatable.gate = null
     }
 

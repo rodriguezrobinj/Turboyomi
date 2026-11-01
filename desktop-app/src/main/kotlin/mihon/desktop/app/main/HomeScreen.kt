@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import mihon.app.di.appGraph
 import mihon.desktop.app.download.DownloadsTab
+import mihon.desktop.app.library.LibraryUpdateRailItem
 import mihon.desktop.app.platform.LocalWindowControls
 import mihon.desktop.app.settings.SettingsTab
 import mihon.icons.materialsymbols.MaterialSymbols
@@ -96,8 +97,10 @@ object HomeScreen : Screen() {
                         label = { Text(options.title) },
                     )
                 }
+                Spacer(Modifier.weight(1f))
+                // desktop: the library update's progress, which on top of the screens pushed them down
+                LibraryUpdateRailItem(context.appGraph.libraryUpdateJob)
                 LocalWindowControls.current?.let { window ->
-                    Spacer(Modifier.weight(1f))
                     NavigationRailItem(
                         selected = false,
                         onClick = window::toggleFullscreen,
