@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import eu.kanade.presentation.category.components.CategoryFloatingActionButton
 import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.more.settings.screen.browse.ExtensionStoreScreenState
+import mihon.desktop.app.platform.IconTooltip
 import mihon.domain.extension.model.ExtensionStore
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.Refresh
@@ -41,11 +42,13 @@ fun ExtensionStoresScreen(
                 title = stringResource(MR.strings.extensionStores),
                 scrollBehavior = scrollBehavior,
                 actions = {
-                    IconButton(onClick = onClickRefresh) {
-                        Icon(
-                            imageVector = MaterialSymbols.Rounded.Refresh,
-                            contentDescription = stringResource(resource = MR.strings.action_webview_refresh),
-                        )
+                    IconTooltip(stringResource(resource = MR.strings.action_webview_refresh)) {
+                        IconButton(onClick = onClickRefresh) {
+                            Icon(
+                                imageVector = MaterialSymbols.Rounded.Refresh,
+                                contentDescription = stringResource(resource = MR.strings.action_webview_refresh),
+                            )
+                        }
                     }
                 },
             )

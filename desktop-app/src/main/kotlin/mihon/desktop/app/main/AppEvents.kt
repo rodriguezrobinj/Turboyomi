@@ -28,6 +28,10 @@ object AppEvents {
     private val _fullscreen = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val fullscreen: SharedFlow<Unit> = _fullscreen
 
+    /** Collected by AppContent's navigator, which keeps the [ForwardHistory]. */
+    private val _forward = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val forward: SharedFlow<Unit> = _forward
+
     private val _updatesRequests = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val updatesRequests: SharedFlow<Unit> = _updatesRequests
 
@@ -42,6 +46,7 @@ object AppEvents {
             WindowBackInput.back()
             true
         }
+        Shortcut.Forward -> _forward.tryEmit(Unit)
         Shortcut.Refresh -> _refresh.tryEmit(Unit)
         Shortcut.GlobalSearch -> _globalSearch.tryEmit(Unit)
         Shortcut.Settings -> _openSettings.tryEmit(Unit)

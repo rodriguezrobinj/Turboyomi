@@ -22,9 +22,12 @@ import eu.kanade.presentation.reader.components.ChapterNavigator
 import eu.kanade.presentation.reader.components.ChapterNavigatorType
 import eu.kanade.tachiyomi.ui.reader.ReaderViewModel
 import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
+import mihon.desktop.app.main.ShortcutHelp
+import mihon.desktop.app.platform.IconTooltip
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.Fullscreen
 import mihon.icons.materialsymbols.rounded.FullscreenExit
+import mihon.icons.materialsymbols.rounded.Keyboard
 import mihon.icons.materialsymbols.rounded.Settings
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
@@ -95,18 +98,31 @@ fun ReaderControls(
                     onPageIndexChangeFinished = {},
                 )
                 Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainer)) {
-                    IconButton(onClick = onOpenSettings, modifier = Modifier.testTag(QUICK_SETTINGS_TAG)) {
-                        Icon(
-                            MaterialSymbols.Rounded.Settings,
-                            contentDescription = stringResource(MR.strings.action_settings),
-                        )
+                    IconTooltip(stringResource(MR.strings.action_settings)) {
+                        IconButton(onClick = onOpenSettings, modifier = Modifier.testTag(QUICK_SETTINGS_TAG)) {
+                            Icon(
+                                MaterialSymbols.Rounded.Settings,
+                                contentDescription = stringResource(MR.strings.action_settings),
+                            )
+                        }
+                    }
+                    // desktop: the keyboard help, where a reader looks for it (spec 12 §3)
+                    IconTooltip(stringResource(MR.strings.desktop_help_title)) {
+                        IconButton(onClick = { ShortcutHelp.open = true }) {
+                            Icon(
+                                MaterialSymbols.Rounded.Keyboard,
+                                contentDescription = stringResource(MR.strings.desktop_help_title),
+                            )
+                        }
                     }
                     if (isFullscreen != null) {
-                        IconButton(onClick = onToggleFullscreen, modifier = Modifier.testTag(FULLSCREEN_TAG)) {
-                            Icon(
-                                with(MaterialSymbols.Rounded) { if (isFullscreen) FullscreenExit else Fullscreen },
-                                contentDescription = stringResource(MR.strings.pref_fullscreen),
-                            )
+                        IconTooltip(stringResource(MR.strings.pref_fullscreen)) {
+                            IconButton(onClick = onToggleFullscreen, modifier = Modifier.testTag(FULLSCREEN_TAG)) {
+                                Icon(
+                                    with(MaterialSymbols.Rounded) { if (isFullscreen) FullscreenExit else Fullscreen },
+                                    contentDescription = stringResource(MR.strings.pref_fullscreen),
+                                )
+                            }
                         }
                     }
                 }

@@ -10,6 +10,7 @@ enum class Shortcut(
     val beforeFocusedComponent: Boolean,
 ) {
     Back(false),
+    Forward(true),
     GlobalSearch(true),
     Refresh(true),
     Settings(true),
@@ -26,6 +27,7 @@ enum class Shortcut(
 fun shortcutFor(key: Key, ctrl: Boolean, alt: Boolean, shift: Boolean): Shortcut? = when {
     // Esc is Compose's own back key (see ConnectWindowBack); only Alt+Left needs mapping
     key == Key.DirectionLeft && alt && !ctrl -> Shortcut.Back
+    key == Key.DirectionRight && alt && !ctrl -> Shortcut.Forward
     key == Key.F && ctrl && !alt -> Shortcut.GlobalSearch
     key == Key.F5 && !ctrl && !alt -> Shortcut.Refresh
     key == Key.F11 && !ctrl && !alt -> Shortcut.Fullscreen

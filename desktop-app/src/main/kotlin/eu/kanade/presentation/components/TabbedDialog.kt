@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
 import kotlinx.coroutines.launch
+import mihon.desktop.app.platform.IconTooltip
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.MoreVert
 import tachiyomi.i18n.MR
@@ -87,11 +88,13 @@ private fun MoreMenu(
 ) {
     var expanded by remember { mutableStateOf(false) }
     Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
-        IconButton(onClick = { expanded = true }) {
-            Icon(
-                imageVector = MaterialSymbols.Rounded.MoreVert,
-                contentDescription = stringResource(MR.strings.label_more),
-            )
+        IconTooltip(stringResource(MR.strings.label_more)) {
+            IconButton(onClick = { expanded = true }) {
+                Icon(
+                    imageVector = MaterialSymbols.Rounded.MoreVert,
+                    contentDescription = stringResource(MR.strings.label_more),
+                )
+            }
         }
         DropdownMenu(
             expanded = expanded,

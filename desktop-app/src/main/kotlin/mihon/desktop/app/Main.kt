@@ -64,6 +64,7 @@ import mihon.desktop.app.platform.AppMessages
 import mihon.desktop.app.platform.AppTitleBar
 import mihon.desktop.app.platform.ExitHooks
 import mihon.desktop.app.platform.LocalWindowControls
+import mihon.desktop.app.platform.TaskbarProgress
 import mihon.desktop.app.platform.WindowControls
 import mihon.desktop.app.security.AppLock
 import mihon.desktop.app.security.AppSecurity
@@ -286,6 +287,7 @@ fun main(args: Array<String>) {
                     }
                 }
                 AppSecurity.window = window
+                TaskbarProgress(graph, window)
                 // Minimized or in the tray is Android's background, where "lock when idle" counts from
                 LaunchedEffect(Unit) {
                     snapshotFlow { !windowVisible || windowState.isMinimized }

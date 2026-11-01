@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import mihon.desktop.app.platform.IconTooltip
 import mihon.domain.extension.model.ExtensionStore
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.automirroredrounded.Label
@@ -93,11 +94,13 @@ private fun ExtensionStoresListItem(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End,
         ) {
-            IconButton(onClick = onOpenWebsite) {
-                Icon(
-                    imageVector = MaterialSymbols.Rounded.Public,
-                    contentDescription = stringResource(MR.strings.action_open_in_browser),
-                )
+            IconTooltip(stringResource(MR.strings.action_open_in_browser)) {
+                IconButton(onClick = onOpenWebsite) {
+                    Icon(
+                        imageVector = MaterialSymbols.Rounded.Public,
+                        contentDescription = stringResource(MR.strings.action_open_in_browser),
+                    )
+                }
             }
 
             if (store.contact.discord != null) {
@@ -109,18 +112,22 @@ private fun ExtensionStoresListItem(
                 }
             }
 
-            IconButton(onClick = onCopy) {
-                Icon(
-                    imageVector = MaterialSymbols.Rounded.ContentCopy,
-                    contentDescription = stringResource(MR.strings.action_copy_to_clipboard),
-                )
+            IconTooltip(stringResource(MR.strings.action_copy_to_clipboard)) {
+                IconButton(onClick = onCopy) {
+                    Icon(
+                        imageVector = MaterialSymbols.Rounded.ContentCopy,
+                        contentDescription = stringResource(MR.strings.action_copy_to_clipboard),
+                    )
+                }
             }
 
-            IconButton(onClick = onDelete) {
-                Icon(
-                    imageVector = MaterialSymbols.Rounded.Delete,
-                    contentDescription = stringResource(MR.strings.action_delete),
-                )
+            IconTooltip(stringResource(MR.strings.action_delete)) {
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        imageVector = MaterialSymbols.Rounded.Delete,
+                        contentDescription = stringResource(MR.strings.action_delete),
+                    )
+                }
             }
         }
     }

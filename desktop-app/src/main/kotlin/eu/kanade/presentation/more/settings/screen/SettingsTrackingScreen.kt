@@ -50,6 +50,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mihon.app.di.appGraph
+import mihon.desktop.app.platform.IconTooltip
 import mihon.desktop.app.track.ProtocolRegistrar
 import mihon.desktop.app.track.TrackLoginHandler
 import mihon.icons.materialsymbols.MaterialSymbols
@@ -85,11 +86,13 @@ object SettingsTrackingScreen : SearchableSettings {
     @Composable
     override fun RowScope.AppBarAction() {
         val uriHandler = LocalUriHandler.current
-        IconButton(onClick = { uriHandler.openUri("https://mihon.app/docs/guides/tracking") }) {
-            Icon(
-                imageVector = MaterialSymbols.AutoMirroredRounded.Help,
-                contentDescription = stringResource(MR.strings.tracking_guide),
-            )
+        IconTooltip(stringResource(MR.strings.tracking_guide)) {
+            IconButton(onClick = { uriHandler.openUri("https://mihon.app/docs/guides/tracking") }) {
+                Icon(
+                    imageVector = MaterialSymbols.AutoMirroredRounded.Help,
+                    contentDescription = stringResource(MR.strings.tracking_guide),
+                )
+            }
         }
     }
 
@@ -213,11 +216,13 @@ object SettingsTrackingScreen : SearchableSettings {
                         text = stringResource(MR.strings.login_title, tracker.name),
                         modifier = Modifier.weight(1f),
                     )
-                    IconButton(onClick = onDismissRequest) {
-                        Icon(
-                            imageVector = MaterialSymbols.Rounded.Close,
-                            contentDescription = stringResource(MR.strings.action_close),
-                        )
+                    IconTooltip(stringResource(MR.strings.action_close)) {
+                        IconButton(onClick = onDismissRequest) {
+                            Icon(
+                                imageVector = MaterialSymbols.Rounded.Close,
+                                contentDescription = stringResource(MR.strings.action_close),
+                            )
+                        }
                     }
                 }
             },

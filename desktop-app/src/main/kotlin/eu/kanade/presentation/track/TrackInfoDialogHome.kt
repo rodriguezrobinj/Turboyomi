@@ -57,6 +57,7 @@ import eu.kanade.tachiyomi.util.lang.toJavaLocalDate
 import eu.kanade.tachiyomi.util.lang.toLocalDate
 import eu.kanade.tachiyomi.util.system.copyToClipboard
 import kotlinx.datetime.toJavaLocalDate
+import mihon.desktop.app.platform.IconTooltip
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.MoreVert
 import mihon.icons.materialsymbols.roundedfilled.VisibilityOff
@@ -332,11 +333,13 @@ private fun TrackInfoItemMenu(
 ) {
     var expanded by remember { mutableStateOf(false) }
     Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
-        IconButton(onClick = { expanded = true }) {
-            Icon(
-                imageVector = MaterialSymbols.Rounded.MoreVert,
-                contentDescription = stringResource(MR.strings.label_more),
-            )
+        IconTooltip(stringResource(MR.strings.label_more)) {
+            IconButton(onClick = { expanded = true }) {
+                Icon(
+                    imageVector = MaterialSymbols.Rounded.MoreVert,
+                    contentDescription = stringResource(MR.strings.label_more),
+                )
+            }
         }
         DropdownMenu(
             expanded = expanded,

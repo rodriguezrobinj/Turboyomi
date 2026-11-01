@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.sp
 import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.AppBarActions
 import eu.kanade.presentation.components.SearchToolbar
+import mihon.desktop.app.main.ShortcutHelp
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.FilterList
 import mihon.icons.materialsymbols.rounded.FlipToBack
@@ -140,6 +141,11 @@ private fun LibraryRegularToolbar(
                     AppBar.OverflowAction(
                         title = stringResource(MR.strings.pref_incognito_mode),
                         onClick = onClickIncognito,
+                    ),
+                    // desktop: the keyboard help, besides F1 and Settings › About (spec 12 §3)
+                    AppBar.OverflowAction(
+                        title = stringResource(MR.strings.desktop_help_title) + " (F1)",
+                        onClick = { ShortcutHelp.open = true },
                     ),
                 ),
             )

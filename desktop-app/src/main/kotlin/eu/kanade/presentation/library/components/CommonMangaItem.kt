@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import eu.kanade.presentation.manga.components.MangaCover
+import mihon.desktop.app.platform.IconTooltip
 import mihon.desktop.app.platform.onSecondaryClick
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.roundedfilled.PlayArrow
@@ -388,20 +389,22 @@ private fun ContinueReadingButton(
     modifier: Modifier = Modifier,
 ) {
     Box(modifier = modifier) {
-        FilledIconButton(
-            onClick = onClick,
-            shape = MaterialTheme.shapes.small,
-            colors = IconButtonDefaults.filledIconButtonColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f),
-                contentColor = contentColorFor(MaterialTheme.colorScheme.primaryContainer),
-            ),
-            modifier = Modifier.size(size),
-        ) {
-            Icon(
-                imageVector = MaterialSymbols.RoundedFilled.PlayArrow,
-                contentDescription = stringResource(MR.strings.action_resume),
-                modifier = Modifier.size(iconSize),
-            )
+        IconTooltip(stringResource(MR.strings.action_resume)) {
+            FilledIconButton(
+                onClick = onClick,
+                shape = MaterialTheme.shapes.small,
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f),
+                    contentColor = contentColorFor(MaterialTheme.colorScheme.primaryContainer),
+                ),
+                modifier = Modifier.size(size),
+            ) {
+                Icon(
+                    imageVector = MaterialSymbols.RoundedFilled.PlayArrow,
+                    contentDescription = stringResource(MR.strings.action_resume),
+                    modifier = Modifier.size(iconSize),
+                )
+            }
         }
     }
 }

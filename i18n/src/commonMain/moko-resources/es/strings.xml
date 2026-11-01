@@ -958,8 +958,10 @@
     <string name="desktop_help_select_all">Seleccionar todo en la biblioteca</string>
     <string name="desktop_help_keys_categories">Ctrl + Tab · Ctrl + Mayús + Tab</string>
     <string name="desktop_help_categories">Categoría siguiente / anterior de la biblioteca</string>
-    <string name="desktop_help_keys_back">Alt + ← · Esc</string>
+    <string name="desktop_help_keys_back">Alt + ← · Esc · Botón atrás del ratón</string>
     <string name="desktop_help_back">Volver</string>
+    <string name="desktop_help_keys_forward">Alt + → · Botón adelante del ratón</string>
+    <string name="desktop_help_forward">Volver a abrir la pantalla de la que saliste</string>
     <string name="desktop_help_keys_scroll_lists">Re Pág · Av Pág · Inicio · Fin · ↑ ↓ · Espacio</string>
     <string name="desktop_help_scroll_lists">Desplazar listas y cuadrículas</string>
     <string name="desktop_help_keys_turn_paged">→ ← · ↓ ↑ · Av Pág · Re Pág · Espacio · Mayús + Espacio</string>
@@ -1000,6 +1002,10 @@
     <string name="desktop_window_minimize">Minimizar</string>
     <string name="desktop_window_maximize">Maximizar</string>
     <string name="desktop_window_restore">Restaurar</string>
+    <string name="desktop_local_drop_copying">Copiando a la fuente local…</string>
+    <string name="desktop_local_drop_added">Añadido a la fuente local: %1$s</string>
+    <string name="desktop_local_drop_unsupported">No es una carpeta ni un archivo de capítulo (zip, cbz, rar, cbr, 7z, cb7, tar, cbt): %1$s</string>
+    <string name="desktop_local_drop_failed">No se pudo copiar a la fuente local: %1$s</string>
 
     <!-- Desktop: Mihon strings with no Spanish translation upstream yet; drop each one when Weblate adds it -->
     <string name="considering">Considerando</string>

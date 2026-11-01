@@ -34,6 +34,7 @@ import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.AppBarActions
 import eu.kanade.presentation.components.DropdownMenu
 import eu.kanade.presentation.manga.EditCoverAction
+import mihon.desktop.app.platform.IconTooltip
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.Close
 import mihon.icons.materialsymbols.rounded.Edit
@@ -73,11 +74,13 @@ fun MangaCoverDialog(
                         .navigationBarsPadding(),
                 ) {
                     ActionsPill {
-                        IconButton(onClick = onDismissRequest) {
-                            Icon(
-                                imageVector = MaterialSymbols.Rounded.Close,
-                                contentDescription = stringResource(MR.strings.action_close),
-                            )
+                        IconTooltip(stringResource(MR.strings.action_close)) {
+                            IconButton(onClick = onDismissRequest) {
+                                Icon(
+                                    imageVector = MaterialSymbols.Rounded.Close,
+                                    contentDescription = stringResource(MR.strings.action_close),
+                                )
+                            }
                         }
                     }
                     Spacer(modifier = Modifier.weight(1f))
@@ -101,21 +104,23 @@ fun MangaCoverDialog(
                         if (onEditClick != null) {
                             Box {
                                 var expanded by remember { mutableStateOf(false) }
-                                IconButton(
-                                    onClick = {
-                                        when {
-                                            !manga.favorite && !manga.isLocal() -> {
-                                                onEditClick(EditCoverAction.ADD_TO_LIBRARY)
+                                IconTooltip(stringResource(MR.strings.action_edit_cover)) {
+                                    IconButton(
+                                        onClick = {
+                                            when {
+                                                !manga.favorite && !manga.isLocal() -> {
+                                                    onEditClick(EditCoverAction.ADD_TO_LIBRARY)
+                                                }
+                                                isCustomCover -> expanded = true
+                                                else -> onEditClick(EditCoverAction.EDIT)
                                             }
-                                            isCustomCover -> expanded = true
-                                            else -> onEditClick(EditCoverAction.EDIT)
-                                        }
-                                    },
-                                ) {
-                                    Icon(
-                                        imageVector = MaterialSymbols.Rounded.Edit,
-                                        contentDescription = stringResource(MR.strings.action_edit_cover),
-                                    )
+                                        },
+                                    ) {
+                                        Icon(
+                                            imageVector = MaterialSymbols.Rounded.Edit,
+                                            contentDescription = stringResource(MR.strings.action_edit_cover),
+                                        )
+                                    }
                                 }
                                 DropdownMenu(
                                     expanded = expanded,

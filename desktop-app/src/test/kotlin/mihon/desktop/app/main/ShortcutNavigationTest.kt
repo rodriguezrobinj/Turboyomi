@@ -6,9 +6,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.MouseButton
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.runComposeUiTest
 import io.kotest.matchers.shouldBe
 import mihon.desktop.app.testing.startTestApp
@@ -77,6 +80,33 @@ class ShortcutNavigationTest {
 
         runOnIdle { AppEvents.send(Shortcut.Back) }
         waitFor(str(MR.strings.label_extensions))
+    }
+
+    @Test
+    fun `the mouse's back button closes a screen and its forward button opens it again`() = runComposeUiTest {
+        val graph = startTestApp()
+        setContent { AppContent(graph, crash = null, onRestart = {}) }
+        fun waitFor(text: String) = waitUntil(timeoutMillis = 10_000) {
+            onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty()
+        }
+        fun click(button: MouseButton) = onRoot().performMouseInput {
+            press(button)
+            release(button)
+        }
+
+        onNodeWithText(str(MR.strings.browse)).performClick()
+        onNodeWithText(str(MR.strings.label_extensions)).performClick()
+        waitFor(str(MR.strings.extensionStores))
+        onNodeWithText(str(MR.strings.extensionStores)).performClick()
+        waitFor(str(MR.strings.extensionStoresScreen_emptyLabel))
+
+        // AWT's buttons 4 and 5, Compose's PointerButton.Back and Forward
+        click(MouseButton(3))
+        waitUntil(timeoutMillis = 10_000) {
+            onAllNodes(hasText(str(MR.strings.extensionStoresScreen_emptyLabel))).fetchSemanticsNodes().isEmpty()
+        }
+        click(MouseButton(4))
+        waitFor(str(MR.strings.extensionStoresScreen_emptyLabel))
     }
 
     @Test

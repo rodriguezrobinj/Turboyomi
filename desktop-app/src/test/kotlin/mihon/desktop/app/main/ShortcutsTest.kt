@@ -10,6 +10,7 @@ class ShortcutsTest {
         // Esc is Compose's own back key: ConnectWindowBack routes it, dialogs first
         shortcutFor(Key.Escape, ctrl = false, alt = false, shift = false) shouldBe null
         shortcutFor(Key.DirectionLeft, ctrl = false, alt = true, shift = false) shouldBe Shortcut.Back
+        shortcutFor(Key.DirectionRight, ctrl = false, alt = true, shift = false) shouldBe Shortcut.Forward
         shortcutFor(Key.F, ctrl = true, alt = false, shift = false) shouldBe Shortcut.GlobalSearch
         shortcutFor(Key.F5, ctrl = false, alt = false, shift = false) shouldBe Shortcut.Refresh
         shortcutFor(Key.F11, ctrl = false, alt = false, shift = false) shouldBe Shortcut.Fullscreen
