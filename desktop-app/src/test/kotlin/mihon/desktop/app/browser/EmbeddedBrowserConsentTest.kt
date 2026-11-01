@@ -40,8 +40,11 @@ class EmbeddedBrowserConsentTest {
         val graph = startTestApp()
         server.dispatcher = fake
         server.start()
-        val installer =
-            CefInstaller(createTempDirectory("cef José").resolve("cef"), url = server.url("/jbr.zip").toString())
+        val installer = CefInstaller(
+            createTempDirectory("cef José").resolve("cef"),
+            url = server.url("/jbr.zip").toString(),
+            checksum = fake.checksum,
+        )
         setContent { AppProviders(graph) { EmbeddedBrowserConsent(installer, onStart) } }
         runOnIdle { EmbeddedBrowser.open(graph.context, "https://example.org/manga") }
         waitFor(str(MR.strings.desktop_cef_download))

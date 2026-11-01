@@ -19,6 +19,7 @@ import java.nio.file.AccessDeniedException
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
+import java.util.HexFormat
 import java.util.zip.ZipInputStream
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.createDirectories
@@ -40,13 +41,14 @@ import kotlin.io.path.readLines
  * The embedded browser's files (spec 2b §2, §4): JetBrains Runtime's JCEF build in [installDir], downloaded on demand.
  *
  * Ported from Suwayomi's CEFManager, with a fixed [url] instead of the GitHub API, the .zip read with java.util.zip
- * instead of the .tar.gz, a SHA-512 check, and an install that only exists once complete: it's built in a folder
+ * instead of the .tar.gz, a check against [CefRelease.SHA512], and an install that only exists once complete: it's built in a folder
  * next to [installDir] and renamed at the end.
  */
 @OptIn(ExperimentalPathApi::class)
 class CefInstaller(
     private val installDir: Path,
     private val url: String = CefRelease.URL,
+    private val checksum: String = CefRelease.SHA512,
     private val expectedVersion: String = CefRelease.JCEF_VERSION,
     private val client: OkHttpClient = OkHttpClient(),
 ) {
@@ -73,7 +75,6 @@ class CefInstaller(
         val parent = installDir.toAbsolutePath().parent.createDirectories()
         val staging = createTempDirectory(parent, "${installDir.name}-install")
         try {
-            val checksum = fetchChecksum()
             val archive = staging / "jbr.zip"
             if (!download(archive, onProgress).equals(checksum, ignoreCase = true)) {
                 throw IOException("The browser download is damaged: its SHA-512 doesn't match")
@@ -120,12 +121,6 @@ class CefInstaller(
         if (removalMarker.exists()) uninstall(running = false)
     }
 
-    private fun fetchChecksum(): String =
-        client.newCall(Request.Builder().url("$url.checksum").build()).execute().use { response ->
-            if (!response.isSuccessful) throw IOException("HTTP ${response.code} getting the browser's checksum")
-            response.body.string().trim().substringBefore(' ')
-        }
-
     /** Writes the archive to [target] and returns its SHA-512. */
     private suspend fun download(target: Path, onProgress: (Float) -> Unit): String {
         val digest = MessageDigest.getInstance("SHA-512")
@@ -149,7 +144,7 @@ class CefInstaller(
             }
         }
         onProgress(1f)
-        return digest.digest().joinToString("") { "%02x".format(it) }
+        return HexFormat.of().formatHex(digest.digest())
     }
 
     private fun extract(archive: Path, target: Path): Path {
