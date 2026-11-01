@@ -17,7 +17,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
 import eu.kanade.presentation.components.AppBar
@@ -30,8 +29,6 @@ import eu.kanade.tachiyomi.ui.updates.UpdatesViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
-import mihon.app.di.appGraph
-import mihon.desktop.app.library.LibraryUpdateProgress
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.CalendarMonth
 import mihon.icons.materialsymbols.rounded.FilterList
@@ -72,26 +69,20 @@ fun UpdateScreen(
     }
 
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
-    val updateJob = remember { context.appGraph.libraryUpdateJob }
 
     Scaffold(
         topBar = { scrollBehavior ->
-            // desktop: the running update's progress under the app bar (spec 3a §3 G)
-            Column {
-                UpdatesAppBar(
-                    onCalendarClicked = onCalendarClicked,
-                    onUpdateLibrary = { scope.launch { onUpdateLibrary() } },
-                    onFilterClicked = { onFilterClicked() },
-                    hasFilters = hasActiveFilters,
-                    actionModeCounter = state.selected.size,
-                    onSelectAll = { onSelectAll(true) },
-                    onInvertSelection = { onInvertSelection() },
-                    onCancelActionMode = { onSelectAll(false) },
-                    scrollBehavior = scrollBehavior,
-                )
-                LibraryUpdateProgress(updateJob)
-            }
+            UpdatesAppBar(
+                onCalendarClicked = onCalendarClicked,
+                onUpdateLibrary = { scope.launch { onUpdateLibrary() } },
+                onFilterClicked = { onFilterClicked() },
+                hasFilters = hasActiveFilters,
+                actionModeCounter = state.selected.size,
+                onSelectAll = { onSelectAll(true) },
+                onInvertSelection = { onInvertSelection() },
+                onCancelActionMode = { onSelectAll(false) },
+                scrollBehavior = scrollBehavior,
+            )
         },
         bottomBar = {
             UpdatesBottomBar(
