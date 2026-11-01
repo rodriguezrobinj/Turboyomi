@@ -8,6 +8,7 @@ import eu.kanade.domain.base.BasePreferences
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.awaitSuccess
+import eu.kanade.tachiyomi.util.system.openInBrowser
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -28,10 +29,9 @@ import mihon.desktop.core.jobs.PeriodicJob
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.i18n.MR
-import java.awt.Desktop
 import java.io.File
-import java.net.URI
 import java.security.MessageDigest
+import java.util.HexFormat
 import kotlin.time.Duration.Companion.hours
 
 sealed interface UpdateState {
@@ -64,7 +64,7 @@ class AppUpdater(
     // Seams for tests, like BaseTracker.testInterceptor
     var apiBase: String = AppReleases.API_BASE
     var install: UpdateInstaller = UpdateInstaller()
-    var openPage: (String) -> Unit = { runCatching { Desktop.getDesktop().browse(URI(it)) } }
+    var openPage: (String) -> Unit = { context.openInBrowser(it) }
 
     /** [manual]: Settings › About's button, which always reports back; the daily check stays quiet on errors. */
     suspend fun check(manual: Boolean) {
@@ -151,7 +151,7 @@ class AppUpdater(
             }
             val sums = network.client.newCall(GET(release.sumsUrl)).awaitSuccess().use { it.body.string() }
             val expected = expectedHash(sums, release.msiName)
-            val actual = digest.digest().joinToString("") { "%02x".format(it) }
+            val actual = HexFormat.of().formatHex(digest.digest())
             if (expected == null || !expected.equals(actual, ignoreCase = true)) {
                 part.delete()
                 _state.value = UpdateState.Failed(release, context.stringResource(MR.strings.desktop_update_corrupt))

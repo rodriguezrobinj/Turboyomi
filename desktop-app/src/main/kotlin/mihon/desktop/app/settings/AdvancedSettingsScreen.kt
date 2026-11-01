@@ -45,6 +45,7 @@ import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.util.collectAsState
 import xyz.nulldev.androidcompat.webkit.CefHelper
 import java.awt.Desktop
+import kotlin.io.path.createDirectories
 
 /** Spec 2a §3, 2b §2 and 9a §2: Mihon's advanced settings that apply on Windows, and the embedded browser. */
 object AdvancedSettingsScreen : SearchableSettings {
@@ -98,7 +99,15 @@ object AdvancedSettingsScreen : SearchableSettings {
             ),
             Preference.PreferenceItem.TextPreference(
                 title = stringResource(MR.strings.desktop_open_logs_folder),
-                onClick = { Desktop.getDesktop().open(context.appGraph.appDirs.logs.toFile()) },
+                // Made again if it was deleted while the app ran: Desktop.open throws on a missing folder
+                onClick = {
+                    val logs = context.appGraph.appDirs.logs
+                    runCatching { Desktop.getDesktop().open(logs.createDirectories().toFile()) }
+                        .onFailure {
+                            logcat(LogPriority.ERROR, it)
+                            context.toast(it.message)
+                        }
+                },
             ),
             Preference.PreferenceItem.TextPreference(
                 title = stringResource(MR.strings.desktop_clear_image_cache),
