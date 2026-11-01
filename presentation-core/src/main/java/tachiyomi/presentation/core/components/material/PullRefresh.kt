@@ -15,14 +15,14 @@ import androidx.compose.ui.unit.dp
 /**
  * @param refreshing Whether the layout is currently refreshing
  * @param onRefresh Lambda which is invoked when a swipe to refresh gesture is completed.
- * @param enabled Whether the the layout should react to swipe gestures or not.
+ * @param enabled Whether the the layout should react to swipe gestures or not. desktop: ignored, see below.
  * @param indicatorPadding Content padding for the indicator, to inset the indicator in if required.
  * @param content The content containing a vertically scrollable composable.
  */
 @Composable
 fun PullRefresh(
     refreshing: Boolean,
-    enabled: Boolean,
+    @Suppress("UNUSED_PARAMETER") enabled: Boolean,
     onRefresh: () -> Unit,
     modifier: Modifier = Modifier,
     indicatorPadding: PaddingValues = PaddingValues(0.dp),
@@ -34,7 +34,9 @@ fun PullRefresh(
             .pullToRefresh(
                 isRefreshing = refreshing,
                 state = state,
-                enabled = enabled,
+                // desktop: no pull gesture, since a long mouse wheel past the top set it off; each screen's refresh
+                // button starts it, and the indicator still shows while [refreshing]
+                enabled = false,
                 onRefresh = onRefresh,
             ),
     ) {
