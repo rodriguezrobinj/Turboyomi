@@ -1004,7 +1004,7 @@
     <string name="desktop_window_restore">Restaurar</string>
     <string name="desktop_local_drop_copying">Copiando a la fuente local…</string>
     <string name="desktop_local_drop_added">Añadido a la fuente local: %1$s</string>
-    <string name="desktop_local_drop_unsupported">No es una carpeta ni un archivo de capítulo (zip, cbz, rar, cbr, 7z, cb7, tar, cbt): %1$s</string>
+    <string name="desktop_local_drop_unsupported">No añadido: %1$s. Suelta carpetas o archivos de capítulo (zip, cbz, rar, cbr, 7z, cb7, tar, cbt, epub) de fuera de la fuente local.</string>
     <string name="desktop_local_drop_failed">No se pudo copiar a la fuente local: %1$s</string>
 
     <!-- Desktop: Mihon strings with no Spanish translation upstream yet; drop each one when Weblate adds it -->

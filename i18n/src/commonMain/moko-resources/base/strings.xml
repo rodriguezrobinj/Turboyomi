@@ -1194,6 +1194,6 @@
     <string name="desktop_window_restore">Restore down</string>
     <string name="desktop_local_drop_copying">Copying to the local source…</string>
     <string name="desktop_local_drop_added">Added to the local source: %1$s</string>
-    <string name="desktop_local_drop_unsupported">Not a folder or a chapter archive (zip, cbz, rar, cbr, 7z, cb7, tar, cbt): %1$s</string>
+    <string name="desktop_local_drop_unsupported">Not added: %1$s. Drop folders or chapter files (zip, cbz, rar, cbr, 7z, cb7, tar, cbt, epub) from outside the local source.</string>
     <string name="desktop_local_drop_failed">Couldn\'t copy to the local source: %1$s</string>
 </resources>
