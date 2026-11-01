@@ -47,7 +47,7 @@ class CefInstallerTest {
 
     private fun installer(fake: FakeJbr): CefInstaller {
         server.dispatcher = fake
-        return CefInstaller(root.resolve("cef"), url = server.url("/jbr.zip").toString())
+        return CefInstaller(root.resolve("cef"), url = server.url("/jbr.zip").toString(), checksum = fake.checksum)
     }
 
     // Whatever install left next to the install folder: its staging folder must be gone
