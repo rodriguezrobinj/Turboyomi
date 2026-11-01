@@ -1,6 +1,5 @@
 package eu.kanade.presentation.manga.components
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,21 +16,16 @@ import tachiyomi.presentation.core.components.material.padding
 import tachiyomi.presentation.core.i18n.pluralStringResource
 import tachiyomi.presentation.core.i18n.stringResource
 
+// desktop: not clickable, the toolbar's filter button opens the same sheet
 @Composable
 fun ChapterHeader(
-    enabled: Boolean,
     chapterCount: Int?,
     missingChapterCount: Int,
-    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(
-                enabled = enabled,
-                onClick = onClick,
-            )
             .padding(horizontal = 16.dp, vertical = 4.dp),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.extraSmall),
     ) {
