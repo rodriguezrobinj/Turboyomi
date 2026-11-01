@@ -48,8 +48,10 @@ fun TaskbarProgress(graph: AppGraph, window: Window) {
     // Not state: it only follows the queue
     val peak = remember { intArrayOf(0) }
     peak[0] = if (queue.isEmpty()) 0 else maxOf(peak[0], queue.size)
-    // The chapter whose pages moved last: the one downloading
-    val chapterPercent by remember { graph.downloadManager.progressFlow().map { it.progress } }.collectAsState(0)
+    // The chapter whose pages moved last, while it's still queued: a finished one leaves at 100
+    val lastProgress by remember { graph.downloadManager.progressFlow().map { it.chapter.id to it.progress } }
+        .collectAsState(null)
+    val chapterPercent = lastProgress?.takeIf { (id, _) -> queue.any { it.chapter.id == id } }?.second ?: 0
     val bar = taskbarBar(library, queue.size, peak[0], chapterPercent, downloading)
     LaunchedEffect(bar) {
         val taskbar = Taskbar.getTaskbar()

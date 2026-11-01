@@ -34,11 +34,16 @@ La ayuda de F1 ya existe (spec 8a §3 C), pero solo se llega por F1 o Ajustes �
 ## 5. Arrastrar y soltar a la fuente local (12d)
 - La ventana acepta archivos soltados (`dragAndDropTarget` con `DragData.FilesList`).
 - Cada elemento se copia a la carpeta de la fuente local (`StorageManager.getLocalSourceDirectory()`):
-  - una carpeta: entra como un manga, con su nombre;
-  - un archivo de capítulo (`Archive.isSupported`: zip, cbz, rar, cbr, 7z, cb7, tar, cbt): entra como capítulo de un
-    manga con el nombre del archivo sin extensión;
-  - cualquier otro archivo se ignora y se avisa.
+  - una carpeta con capítulos (subcarpetas o archivos de capítulo): entra como un manga, con su nombre;
+  - una carpeta solo de páginas: entra como capítulo de un manga con su nombre (`local/<nombre>/<nombre>`), porque
+    `LocalSource` no lee imágenes sueltas como capítulo;
+  - un archivo de capítulo (los de `Archive.isSupported` más `epub`, lo mismo que lee `LocalSource`): entra como
+    capítulo de un manga con el nombre del archivo sin extensión;
+  - cualquier otro archivo, la carpeta que contiene la fuente local o una que ya está dentro de ella se ignora y se
+    avisa (copiarla la metería dentro de sí misma).
 - **Nunca se sobrescribe:** un archivo que ya existe en el destino se salta. Se copia, no se mueve: el original queda.
+  Cada archivo se copia primero a `<nombre>.part` y se renombra al acabar: una copia cortada no deja un capítulo roto
+  que el siguiente intento saltaría.
 - La copia corre en IO. Un mensaje al empezar y otro al terminar ("N añadidos a la fuente local", con la acción
   "Ver" que abre la fuente local buscando el nombre si fue uno solo).
 - Sin carpeta de almacenamiento configurada: mensaje de error, no se copia nada.

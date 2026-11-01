@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
+import kotlin.io.path.exists
+import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
@@ -52,5 +54,44 @@ class LocalDropTest {
         val text = dir.resolve("notes.txt").apply { writeText("x") }
 
         LocalDrop.import(listOf(text), local) shouldBe LocalDrop.Result(emptyList(), listOf("notes.txt"))
+    }
+
+    @Test
+    fun `an epub is a chapter, as LocalSource reads it`() {
+        val epub = dir.resolve("Libro.EPUB").apply { writeText("e") }
+
+        LocalDrop.import(listOf(epub), local).mangas shouldBe listOf("Libro")
+        local.resolve("Libro/Libro.EPUB").readText() shouldBe "e"
+    }
+
+    @Test
+    fun `a folder of pages is one chapter of the manga named after it`() {
+        val pages = dir.resolve("drop/Cap. 12").createDirectories()
+        pages.resolve("001.jpg").writeText("p")
+
+        LocalDrop.import(listOf(pages), local).mangas shouldBe listOf("Cap. 12")
+        local.resolve("Cap. 12/Cap. 12/001.jpg").readText() shouldBe "p"
+    }
+
+    @Test
+    fun `a copy cut short earlier is done again, and leaves no part file`() {
+        val manga = local.resolve("Manga").createDirectories()
+        manga.resolve("Manga.cbz.part").writeText("half")
+        val archive = dir.resolve("Manga.cbz").apply { writeText("whole") }
+
+        LocalDrop.import(listOf(archive), local)
+
+        manga.resolve("Manga.cbz").readText() shouldBe "whole"
+        manga.resolve("Manga.cbz.part").exists() shouldBe false
+    }
+
+    @Test
+    fun `a folder holding the local source, or inside it, is left out`() {
+        val storage = dir
+        val inLocal = local.resolve("Manga").createDirectories()
+
+        LocalDrop.import(listOf(storage, inLocal), local) shouldBe
+            LocalDrop.Result(emptyList(), listOf(storage.fileName.toString(), "Manga"))
+        local.listDirectoryEntries().map { it.fileName.toString() } shouldBe listOf("Manga")
     }
 }
