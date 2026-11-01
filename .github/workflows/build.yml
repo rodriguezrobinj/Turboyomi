@@ -21,7 +21,7 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           # The version comes from the last v* tag (spec 6a §2)
           fetch-depth: 0
@@ -30,13 +30,13 @@ jobs:
           tracker-keys: ${{ secrets.TRACKER_KEYS }}
       - run: bash scripts/check-licenses.sh
       - run: ./gradlew spotlessCheck test --continue
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: failure()
         with:
           name: test-reports
           path: "**/build/reports/tests/test/"
       - run: bash scripts/check-no-android.sh
-      - uses: actions/cache@v4
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: build/cef
           key: cef-jbr-release-25.0.4b508.27
@@ -46,7 +46,7 @@ jobs:
         continue-on-error: true
         run: ./gradlew :desktop-core:cefTest
       - run: ./gradlew :desktop-app:packageMsi :desktop-app:packageZip -Paot=true
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: turboyomi
           path: |

@@ -1,0 +1,50 @@
+name: dependencies
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  # A Dependabot auto-merge pushes with GITHUB_TOKEN, which starts no push run, so the graph also refreshes weekly
+  schedule:
+    - cron: "0 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependencies-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Dependabot can't read Gradle's resolved graph on its own: this sends it, so alerts and the review see every library
+  submit:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          distribution: temurin
+          java-version: |
+            25
+            23
+      - uses: gradle/actions/dependency-submission@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
+
+  review:
+    if: github.event_name == 'pull_request'
+    needs: submit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4.9.0
+        with:
+          fail-on-severity: moderate
+          retry-on-snapshot-warnings: true
+          comment-summary-in-pr: on-failure

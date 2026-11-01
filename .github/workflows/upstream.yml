@@ -1,0 +1,31 @@
+name: upstream
+
+on:
+  schedule:
+    - cron: "0 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  # Opens one issue when Mihon has commits Turboyomi hasn't merged yet, for the sync-upstream skill
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git fetch -q https://github.com/mihonapp/mihon.git main
+          behind=$(git rev-list --count HEAD..FETCH_HEAD)
+          echo "Mihon commits not merged: $behind" >> "$GITHUB_STEP_SUMMARY"
+          [ "$behind" -gt 0 ] || exit 0
+          title="Sincronizar con Mihon"
+          open=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq length)
+          [ "$open" -eq 0 ] || exit 0
+          gh issue create --title "$title" --body "Mihon (\`upstream/main\`) tiene $behind commits que Turboyomi aún no ha mergeado. Se traen con el skill \`sync-upstream\`."
