@@ -23,15 +23,21 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import mihon.core.metro.AppCoroutineScope
+import mihon.desktop.app.tray.Notice
+import mihon.desktop.app.tray.TrayNotifier
 import mihon.desktop.core.DesktopExtensionManager
+import mihon.desktop.core.jobs.PeriodicJob
+import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.source.model.StubSource
 import tachiyomi.i18n.MR
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.Duration.Companion.hours
 
 /**
  * Mihon's ExtensionManager API over [DesktopExtensionManager], so its extension screens and view models run
@@ -128,6 +134,30 @@ class ExtensionManager(
         return installExtension(update)
     }
 
+    /** Every 12 h, once the user turned it on: the loaded extensions' new versions (spec 13 §5). */
+    fun periodicJob(): PeriodicJob = PeriodicJob(
+        name = "ExtensionAutoUpdate",
+        interval = { 12.hours.takeIf { preferences.autoUpdateExtensions.get() } },
+        lastRun = preferences.lastExtensionAutoUpdate,
+        run = ::autoUpdate,
+    )
+
+    private suspend fun autoUpdate() {
+        findAvailableExtensions()
+        // The trust rules still apply: a version signed by another key installs unloaded, as by hand
+        val updated = updatable(manager.installed.value, availableListings.value)
+            .filter { updateExtension(it).toList().lastOrNull() == InstallStep.Installed }
+        if (updated.isNotEmpty()) {
+            TrayNotifier.send(
+                Notice(
+                    context.stringResource(MR.strings.desktop_extensions_auto_updated),
+                    updated.joinToString { it.name },
+                    opensUpdates = false,
+                ),
+            )
+        }
+    }
+
     fun cancelInstallUpdateExtension(extension: Extension) {
         installJobs.remove(extension.pkgName)?.cancel()
     }
@@ -147,6 +177,13 @@ class ExtensionManager(
          */
         fun listingFor(extension: Extension.Available, listings: List<Extension.Available>): Extension.Available =
             listings.find { it.apkUrl == extension.apkUrl && it.store == extension.store } ?: extension
+
+        /** The loaded extensions a store lists a newer version of. */
+        fun updatable(
+            installed: List<Extension.Installed>,
+            available: List<Extension.Available>,
+        ): List<Extension.Loaded> =
+            installed.map { withStatus(it, available) }.filterIsInstance<Extension.Loaded>().filter { it.hasUpdate }
 
         /** What the listings say about an installed extension; with no listing at all, nothing is derived. */
         fun withStatus(extension: Extension.Installed, available: List<Extension.Available>): Extension.Installed {

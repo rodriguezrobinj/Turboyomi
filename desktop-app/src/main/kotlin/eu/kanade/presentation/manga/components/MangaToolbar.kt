@@ -38,6 +38,9 @@ fun MangaToolbar(
     onClickRefresh: () -> Unit,
     onClickMigrate: (() -> Unit)?,
     onClickEditNotes: (() -> Unit)?,
+    // desktop: spec 13 §3 and §4
+    onClickShowInExplorer: (() -> Unit)? = null,
+    onClickEditInfo: (() -> Unit)? = null,
 
     // For action mode
     actionModeCounter: Int,
@@ -148,6 +151,22 @@ fun MangaToolbar(
                             AppBar.OverflowAction(
                                 title = stringResource(MR.strings.action_notes),
                                 onClick = onClickEditNotes,
+                            ),
+                        )
+                    }
+                    if (onClickEditInfo != null) {
+                        add(
+                            AppBar.OverflowAction(
+                                title = stringResource(MR.strings.desktop_edit_manga_info),
+                                onClick = onClickEditInfo,
+                            ),
+                        )
+                    }
+                    if (onClickShowInExplorer != null) {
+                        add(
+                            AppBar.OverflowAction(
+                                title = stringResource(MR.strings.desktop_show_in_explorer),
+                                onClick = onClickShowInExplorer,
                             ),
                         )
                     }

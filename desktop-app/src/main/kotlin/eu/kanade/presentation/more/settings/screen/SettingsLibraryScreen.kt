@@ -20,6 +20,7 @@ import eu.kanade.presentation.more.settings.widget.TriStateListDialog
 import eu.kanade.tachiyomi.ui.category.CategoryScreen
 import kotlinx.coroutines.launch
 import mihon.app.di.appGraph
+import mihon.desktop.app.update.UpdateInstaller
 import tachiyomi.domain.category.model.Category
 import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.domain.library.service.LibraryPreferences.Companion.DEVICE_CHARGING
@@ -201,6 +202,13 @@ object SettingsLibraryScreen : SearchableSettings {
                     title = stringResource(MR.strings.desktop_close_to_tray),
                     subtitle = stringResource(MR.strings.desktop_close_to_tray_summary),
                     visible = trayPreferences.traySupported,
+                ),
+                // desktop: the packaged exe only, which is what Windows starts (spec 13 §2)
+                Preference.PreferenceItem.SwitchPreference(
+                    preference = trayPreferences.startWithWindows,
+                    title = stringResource(MR.strings.desktop_start_with_windows),
+                    subtitle = stringResource(MR.strings.desktop_start_with_windows_summary),
+                    visible = remember { !UpdateInstaller().isDevelopment() },
                 ),
             ),
         )

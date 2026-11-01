@@ -12,6 +12,9 @@ import java.awt.SystemTray
 class TrayPreferences(preferenceStore: PreferenceStore) {
     val closeToTray: Preference<Boolean> = preferenceStore.getBoolean("desktop_close_to_tray", false)
 
+    /** The Run entry Autostart keeps in step with it (spec 13 §2). */
+    val startWithWindows: Preference<Boolean> = preferenceStore.getBoolean("desktop_start_with_windows", false)
+
     /** The "still in the tray" notification is shown once. */
     val hintShown: Preference<Boolean> =
         preferenceStore.getBoolean(Preference.appStateKey("desktop_tray_hint_shown"), false)

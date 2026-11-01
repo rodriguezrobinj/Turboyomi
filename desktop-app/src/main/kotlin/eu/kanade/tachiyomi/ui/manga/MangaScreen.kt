@@ -53,6 +53,7 @@ import logcat.LogPriority
 import mihon.desktop.app.browser.EmbeddedBrowser
 import mihon.desktop.app.main.AppEvents
 import mihon.desktop.app.main.HomeScreen
+import mihon.desktop.app.manga.MangaEditInfoDialog
 import mihon.desktop.app.platform.FileDialogs
 import mihon.desktop.app.reader.ReaderScreen
 import mihon.feature.migration.config.MigrationConfigScreen
@@ -162,6 +163,9 @@ class MangaScreen(
                 navigator.push(MigrationConfigScreen(successState.manga.id))
             }.takeIf { successState.manga.favorite },
             onEditNotesClicked = { navigator.push(MangaNotesScreen(manga = successState.manga)) },
+            onShowInExplorerClicked = viewModel::showInExplorer,
+            // desktop: library entries only, which browsing no longer refreshes (spec 13 §4)
+            onEditInfoClicked = viewModel::showEditInfoDialog.takeIf { successState.manga.favorite },
             onMultiBookmarkClicked = viewModel::bookmarkChapters,
             onMultiMarkAsReadClicked = viewModel::markChaptersRead,
             onMarkPreviousAsReadClicked = viewModel::markPreviousChapterRead,
@@ -262,6 +266,14 @@ class MangaScreen(
                     target = dialog.target,
                     // Initiated from the context of [dialog.target] so we show [dialog.current].
                     onClickTitle = { navigator.push(MangaScreen(dialog.current.id)) },
+                    onDismissRequest = onDismissRequest,
+                )
+            }
+            is MangaViewModel.Dialog.EditInfo -> {
+                MangaEditInfoDialog(
+                    manga = dialog.manga,
+                    onSave = viewModel::saveInfo,
+                    onReset = viewModel::resetInfo,
                     onDismissRequest = onDismissRequest,
                 )
             }

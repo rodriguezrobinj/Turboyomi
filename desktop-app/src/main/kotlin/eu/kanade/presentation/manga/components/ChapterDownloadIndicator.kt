@@ -47,6 +47,9 @@ enum class ChapterDownloadAction {
     START_NOW,
     CANCEL,
     DELETE,
+
+    // desktop: spec 13 §3
+    SHOW_IN_EXPLORER,
 }
 
 @Composable
@@ -228,6 +231,13 @@ private fun DownloadedIndicator(
                 text = { Text(text = stringResource(MR.strings.action_delete)) },
                 onClick = {
                     onClick(ChapterDownloadAction.DELETE)
+                    isMenuExpanded = false
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(text = stringResource(MR.strings.desktop_show_in_explorer)) },
+                onClick = {
+                    onClick(ChapterDownloadAction.SHOW_IN_EXPLORER)
                     isMenuExpanded = false
                 },
             )

@@ -57,6 +57,34 @@ class ExtensionManagerTest {
     }
 
     @Test
+    fun `only loaded extensions with a newer listing update on their own`() {
+        val loaded = Extension.Loaded(
+            name = "Example", pkgName = "pkg.example", versionName = "1.4.1", versionCode = 1, libVersion = 1.4,
+            lang = "en", contentWarning = ContentWarning.SAFE, isShared = false, signatures = listOf("key"),
+            pkgFactory = null, sources = emptyList(),
+        )
+        val current = loaded.copy(pkgName = "pkg.current", name = "Current")
+        val untrusted = Extension.NotLoaded(
+            name = "Untrusted",
+            pkgName = "pkg.untrusted",
+            versionName = "1",
+            versionCode = 1,
+            isShared = false,
+            contentWarning = ContentWarning.SAFE,
+            signatures = listOf("other"),
+            reason = Extension.NotLoaded.Reason.Untrusted("hash"),
+        )
+        val listings = listOf(
+            available("").copy(versionCode = 2),
+            available("").copy(pkgName = "pkg.current", versionCode = 1),
+            available("").copy(pkgName = "pkg.untrusted", versionCode = 2),
+        )
+
+        ExtensionManager.updatable(listOf(loaded, current, untrusted), listings).map { it.pkgName } shouldBe
+            listOf("pkg.example")
+    }
+
+    @Test
     fun `a per-language row installs the store's listing, whose package name is the apk's`() {
         // GetExtensionsByType splits multi-language extensions into rows named "<pkg>-<sourceId>"
         val listing = available("https://repo/all.mangadex.apk")

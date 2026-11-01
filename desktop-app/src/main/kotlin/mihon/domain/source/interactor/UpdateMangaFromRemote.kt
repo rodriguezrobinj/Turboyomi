@@ -12,6 +12,8 @@ import eu.kanade.tachiyomi.source.model.SManga
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import logcat.LogPriority
+import mihon.desktop.app.manga.MangaEdits
+import mihon.desktop.app.manga.withEdit
 import mihon.domain.source.models.RemoteMangaUpdate
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.chapter.model.Chapter
@@ -34,6 +36,7 @@ class UpdateMangaFromRemote(
     private val coverCache: CoverCache,
     private val libraryPreferences: LibraryPreferences,
     private val downloadManager: DownloadManager,
+    private val mangaEdits: MangaEdits,
 ) {
     suspend operator fun invoke(
         manga: Manga,
@@ -122,25 +125,23 @@ class UpdateMangaFromRemote(
 
         val thumbnailUrl = remoteManga.thumbnail_url?.takeIf { it.isNotEmpty() }
 
-        val success = mangaRepository.updateRemote(
-            MangaRemoteUpdate(
-                id = localManga.id,
-                title = title,
-                coverLastModified = coverLastModified,
-                author = remoteManga.author,
-                artist = remoteManga.artist,
-                description = remoteManga.description,
-                genre = remoteManga.getGenres(),
-                thumbnailUrl = thumbnailUrl,
-                status = remoteManga.status.toLong(),
-                updateStrategy = remoteManga.update_strategy,
-                initialized = true,
-                memo = remoteManga.memo,
-            ),
-        )
-        if (success && title != null) {
-            downloadManager.renameManga(localManga, title)
-        }
+        // desktop: what the user edited stays over what the source sends (spec 13 §4)
+        val update = MangaRemoteUpdate(
+            id = localManga.id,
+            title = title,
+            coverLastModified = coverLastModified,
+            author = remoteManga.author,
+            artist = remoteManga.artist,
+            description = remoteManga.description,
+            genre = remoteManga.getGenres(),
+            thumbnailUrl = thumbnailUrl,
+            status = remoteManga.status.toLong(),
+            updateStrategy = remoteManga.update_strategy,
+            initialized = true,
+            memo = remoteManga.memo,
+        ).withEdit(mangaEdits.get(localManga))
+        val success = mangaRepository.updateRemote(update)
+        if (success) update.title?.let { downloadManager.renameManga(localManga, it) }
         return success
     }
 }
