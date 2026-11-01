@@ -20,6 +20,7 @@ import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.Download
 import mihon.icons.materialsymbols.rounded.FilterList
 import mihon.icons.materialsymbols.rounded.FlipToBack
+import mihon.icons.materialsymbols.rounded.Refresh
 import mihon.icons.materialsymbols.rounded.SelectAll
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
@@ -110,9 +111,11 @@ fun MangaToolbar(
                             onClick = onClickFilter,
                         ),
                     )
+                    // desktop: on the bar, since there's no pull to refresh
                     add(
-                        AppBar.OverflowAction(
+                        AppBar.Action(
                             title = stringResource(MR.strings.action_webview_refresh),
+                            icon = MaterialSymbols.Rounded.Refresh,
                             onClick = onClickRefresh,
                         ),
                     )

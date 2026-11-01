@@ -18,6 +18,7 @@ import eu.kanade.presentation.components.SearchToolbar
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.FilterList
 import mihon.icons.materialsymbols.rounded.FlipToBack
+import mihon.icons.materialsymbols.rounded.Refresh
 import mihon.icons.materialsymbols.rounded.SelectAll
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.components.Pill
@@ -111,8 +112,10 @@ private fun LibraryRegularToolbar(
                         iconTint = filterTint,
                         onClick = onClickFilter,
                     ),
-                    AppBar.OverflowAction(
+                    // desktop: on the bar, since there's no pull to refresh
+                    AppBar.Action(
                         title = stringResource(MR.strings.action_update_library),
+                        icon = MaterialSymbols.Rounded.Refresh,
                         onClick = onClickGlobalUpdate,
                     ),
                     AppBar.OverflowAction(

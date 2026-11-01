@@ -22,6 +22,8 @@ import eu.kanade.tachiyomi.ui.browse.extension.details.ExtensionDetailsScreen
 import eu.kanade.tachiyomi.util.system.isPackageInstalled
 import eu.kanade.tachiyomi.util.system.openInBrowser
 import mihon.desktop.app.browser.EmbeddedBrowser
+import mihon.icons.materialsymbols.MaterialSymbols
+import mihon.icons.materialsymbols.rounded.Refresh
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
 
@@ -40,6 +42,12 @@ fun extensionsTab(
         badgeNumber = updatesCount.takeIf { it > 0 },
         searchEnabled = true,
         actions = listOf(
+            // desktop: the store listings' reload, which Mihon only has as pull to refresh
+            AppBar.Action(
+                title = stringResource(MR.strings.action_webview_refresh),
+                icon = MaterialSymbols.Rounded.Refresh,
+                onClick = extensionsViewModel::findAvailableExtensions,
+            ),
             AppBar.OverflowAction(
                 title = stringResource(MR.strings.action_filter),
                 onClick = { navigator.push(ExtensionFilterScreen()) },
