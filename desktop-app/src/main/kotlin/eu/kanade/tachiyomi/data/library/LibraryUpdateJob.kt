@@ -11,6 +11,7 @@ import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.source.UnmeteredSource
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.model.UpdateStrategy
+import eu.kanade.tachiyomi.util.system.openInBrowser
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -60,7 +61,6 @@ import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.i18n.MR
 import java.awt.Desktop
 import java.io.File
-import java.net.URI
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.io.path.createDirectories
@@ -295,7 +295,7 @@ class LibraryUpdateJob(
         AppMessages.show(
             context.stringResource(MR.strings.notification_size_warning),
             context.stringResource(MR.strings.desktop_learn_more),
-        ) { runCatching { Desktop.getDesktop().browse(URI(HELP_WARNING_URL)) } }
+        ) { context.openInBrowser(HELP_WARNING_URL) }
     }
 
     /** Mihon's error file format, in the logs folder (spec 3a §3 G). */
