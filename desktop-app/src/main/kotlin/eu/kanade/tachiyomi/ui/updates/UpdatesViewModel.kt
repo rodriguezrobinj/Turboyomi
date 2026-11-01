@@ -21,6 +21,7 @@ import eu.kanade.presentation.manga.components.ChapterDownloadAction
 import eu.kanade.presentation.updates.UpdatesUiModel
 import eu.kanade.tachiyomi.data.download.DownloadCache
 import eu.kanade.tachiyomi.data.download.DownloadManager
+import eu.kanade.tachiyomi.data.download.DownloadProvider
 import eu.kanade.tachiyomi.data.download.model.Download
 import eu.kanade.tachiyomi.data.library.LibraryUpdateJob
 import eu.kanade.tachiyomi.util.lang.toLocalDate
@@ -47,6 +48,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import logcat.LogPriority
 import mihon.core.metro.AppCoroutineScope
+import mihon.desktop.app.platform.Explorer
 import tachiyomi.core.common.preference.TriState
 import tachiyomi.core.common.util.lang.SubscriberGate
 import tachiyomi.core.common.util.lang.pausedWhileUnsubscribed
@@ -73,6 +75,7 @@ class UpdatesViewModel(
     private val sourceManager: SourceManager,
     private val downloadManager: DownloadManager,
     private val downloadCache: DownloadCache,
+    private val downloadProvider: DownloadProvider,
     private val updateChapter: UpdateChapter,
     private val setReadStatus: SetReadStatus,
     private val getUpdates: GetUpdates,
@@ -283,6 +286,18 @@ class UpdatesViewModel(
                 }
                 ChapterDownloadAction.DELETE -> {
                     deleteChapters(items)
+                }
+                ChapterDownloadAction.SHOW_IN_EXPLORER -> {
+                    val update = items.singleOrNull()?.update ?: return@launch
+                    val source = sourceManager.get(update.sourceId) ?: return@launch
+                    val file = downloadProvider.findChapterDir(
+                        update.chapterName,
+                        update.scanlator,
+                        update.chapterUrl,
+                        update.mangaTitle,
+                        source,
+                    )
+                    Explorer.showDownload(context, file?.filePath)
                 }
             }
             toggleAllSelection(false)

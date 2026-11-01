@@ -1192,6 +1192,16 @@
     <string name="desktop_window_minimize">Minimize</string>
     <string name="desktop_window_maximize">Maximize</string>
     <string name="desktop_window_restore">Restore down</string>
+    <string name="desktop_start_with_windows">Start with Windows</string>
+    <string name="desktop_start_with_windows_summary">Opens in the tray when you sign in, to update the library and download in the background</string>
+    <string name="desktop_show_in_explorer">Show in File Explorer</string>
+    <string name="desktop_show_in_explorer_nothing">Nothing downloaded yet</string>
+    <string name="desktop_edit_manga_info">Edit info</string>
+    <string name="desktop_manga_description">Description</string>
+    <string name="desktop_manga_genres">Genres, separated by commas</string>
+    <string name="desktop_auto_update_extensions">Update extensions automatically</string>
+    <string name="desktop_auto_update_extensions_summary">Installs new versions without asking, every 12 hours. A version signed by another key stays unloaded until you trust it.</string>
+    <string name="desktop_extensions_auto_updated">Extensions updated</string>
     <string name="desktop_local_drop_copying">Copying to the local source…</string>
     <string name="desktop_local_drop_added">Added to the local source: %1$s</string>
     <string name="desktop_local_drop_unsupported">Not added: %1$s. Drop folders or chapter files (zip, cbz, rar, cbr, 7z, cb7, tar, cbt, epub) from outside the local source.</string>

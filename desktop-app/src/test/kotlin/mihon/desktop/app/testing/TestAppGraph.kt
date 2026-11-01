@@ -22,6 +22,7 @@ import mihon.app.di.AppGraph
 import mihon.core.metro.IsDebugBuild
 import mihon.desktop.app.DesktopApp
 import mihon.desktop.app.local.startStorage
+import mihon.desktop.app.manga.MangaEdits
 import mihon.desktop.core.AppDirs
 import mihon.desktop.core.DesktopBindings
 import mihon.desktop.core.DesktopSourceManager
@@ -40,6 +41,7 @@ import tachiyomi.domain.manga.interactor.GetLibraryManga
 import tachiyomi.domain.manga.interactor.GetManga
 import tachiyomi.domain.manga.interactor.GetMangaByUrlAndSourceId
 import tachiyomi.domain.manga.interactor.NetworkToLocalManga
+import tachiyomi.domain.manga.repository.MangaRepository
 import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.domain.track.repository.TrackRepository
 import tachiyomi.domain.upcoming.service.UpcomingPreferences
@@ -83,6 +85,8 @@ interface TestAppGraph : AppGraph {
     val backupDecoder: BackupDecoder
     val backupFileValidator: BackupFileValidator
     val backupCreatorFactory: BackupCreator.Factory
+    val mangaEdits: MangaEdits
+    val mangaRepository: MangaRepository
 
     @DependencyGraph.Factory
     fun interface Factory {

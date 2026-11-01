@@ -1002,6 +1002,16 @@
     <string name="desktop_window_minimize">Minimizar</string>
     <string name="desktop_window_maximize">Maximizar</string>
     <string name="desktop_window_restore">Restaurar</string>
+    <string name="desktop_start_with_windows">Iniciar con Windows</string>
+    <string name="desktop_start_with_windows_summary">Se abre en la bandeja al iniciar sesión, para actualizar la biblioteca y descargar en segundo plano</string>
+    <string name="desktop_show_in_explorer">Mostrar en el Explorador de archivos</string>
+    <string name="desktop_show_in_explorer_nothing">Aún no hay nada descargado</string>
+    <string name="desktop_edit_manga_info">Editar información</string>
+    <string name="desktop_manga_description">Descripción</string>
+    <string name="desktop_manga_genres">Géneros, separados por comas</string>
+    <string name="desktop_auto_update_extensions">Actualizar extensiones automáticamente</string>
+    <string name="desktop_auto_update_extensions_summary">Instala las versiones nuevas sin preguntar, cada 12 horas. Una versión firmada con otra clave queda sin cargar hasta que la confíes.</string>
+    <string name="desktop_extensions_auto_updated">Extensiones actualizadas</string>
     <string name="desktop_local_drop_copying">Copiando a la fuente local…</string>
     <string name="desktop_local_drop_added">Añadido a la fuente local: %1$s</string>
     <string name="desktop_local_drop_unsupported">No añadido: %1$s. Suelta carpetas o archivos de capítulo (zip, cbz, rar, cbr, 7z, cb7, tar, cbt, epub) de fuera de la fuente local.</string>

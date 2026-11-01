@@ -77,6 +77,12 @@ object SettingsBrowseScreen : SearchableSettings {
                         // desktop: no biometric lock, the change is saved directly
                     ),
                     Preference.PreferenceItem.InfoPreference(stringResource(MR.strings.content_warnings_info)),
+                    // desktop: installs without asking, so it's off until turned on (spec 13 §5)
+                    Preference.PreferenceItem.SwitchPreference(
+                        preference = sourcePreferences.autoUpdateExtensions,
+                        title = stringResource(MR.strings.desktop_auto_update_extensions),
+                        subtitle = stringResource(MR.strings.desktop_auto_update_extensions_summary),
+                    ),
                 ),
             ),
         )

@@ -40,6 +40,7 @@ import eu.kanade.presentation.util.formattedMessage
 import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.data.download.DownloadCache
 import eu.kanade.tachiyomi.data.download.DownloadManager
+import eu.kanade.tachiyomi.data.download.DownloadProvider
 import eu.kanade.tachiyomi.data.download.model.Download
 import eu.kanade.tachiyomi.data.track.EnhancedTracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
@@ -73,6 +74,8 @@ import kotlinx.coroutines.plus
 import kotlinx.coroutines.withContext
 import logcat.LogPriority
 import mihon.core.metro.AppCoroutineScope
+import mihon.desktop.app.manga.MangaEdits
+import mihon.desktop.app.platform.Explorer
 import mihon.domain.chapter.interactor.FilterChaptersForDownload
 import mihon.domain.source.interactor.UpdateMangaFromRemote
 import tachiyomi.core.common.i18n.stringResource
@@ -103,6 +106,7 @@ import tachiyomi.domain.manga.model.applyFilter
 import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.domain.track.interactor.GetTracks
 import tachiyomi.i18n.MR
+import tachiyomi.source.local.io.LocalSourceFileSystem
 import tachiyomi.source.local.isLocal
 import kotlin.math.floor
 import kotlin.time.Duration.Companion.seconds
@@ -139,6 +143,9 @@ class MangaViewModel(
     private val sourceManager: SourceManager,
     private val refreshTracks: RefreshTracks,
     private val coverCache: CoverCache,
+    private val downloadProvider: DownloadProvider,
+    private val localFileSystem: LocalSourceFileSystem,
+    private val mangaEdits: MangaEdits,
 ) : ViewModel() {
 
     private val subscriberGate = SubscriberGate()
@@ -729,6 +736,22 @@ class MangaViewModel(
             ChapterDownloadAction.DELETE -> {
                 deleteChapters(items.map { it.chapter })
             }
+            ChapterDownloadAction.SHOW_IN_EXPLORER -> {
+                val chapter = items.singleOrNull()?.chapter ?: return
+                val manga = manga ?: return
+                val source = source ?: return
+                viewModelScope.launch(Dispatchers.IO) {
+                    val file =
+                        downloadProvider.findChapterDir(
+                            chapter.name,
+                            chapter.scanlator,
+                            chapter.url,
+                            manga.title,
+                            source,
+                        )
+                    Explorer.showDownload(context, file?.filePath)
+                }
+            }
         }
     }
 
@@ -1058,10 +1081,47 @@ class MangaViewModel(
         data object SettingsSheet : Dialog
         data object TrackSheet : Dialog
         data object FullCover : Dialog
+        data class EditInfo(val manga: Manga) : Dialog
     }
 
     fun dismissDialog() {
         dialog.value = null
+    }
+
+    /** The manga's downloads, or its local source folder (spec 13 §3). */
+    fun showInExplorer() {
+        val manga = manga ?: return
+        val source = source ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            val dir = if (manga.isLocal()) {
+                localFileSystem.getMangaDirectory(manga.url)
+            } else {
+                downloadProvider.findMangaDir(manga.title, source)
+            }
+            Explorer.showDownload(context, dir?.filePath)
+        }
+    }
+
+    fun showEditInfoDialog() {
+        val manga = manga ?: return
+        dialog.value = Dialog.EditInfo(manga)
+    }
+
+    /** Saves the user's details over the source's until [reset] (spec 13 §4). */
+    fun saveInfo(edit: MangaEdits.Edit) {
+        val manga = manga ?: return
+        dismissDialog()
+        viewModelScope.launch(Dispatchers.IO) { mangaEdits.save(manga, edit) }
+    }
+
+    /** Drops the user's details and fetches the source's again. */
+    fun resetInfo() {
+        val manga = manga ?: return
+        dismissDialog()
+        viewModelScope.launch(Dispatchers.IO) {
+            mangaEdits.clear(manga)
+            fetchAllFromSource()
+        }
     }
 
     fun showDeleteChapterDialog(chapters: List<Chapter>) {

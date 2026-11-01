@@ -48,6 +48,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import logcat.LogPriority
@@ -81,10 +83,12 @@ import mihon.desktop.app.startup.placeOnScreens
 import mihon.desktop.app.track.LoginUrls
 import mihon.desktop.app.track.ProtocolRegistrar
 import mihon.desktop.app.tray.AppTray
+import mihon.desktop.app.tray.Autostart
 import mihon.desktop.app.tray.CloseAction
 import mihon.desktop.app.tray.Notice
 import mihon.desktop.app.tray.TrayNotifier
 import mihon.desktop.app.tray.closeAction
+import mihon.desktop.app.update.UpdateInstaller
 import mihon.desktop.app.update.UpdateState
 import mihon.desktop.core.AppDirs
 import mihon.desktop.core.DesktopLogging
@@ -100,6 +104,7 @@ import java.awt.Dimension
 import java.awt.GraphicsEnvironment
 import java.awt.Rectangle
 import java.awt.Toolkit
+import kotlin.io.path.Path
 import kotlin.io.path.createTempDirectory
 import kotlin.system.exitProcess
 import kotlin.time.Duration.Companion.seconds
@@ -142,7 +147,8 @@ fun main(args: Array<String>) {
     instance.listen(CoroutineScope(SupervisorJob() + Dispatchers.IO)) { forwarded ->
         LoginUrls.route(forwarded) { loginUrls.trySend(it) }
         DeepLinks.route(forwarded)
-        bringToFront.tryEmit(Unit)
+        // Windows' sign-in start leaves an open window where it is
+        if (Autostart.TRAY_ARG !in forwarded) bringToFront.tryEmit(Unit)
     }
 
     val graph = try {
@@ -178,6 +184,7 @@ fun main(args: Array<String>) {
             graph.backupJob.periodicJob(),
             graph.delayedTrackingJob.periodicJob(),
             graph.appUpdater.periodicJob(),
+            graph.mihonExtensionManager.periodicJob(),
         ),
     )
     DesktopApp.jobScheduler = jobScheduler
@@ -200,10 +207,20 @@ fun main(args: Array<String>) {
         }
     }
     val initial = placeOnScreens(windowStore.load(), screens)
+    // Start with Windows (spec 13 §2): only the packaged exe, written on every start so it follows the exe
+    val exe = ProcessHandle.current().info().command().orElse(null)?.let(::Path)
+    if (exe != null && !UpdateInstaller().isDevelopment()) {
+        graph.trayPreferences.startWithWindows.changes()
+            .onEach { Autostart.apply(it, exe) }
+            .launchIn(CoroutineScope(SupervisorJob() + Dispatchers.IO))
+    }
+    // Windows' sign-in start: hidden in the tray, or minimized without one
+    val startHidden = Autostart.TRAY_ARG in args
 
     application {
         val windowState = rememberWindowState(
             placement = if (initial.maximized) WindowPlacement.Maximized else WindowPlacement.Floating,
+            isMinimized = startHidden && !graph.trayPreferences.traySupported,
             position = WindowPosition(initial.x.dp, initial.y.dp),
             size = DpSize(initial.width.dp, initial.height.dp),
         )
@@ -212,7 +229,7 @@ fun main(args: Array<String>) {
         // The scroll keys' animations run here (spec 7 §3 C)
         val scrollScope = rememberCoroutineScope()
         var closing by remember { mutableStateOf(false) }
-        var windowVisible by remember { mutableStateOf(true) }
+        var windowVisible by remember { mutableStateOf(!(startHidden && graph.trayPreferences.traySupported)) }
         // Exit from the close button (no tray) or the tray's Exit: the reader's last write first, and the update stops
         val exit = {
             if (!closing) {

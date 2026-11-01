@@ -64,6 +64,14 @@ class SourcePreferences(
 
     val extensionUpdatesCount: Preference<Int> = preferenceStore.getInt("ext_updates_count", 0)
 
+    // desktop: installing new versions without asking, off until the user turns it on (spec 13 §5)
+    val autoUpdateExtensions: Preference<Boolean> = preferenceStore.getBoolean("desktop_auto_update_extensions", false)
+
+    val lastExtensionAutoUpdate: Preference<Long> = preferenceStore.getLong(
+        Preference.appStateKey("desktop_last_extension_auto_update"),
+        0L,
+    )
+
     val trustedExtensions: Preference<Set<String>> = preferenceStore.getStringSet(
         Preference.appStateKey("trusted_extensions"),
         emptySet(),
