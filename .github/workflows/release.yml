@@ -5,17 +5,22 @@ on:
     tags: ["v*"]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   release:
     runs-on: windows-latest
     timeout-minutes: 120
+    permissions:
+      contents: write
+      # Provenance: with no signing certificate yet, `gh attestation verify` proves an MSI came from this workflow
+      id-token: write
+      attestations: write
     defaults:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           # The version comes from the tag (spec 6a §2)
           fetch-depth: 0
@@ -23,7 +28,7 @@ jobs:
         with:
           tracker-keys: ${{ secrets.TRACKER_KEYS }}
       - run: ./gradlew spotlessCheck test --continue
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: failure()
         with:
           name: test-reports
@@ -44,6 +49,11 @@ jobs:
         working-directory: desktop-app/build/packaging
         # "<hash>  <file>", which AppUpdater reads
         run: sha256sum Turboyomi-*.msi Turboyomi-*.zip > SHA256SUMS
+      - uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
+        with:
+          subject-path: |
+            desktop-app/build/packaging/Turboyomi-*.msi
+            desktop-app/build/packaging/Turboyomi-*.zip
       - name: Release
         working-directory: desktop-app/build/packaging
         env:
