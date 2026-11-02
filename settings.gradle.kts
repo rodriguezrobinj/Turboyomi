@@ -23,8 +23,14 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         maven(url = "https://www.jitpack.io")
-        // android.jar stubs used by android-compat
-        maven(url = "https://github.com/Suwayomi/Suwayomi-Server/raw/android-jar/")
+        // android.jar stubs used by android-compat. Suwayomi republishes 1.0.0 in place (on 2026-11-01 it dropped
+        // android.net.Network*, which android-compat doesn't implement), so it's pinned to a commit of that branch
+        exclusiveContent {
+            forRepository {
+                maven(url = "https://github.com/Suwayomi/Suwayomi-Server/raw/3983289d9481a8ba99c0b16350b27f41364906a2/")
+            }
+            filter { includeModule("com.github.Suwayomi", "android-jar") }
+        }
         // JCEF (compile dependency of android-compat's webkit classes)
         maven(url = "https://packages.jetbrains.team/maven/p/ij/intellij-dependencies")
         maven(url = "https://jogamp.org/deployment/maven")
